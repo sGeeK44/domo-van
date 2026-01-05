@@ -1,13 +1,9 @@
+#include "Logger.h"
 #include <Arduino.h>
-// Sensor: HC-SR04 or similar UART-based ultrasonic distance sensor
-// Red => VCC (5v)
-// Black => GND
-// White => TX
-// Yellow => RX
-
-// Sensor wire connections for ESP32
-// White (TX)  <---> GPIO16 (RX2)
-// Yellow (RX) <---> GPIO17 (TX2)
+// Sensor: HC-SR04-like UART ultrasonic sensor
+// Wiring notes:
+// Red => VCC (5V), Black => GND, White => TX, Yellow => RX
+// ESP32 connections: White (sensor TX) -> ESP_RX2, Yellow (sensor RX) -> ESP_TX2
 #define ESP_RX2 16
 #define ESP_TX2 17
 #define STANDARD_BAUD 9600
@@ -16,20 +12,24 @@
 
 unsigned char computeChecksum(unsigned char high, unsigned char low);
 
+static Logger *logger = nullptr;
+
 void setup() {
+  // instantiate logger with Serial in setup
   Serial.begin(STANDARD_BAUD);
-  Serial2.begin(STANDARD_BAUD, SERIAL_8N1, RX2, TX2);
-  Serial.println("--- Setup done ---");
+  logger = new Logger(Serial, Logger::INFO);
+  Serial2.begin(STANDARD_BAUD, SERIAL_8N1, ESP_RX2, ESP_TX2);
+  logger->info("--- Setup done ---");
 }
 
 void loop() {
   if (Serial2.available() < PACKET_SIZE) {
-    Serial.println("Frame not complete done - waiting for more data");
+    logger->debug("Frame not complete done - waiting for more data");
     return;
   }
 
   if (Serial2.read() != PACKET_HEADER) {
-    Serial.println("Header missing - byte ignored.");
+    logger->debug("Header missing - byte ignored.");
     return;
   }
 
@@ -38,12 +38,14 @@ void loop() {
   unsigned char checksum = Serial2.read();
 
   if (checksum != computeChecksum(highPart, lowPart)) {
-    Serial.println("Checksum error - packet ignored");
+    logger->debug("Checksum error - packet ignored");
     return;
   }
 
-  int distance = (highPart << 8) + lowPart;
-  Serial.printf("Distance: %d mm\n", distance);
+  int distance = (highPart << 8) + lowPart; // raw mm
+
+  // print filtered distance only
+  logger->info("Distance: %d mm", distance);
 }
 
 unsigned char computeChecksum(unsigned char high, unsigned char low) { return (PACKET_HEADER + high + low) & 0xFF; }
