@@ -1,14 +1,16 @@
 #pragma once
 #include "Logger.h"
+#include "Sensor.h"
 #include <Arduino.h>
 
-class UltrasonicSensor {
+class UltrasonicSensor : public Sensor {
 public:
   UltrasonicSensor(Stream &stream, Logger *logger);
 
   // Non-blocking: returns distance in mm if a valid packet is available,
   // otherwise returns -1.
-  int readDistance();
+  int read();
+  int maxRange() override { return 1000; } // 1 meters max range
 
 private:
   Stream &_serial;

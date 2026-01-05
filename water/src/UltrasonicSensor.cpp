@@ -1,9 +1,8 @@
 #include "UltrasonicSensor.h"
-#include "Logger.h"
 
 UltrasonicSensor::UltrasonicSensor(Stream &stream, Logger *logger) : _serial(stream), _logger(logger) {};
 
-int UltrasonicSensor::readDistance() {
+int UltrasonicSensor::read() {
   if (Serial2.available() < PACKET_SIZE) {
     _logger->debug("Frame not complete done - waiting for more data");
     return -1;
