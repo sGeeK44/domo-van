@@ -16,23 +16,19 @@
 
 unsigned char computeChecksum(unsigned char high, unsigned char low);
 
-void setup()
-{
+void setup() {
   Serial.begin(STANDARD_BAUD);
   Serial2.begin(STANDARD_BAUD, SERIAL_8N1, RX2, TX2);
   Serial.println("--- Setup done ---");
 }
 
-void loop()
-{
-  if (Serial2.available() < PACKET_SIZE)
-  {
+void loop() {
+  if (Serial2.available() < PACKET_SIZE) {
     Serial.println("Frame not complete done - waiting for more data");
     return;
   }
 
-  if (Serial2.read() != PACKET_HEADER)
-  {
+  if (Serial2.read() != PACKET_HEADER) {
     Serial.println("Header missing - byte ignored.");
     return;
   }
@@ -41,8 +37,7 @@ void loop()
   unsigned char lowPart = Serial2.read();
   unsigned char checksum = Serial2.read();
 
-  if (checksum != computeChecksum(highPart, lowPart))
-  {
+  if (checksum != computeChecksum(highPart, lowPart)) {
     Serial.println("Checksum error - packet ignored");
     return;
   }
@@ -51,7 +46,4 @@ void loop()
   Serial.printf("Distance: %d mm\n", distance);
 }
 
-unsigned char computeChecksum(unsigned char high, unsigned char low)
-{
-  return (PACKET_HEADER + high + low) & 0xFF;
-}
+unsigned char computeChecksum(unsigned char high, unsigned char low) { return (PACKET_HEADER + high + low) & 0xFF; }
