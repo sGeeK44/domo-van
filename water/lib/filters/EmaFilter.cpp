@@ -7,7 +7,9 @@ int EmaFilter::apply(int newValue) {
   if (_lastValue == 0) {
     _lastValue = newValue;
   } else {
-    _lastValue = (_alpha * newValue) + ((1.0 - _alpha) * _lastValue);
+    float result = (_alpha * newValue) + ((1.0 - _alpha) * _lastValue);
+    // Add 0.5 to round to the nearest integer
+    _lastValue = (int)(result + 0.5);
   }
   return _lastValue;
 }
