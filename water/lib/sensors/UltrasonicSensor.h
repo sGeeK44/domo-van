@@ -1,6 +1,6 @@
 #pragma once
 #include "Logger.h"
-#include "Sensor.h"
+#include "SensorBase.h"
 #include <Arduino.h>
 
 class UltrasonicSensor : public Sensor {

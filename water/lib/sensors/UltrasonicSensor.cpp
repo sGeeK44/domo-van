@@ -3,12 +3,12 @@
 UltrasonicSensor::UltrasonicSensor(Stream &stream, Logger *logger) : _serial(stream), _logger(logger) {};
 
 int UltrasonicSensor::read() {
-  if (Serial2.available() < PACKET_SIZE) {
+  if (_serial.available() < PACKET_SIZE) {
     _logger->debug("Frame not complete done - waiting for more data");
     return -1;
   }
 
-  if (Serial2.read() != PACKET_HEADER) {
+  if (_serial.read() != PACKET_HEADER) {
     _logger->debug("Header missing - byte ignored.");
     return -1;
   }

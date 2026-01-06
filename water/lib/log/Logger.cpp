@@ -25,5 +25,8 @@ void Logger::info(const char *fmt, ...) {
 void Logger::log(const char *tag, const char *fmt, va_list ap) {
   char buf[Logger::maxLogMsgSize];
   vsnprintf(buf, sizeof(buf), fmt, ap);
-  out->printf("\n[%s] %s", tag, buf);
+  out->write((const uint8_t *)"\n[", 2);
+  out->write((const uint8_t *)tag, strlen(tag));
+  out->write((const uint8_t *)"] ", 2);
+  out->write((const uint8_t *)buf, strlen(buf));
 }

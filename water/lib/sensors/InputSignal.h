@@ -1,6 +1,6 @@
 #pragma once
 #include "Filter.h"
-#include "Sensor.h"
+#include "SensorBase.h"
 #include <stdint.h>
 #include <vector>
 
