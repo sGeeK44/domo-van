@@ -1,19 +1,25 @@
 #pragma once
+#include "BleManager.h"
+#include "Logger.h"
 #include "SensorBase.h"
 #include "Settings.h"
+#include "WaterTankNotifier.h"
 #include <Arduino.h>
 
 class Program {
 public:
   Program(Settings *settings) : _settings(settings) {}
-  void setup(Stream &serial, Stream &serial2);
+  void setup(Stream &serial, Stream &serial1, Stream &serial2);
   void loop();
 
 private:
-  Sensor *_sensor;
-  class Logger *_logger = nullptr;
-  class BleManager *_bleManager = nullptr;
-  class InputSignal *_input = nullptr;
-  class Settings *_settings = nullptr;
-  class BleChannel* _cleanWaterTank;
+  unsigned long _startAt;
+  Sensor *_sensor = nullptr;
+  Logger *_logger = nullptr;
+  BleManager *_bleManager = nullptr;
+  Settings *_settings = nullptr;
+  WaterTankNotifier *_cleanTank = nullptr;
+  WaterTankNotifier *_greyTank = nullptr;
+  WaterTankNotifier *createNotifier(const char *name, const char *txUuid, const char *rxUuid, Stream &stream,
+                                    Logger *logger);
 };

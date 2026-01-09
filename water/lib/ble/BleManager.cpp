@@ -51,3 +51,5 @@ void BleManager::start() {
 BleChannel *BleManager::addChannel(BleListner *listner) {
   return new BleChannel(_service, _connectionListner, listner, _logger);
 }
+
+bool BleManager::isConnected() { return _connectionListner->isConnected(); }

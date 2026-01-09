@@ -17,6 +17,7 @@ private:
 public:
   BleManager(Logger *logger, Settings *settings) : _logger(logger), _settings(settings) {}
   void setup();
-  BleChannel* addChannel(BleListner *listner);
+  BleChannel *addChannel(BleListner *listner);
   void start();
+  bool isConnected();
 };
