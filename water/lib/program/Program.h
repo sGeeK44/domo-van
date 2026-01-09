@@ -1,5 +1,6 @@
 #pragma once
 #include "SensorBase.h"
+#include "Settings.h"
 #include <Arduino.h>
 
 class Program {
@@ -9,8 +10,10 @@ public:
   void loop();
 
 private:
-  Sensor *sensor;
-  class InputSignal *input = nullptr;
-  class Logger *logger = nullptr;
+  Sensor *_sensor;
+  class Logger *_logger = nullptr;
+  class BleManager *_bleManager = nullptr;
+  class InputSignal *_input = nullptr;
   class Settings *_settings = nullptr;
+  class BleChannel* _cleanWaterTank;
 };

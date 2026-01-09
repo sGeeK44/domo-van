@@ -1,5 +1,13 @@
 #include "Esp32Settings.h"
 
+String Esp32Settings::getDeviceName() { return get("device_name", "Water Tank"); }
+
+void Esp32Settings::setDeviceName(String newName) { save("device_name", newName.c_str()); }
+
+uint32_t Esp32Settings::getPinCode() { return get("pin_code", 123456); }
+
+void Esp32Settings::setPinCode(uint32_t newPin) { save("pin_code", static_cast<int>(newPin)); }
+
 int Esp32Settings::get(const char *key, const int defaultValue) {
   prefs.begin(_nameSpace, false);
   int result = prefs.getInt(key, defaultValue);
