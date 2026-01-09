@@ -22,6 +22,8 @@ void Logger::info(const char *fmt, ...) {
   va_end(ap);
 }
 
+void Logger::flush() { out->flush(); }
+
 void Logger::log(const char *tag, const char *fmt, va_list ap) {
   char buf[Logger::maxLogMsgSize];
   vsnprintf(buf, sizeof(buf), fmt, ap);

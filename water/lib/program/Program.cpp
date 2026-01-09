@@ -26,7 +26,7 @@ void Program::setup(Stream &serial, Stream &serial1, Stream &serial2) {
   _bleManager->start();
 
   _startAt = millis();
-  _logger->info("Setup done");
+  _logger->info("Setup done. Waiting for connection...");
 }
 
 void Program::loop() {
@@ -35,7 +35,8 @@ void Program::loop() {
     _greyTank->notify();
     delay(110);
   } else if (millis() - _startAt > (ADVERTISE_SECONDS * 1000)) {
-    _logger->debug("Timeout -> Deep Sleep");
+    _logger->info("Timeout -> Deep Sleep");
+    _logger->flush();
     esp_sleep_enable_timer_wakeup(DEEP_SLEEP_SECONDS * 1000000ULL);
     esp_deep_sleep_start();
   }

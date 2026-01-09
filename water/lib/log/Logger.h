@@ -13,6 +13,7 @@ public:
 
   void debug(const char *fmt, ...);
   void info(const char *fmt, ...);
+  void flush();
 
 private:
   Stream *out;
