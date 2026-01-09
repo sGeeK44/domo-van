@@ -4,6 +4,7 @@
 #include "InputSignal.h"
 #include "Logger.h"
 #include "MedianFilter.h"
+#include "TankValveListner.h"
 #include "UltrasonicSensor.h"
 #include "WaterTankListner.h"
 #include <Arduino.h>
@@ -11,7 +12,7 @@
 #define DEEP_SLEEP_SECONDS 5
 #define ADVERTISE_SECONDS 5
 
-void Program::setup(Stream &serial, Stream &serial1, Stream &serial2) {
+void Program::setup(Stream &serial, Stream &serial1, Stream &serial2, int relayPin) {
   _logger = new Logger(serial, Logger::INFO);
   _logger->info("Starting water tank module...");
 
@@ -22,6 +23,9 @@ void Program::setup(Stream &serial, Stream &serial1, Stream &serial2) {
                               "aaf8707e-2734-4e30-94b8-8d2725a5ced1", serial1, _logger);
   _greyTank = createNotifier("Grey Water Tank", "aaf8707e-2734-4e30-94b8-8d2725a5ced2",
                              "aaf8707e-2734-4e30-94b8-8d2725a5ced3", serial2, _logger);
+
+  _bleManager->addChannel(new TankValveListner("Grey Water Tank Valve", "aaf8707e-2734-4e30-94b8-8d2725a5ced4",
+                                               "aaf8707e-2734-4e30-94b8-8d2725a5ced5", relayPin));
 
   _bleManager->start();
 

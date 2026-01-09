@@ -9,7 +9,7 @@
 class Program {
 public:
   Program(Settings *settings) : _settings(settings) {}
-  void setup(Stream &serial, Stream &serial1, Stream &serial2);
+  void setup(Stream &serial, Stream &serial1, Stream &serial2, int relayPin);
   void loop();
 
 private:

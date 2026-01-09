@@ -10,6 +10,9 @@
 #define ESP_RX2 16
 #define ESP_TX2 17
 
+// Relay control for grey water tank valve
+#define RELAY_PIN 23
+
 // Rates for serial communication
 #define STANDARD_BAUD 9600
 
@@ -19,7 +22,7 @@ void setup() {
   Serial.begin(STANDARD_BAUD);
   Serial1.begin(STANDARD_BAUD, SERIAL_8N1, ESP_RX1, ESP_TX1);
   Serial2.begin(STANDARD_BAUD, SERIAL_8N1, ESP_RX2, ESP_TX2);
-  program.setup(Serial, Serial1, Serial2);
+  program.setup(Serial, Serial1, Serial2, RELAY_PIN);
 }
 
 void loop() { program.loop(); }
