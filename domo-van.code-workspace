@@ -4,6 +4,10 @@
 			"path": "."
 		},
 		{
+			"name": "Expo Project: mobile app",
+			"path": "mobile-app"
+		},
+		{
 			"name": "ESP32 Project: water module",
 			"path": "water-module"
 		}
