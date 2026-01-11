@@ -4,8 +4,8 @@
 			"path": "."
 		},
 		{
-			"name": "ESP32 Project: water",
-			"path": "water"
+			"name": "ESP32 Project: water module",
+			"path": "water-module"
 		}
 	],
 	"settings": {
