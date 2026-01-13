@@ -8,6 +8,7 @@
 #include "UltrasonicSensor.h"
 #include "WaterTankListner.h"
 #include <Arduino.h>
+#include <string>
 
 #define DEEP_SLEEP_SECONDS 5
 #define ADVERTISE_SECONDS 5
@@ -19,12 +20,12 @@ void Program::setup(Stream &serial, Stream &serial1, Stream &serial2, int relayP
   _bleManager = new BleManager(_logger, _settings);
   _bleManager->setup();
 
-  _cleanTank = createNotifier("Clean Water Tank", "aaf8707e-2734-4e30-94b8-8d2725a5ced0",
+  _cleanTank = createNotifier("clean_tank", "aaf8707e-2734-4e30-94b8-8d2725a5ced0",
                               "aaf8707e-2734-4e30-94b8-8d2725a5ced1", serial1, _logger);
-  _greyTank = createNotifier("Grey Water Tank", "aaf8707e-2734-4e30-94b8-8d2725a5ced2",
+  _greyTank = createNotifier("grey_tank", "aaf8707e-2734-4e30-94b8-8d2725a5ced2",
                              "aaf8707e-2734-4e30-94b8-8d2725a5ced3", serial2, _logger);
 
-  _bleManager->addChannel(new TankValveListner("Grey Water Tank Valve", "aaf8707e-2734-4e30-94b8-8d2725a5ced4",
+  _bleManager->addChannel(new TankValveListner("grey_valve", "aaf8707e-2734-4e30-94b8-8d2725a5ced4",
                                                "aaf8707e-2734-4e30-94b8-8d2725a5ced5", relayPin));
 
   _bleManager->start();
@@ -51,9 +52,11 @@ void Program::loop() {
 WaterTankNotifier *Program::createNotifier(const char *name, const char *txUuid, const char *rxUuid, Stream &stream,
                                            Logger *logger) {
   logger->info("Setup %s...", name);
-  BleChannel *cleanTankChannel = _bleManager->addChannel(new WaterTankListner(name, txUuid, rxUuid));
-  InputSignal *cleanTankInput = new InputSignal(new UltrasonicSensor(stream, _logger));
-  cleanTankInput->addFilter(new MedianFilter(9));
-  cleanTankInput->addFilter(new EmaFilter(0.5));
-  return new WaterTankNotifier(name, cleanTankChannel, cleanTankInput, _logger);
+
+  BleChannel *tankChannel =
+      _bleManager->addChannel(new WaterTankListner(name, txUuid, rxUuid, new TankSettings(_settings, name)));
+  InputSignal *tankInput = new InputSignal(new UltrasonicSensor(stream, _logger));
+  tankInput->addFilter(new MedianFilter(9));
+  tankInput->addFilter(new EmaFilter(0.5));
+  return new WaterTankNotifier(name, tankChannel, tankInput, _logger);
 }

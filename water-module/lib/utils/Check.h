@@ -5,3 +5,5 @@
 
 bool isNumeric(const std::string &str);
 bool isAlphaNumericSentence(const std::string &str);
+bool startsWith(const std::string &s, const char *prefix);
+bool isStrictPositiveInt(const std::string &s);
