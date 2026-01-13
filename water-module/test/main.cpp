@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <gtest/gtest.h>
 
 // --- Main Entry Point ---
