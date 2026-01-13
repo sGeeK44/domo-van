@@ -1,32 +1,33 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs } from "expo-router";
 
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-
+import { IconSymbol } from "@/design-system";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
+  const themeColor = useThemeColor();
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: themeColor["primary"]["500"],
         headerShown: false,
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="home" color={color} />,
+          title: "Home",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="home" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="water"
+        name="water/index"
         options={{
-          title: 'Water',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="water" color={color} />,
+          title: "Water",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="water-drop" color={color} />
+          ),
         }}
       />
     </Tabs>
