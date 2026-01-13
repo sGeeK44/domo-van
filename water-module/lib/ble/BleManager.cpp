@@ -8,7 +8,8 @@ const char *SERVICE_UUID = "aaf8707e-2734-4e30-94b8-8d2725a5ceca";
 
 void BleManager::setup() {
   _logger->info("Setup BLE...");
-  const std::string deviceName = _settings->getDeviceName();
+  AdminSettings adminSettings(_settings);
+  const std::string deviceName = adminSettings.getDeviceName();
 
   // Set display name for bluetooth discovery
   NimBLEDevice::init(deviceName.c_str());
@@ -24,7 +25,7 @@ void BleManager::setup() {
   NimBLEDevice::setSecurityAuth(true, true, true);
 
   // Set the fixed PIN code
-  NimBLEDevice::setSecurityPasskey(_settings->getPinCode());
+  NimBLEDevice::setSecurityPasskey(adminSettings.getPinCode());
 
   // Force the phone to ask the user to enter the code that the ESP32 "displays" (our fixed code).
   NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);

@@ -15,8 +15,8 @@ private:
   }
 
 public:
-  WaterTankListner(const char *name, const char *txUuid, const char *rxUuid, TankSettings *tankSettings)
-      : _protocol(TankCfgProtocol(tankSettings)) {
+  WaterTankListner(const char *name, const char *txUuid, const char *rxUuid, Settings *settings)
+      : _protocol(TankCfgProtocol(new TankSettings(settings, name))) {
     this->name = name;
     this->txUuid = txUuid;
     this->rxUuid = rxUuid;

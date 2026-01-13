@@ -1,31 +1,12 @@
 #include "TankCfgProtocol.h"
+#include "../FakeSettings.h"
 #include <gtest/gtest.h>
-#include <map>
 #include <string>
-
-namespace {
-class FakeSettings : public Settings {
-public:
-  // Minimal stubs (not used by these tests)
-  std::string getDeviceName() override { return "X"; }
-  void setDeviceName(std::string) override {}
-  uint32_t getPinCode() override { return 0; }
-  void setPinCode(uint32_t) override {}
-
-  int getTankVolumeLiters(const char *prefix) override { return volumes[std::string(prefix)]; }
-  void setTankVolumeLiters(const char *prefix, int liters) override { volumes[std::string(prefix)] = liters; }
-  int getTankHeightMm(const char *prefix) override { return heights[std::string(prefix)]; }
-  void setTankHeightMm(const char *prefix, int heightMm) override { heights[std::string(prefix)] = heightMm; }
-
-  std::map<std::string, int> volumes;
-  std::map<std::string, int> heights;
-};
-} // namespace
 
 TEST(TankCfgProtocol, CfgQueryRespondsWithCurrentValues) {
   FakeSettings s;
-  s.volumes["clean"] = 150;
-  s.heights["clean"] = 900;
+  s.int_values["clean_v_l"] = 150;
+  s.int_values["clean_h_mm"] = 900;
 
   TankSettings tankSettings(&s, std::string("clean"));
   TankCfgProtocol p(&tankSettings);
@@ -38,8 +19,8 @@ TEST(TankCfgProtocol, CfgWritePersistsAndRespondsOk) {
   TankCfgProtocol p(&tankSettings);
 
   EXPECT_EQ(p.handle("CFG:V=123;H=456"), "OK");
-  EXPECT_EQ(s.volumes["grey"], 123);
-  EXPECT_EQ(s.heights["grey"], 456);
+  EXPECT_EQ(s.int_values["grey_v_l"], 123);
+  EXPECT_EQ(s.int_values["grey_h_mm"], 456);
 }
 
 TEST(TankCfgProtocol, CfgWriteRejectsMissingFields) {

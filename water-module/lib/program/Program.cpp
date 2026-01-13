@@ -53,8 +53,7 @@ WaterTankNotifier *Program::createNotifier(const char *name, const char *txUuid,
                                            Logger *logger) {
   logger->info("Setup %s...", name);
 
-  BleChannel *tankChannel =
-      _bleManager->addChannel(new WaterTankListner(name, txUuid, rxUuid, new TankSettings(_settings, name)));
+  BleChannel *tankChannel = _bleManager->addChannel(new WaterTankListner(name, txUuid, rxUuid, _settings));
   InputSignal *tankInput = new InputSignal(new UltrasonicSensor(stream, _logger));
   tankInput->addFilter(new MedianFilter(9));
   tankInput->addFilter(new EmaFilter(0.5));

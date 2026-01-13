@@ -4,13 +4,8 @@
 
 class Settings {
 public:
-  virtual std::string getDeviceName() = 0;
-  virtual void setDeviceName(std::string newName) = 0;
-  virtual uint32_t getPinCode() = 0;
-  virtual void setPinCode(uint32_t newPin) = 0;
-
-  virtual int getTankVolumeLiters(const char *name) = 0;
-  virtual void setTankVolumeLiters(const char *name, int liters) = 0;
-  virtual int getTankHeightMm(const char *name) = 0;
-  virtual void setTankHeightMm(const char *name, int heightMm) = 0;
+  virtual int get(const char *key, const int defaultValue) = 0;
+  virtual void save(const char *key, const int value) = 0;
+  virtual std::string get(const char *key, const std::string defaultValue) = 0;
+  virtual void save(const char *key, const char *value) = 0;
 };
