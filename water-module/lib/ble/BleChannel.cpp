@@ -17,6 +17,8 @@ BleChannel::BleChannel(NimBLEService *service, BleConnectionListner *connectionL
   rxChannel->createDescriptor(HUMAN_READABLE_NAME, NIMBLE_PROPERTY::READ)
       ->setValue(std::string(listner->name) + " (RX)");
   rxChannel->setCallbacks(this);
+
+  _listner->onChannelAttach(this);
   logger->debug("BLE Channel %s created", listner->name);
 }
 

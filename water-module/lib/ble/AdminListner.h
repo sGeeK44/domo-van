@@ -7,8 +7,8 @@ class AdminListener : public BleListner {
   Logger *_logger = nullptr;
   Settings *_settings = nullptr;
   void onReceive(std::string value) override;
-  void setNewDeviceName(String newName);
-  void setNewPin(String newPinCode);
+  const char *setNewDeviceName(String newName);
+  const char *setNewPin(String newPinCode);
 
 public:
   AdminListener(Settings *settings, Logger *logger) : _settings(settings), _logger(logger) {
