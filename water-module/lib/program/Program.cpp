@@ -45,8 +45,6 @@ void Program::loop() {
     esp_sleep_enable_timer_wakeup(DEEP_SLEEP_SECONDS * 1000000ULL);
     esp_deep_sleep_start();
   }
-
-  delay(500);
 }
 
 WaterTankNotifier *Program::createNotifier(const char *name, const char *txUuid, const char *rxUuid, Stream &stream,
