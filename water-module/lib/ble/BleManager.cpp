@@ -8,7 +8,7 @@ const char *SERVICE_UUID = "aaf8707e-2734-4e30-94b8-8d2725a5ceca";
 
 void BleManager::setup() {
   _logger->info("Setup BLE...");
-  const String deviceName = _settings->getDeviceName();
+  const std::string deviceName = _settings->getDeviceName();
 
   // Set display name for bluetooth discovery
   NimBLEDevice::init(deviceName.c_str());
@@ -35,7 +35,7 @@ void BleManager::setup() {
 
   _service = server->createService(SERVICE_UUID);
   _adminChannel = new BleChannel(_service, _connectionListner, new AdminListener(_settings, _logger), _logger);
-  _logger->info("BLE setup complete, advertising as %s", deviceName);
+  _logger->info("BLE setup complete, advertising as %s", deviceName.c_str());
 }
 
 void BleManager::start() {

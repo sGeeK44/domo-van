@@ -1,6 +1,7 @@
 #pragma once
 
-#include <WString.h>
+#include <cstring>
+#include <string>
 
-bool isNumeric(String str);
-bool isAlphaNumericSentence(String str);
+bool isNumeric(const std::string &str);
+bool isAlphaNumericSentence(const std::string &str);

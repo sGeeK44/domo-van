@@ -1,12 +1,12 @@
 #include "Check.h"
-#include <Arduino.h>
+#include <cctype>
 
-bool isNumeric(String str) {
-  if (str.length() == 0)
+bool isNumeric(const std::string &str) {
+  if (str.empty())
     return false;
 
-  for (size_t i = 0; i < str.length(); i++) {
-    if (!isDigit(str.charAt(i))) {
+  for (unsigned char c : str) {
+    if (!std::isdigit(c)) {
       return false;
     }
   }
@@ -14,14 +14,12 @@ bool isNumeric(String str) {
   return true;
 }
 
-bool isAlphaNumericSentence(String str) {
-  if (str == nullptr)
+bool isAlphaNumericSentence(const std::string &str) {
+  if (str.empty())
     return false;
 
-  for (size_t i = 0; i < str.length(); i++) {
-    char c = str.charAt(i);
-
-    if (!(isAlphaNumeric(c) || c == ' ' || c == '-' || c == '_')) {
+  for (unsigned char c : str) {
+    if (!(std::isalnum(c) || c == ' ' || c == '-' || c == '_')) {
       return false;
     }
   }

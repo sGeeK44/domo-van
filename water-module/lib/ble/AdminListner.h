@@ -2,13 +2,14 @@
 #include "BleListner.h"
 #include "Logger.h"
 #include "Settings.h"
+#include <string>
 
 class AdminListener : public BleListner {
   Logger *_logger = nullptr;
   Settings *_settings = nullptr;
   void onReceive(std::string value) override;
-  const char *setNewDeviceName(String newName);
-  const char *setNewPin(String newPinCode);
+  const char *setNewDeviceName(const std::string &newName);
+  const char *setNewPin(const std::string &newPinCode);
 
 public:
   AdminListener(Settings *settings, Logger *logger) : _settings(settings), _logger(logger) {
