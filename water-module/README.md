@@ -8,15 +8,73 @@ Ce module gère la mesure des niveaux de cuves (propre/grise) et le contrôle de
 
 **Service UUID :** `aaf8707e-2734-4e30-94b8-8d2725a5ceca`
 
-| Fonction        | UUID Notify (OUT) | UUID Write (IN) | Format / Commandes              |
-| :-------------- | :---------------- | :-------------- | :------------------------------ |
-| **Eau Propre**  | `...ced0`         | `...ced1`       | `int` (mm)                      |
-| **Eau Grise**   | `...ced2`         | `...ced3`       | `int` (mm)                      |
-| **Vanne Grise** | `...ced4`         | `...ced5`       | `OPEN`, `CLOSE`                 |
-| **Admin**       | `...cedb`         | `...cedc`       | `PIN:123456`, `NAME:Water Tank` |
+Chaque **Channel** est une paire de caractéristiques :
 
-> *Note : Les UUIDs sont abrégés, ils partagent le même préfixe que le service.*
+- **TX (OUT)** : `READ_AUTHEN` + `NOTIFY` (notifications chiffrées/authentifiées)
+- **RX (IN)** : `WRITE` + `WRITE_AUTHEN` (écriture authentifiée)
+
+Toutes les payloads sont des **chaînes ASCII/UTF-8** (pas du binaire).
+
+| Channel | Rôle | UUID TX (Notify/Read) | UUID RX (Write) |
+| :-- | :-- | :-- | :-- |
+| **Eau Propre** (`clean_tank`) | Mesure + config cuve | `aaf8707e-2734-4e30-94b8-8d2725a5ced0` | `aaf8707e-2734-4e30-94b8-8d2725a5ced1` |
+| **Eau Grise** (`grey_tank`) | Mesure + config cuve | `aaf8707e-2734-4e30-94b8-8d2725a5ced2` | `aaf8707e-2734-4e30-94b8-8d2725a5ced3` |
+| **Vanne Grise** (`grey_valve`) | Contrôle relais | `aaf8707e-2734-4e30-94b8-8d2725a5ced4` | `aaf8707e-2734-4e30-94b8-8d2725a5ced5` |
+| **Admin** (`Admin Channel`) | Nom / PIN (Passkey) | `aaf8707e-2734-4e30-94b8-8d2725a5cedb` | `aaf8707e-2734-4e30-94b8-8d2725a5cedc` |
+
 > *Valeurs par défaut : Nom = `Water Tank`, PIN = `123456`.*
+
+### Mesures cuves (TX) + configuration cuves (RX) — `TankCfgProtocol`
+
+Sur les channels **Eau Propre** et **Eau Grise** :
+
+- **TX (Notify)** envoie périodiquement la **distance mesurée** en millimètres sous forme de chaîne, ex: `482`
+- **RX (Write)** accepte des commandes de configuration, et **la réponse est renvoyée sur TX** (même caractéristique que les mesures)
+
+Commandes (RX) :
+
+- **Lecture config**: `CFG?`
+  - **Réponse (TX)**: `CFG:V=<liters>;H=<mm>`
+- **Écriture config**: `CFG:V=<liters>;H=<mm>`
+  - **Réponse (TX)**: `OK`
+
+Erreurs possibles (TX) :
+
+- `ERR_CFG_FMT` : champs manquants (ex: `CFG:V=...` sans `H=...`)
+- `ERR_CFG_NUM` : valeur non numérique
+- `ERR_CFG_RANGE` : bornes hors limites (V: 1..5000, H: 1..10000)
+- `ERR_UNKNOWN_CMD` : commande inconnue
+
+Valeurs par défaut (par cuve) :
+
+- **Volume** : 150 L
+- **Hauteur** : 500 mm
+
+> **Note parsing client** : le TX peut contenir soit une mesure (`<mm>`), soit une réponse de protocole (`CFG:...`, `OK`, `ERR_...`).
+
+### Vanne grise (RX)
+
+Commandes (RX) :
+
+- `OPEN` : active le relais (HIGH)
+- `CLOSE` : désactive le relais (LOW)
+
+> Le TX de ce channel est actuellement non utilisé (réservé).
+
+### Administration (RX) — `AdminProtocol`
+
+Commandes (RX) :
+
+- **Changer PIN**: `PIN:<6digits>`
+  - Réponses (TX): `OK`, `ERR_PIN_LEN`, `ERR_PIN_NUM`
+- **Changer nom BLE**: `NAME:<device_name>`
+  - Contraintes : longueur 1..20, caractères autorisés = alphanum + espace + `-` + `_`
+  - Réponses (TX): `OK`, `ERR_NAME_LEN`, `ERR_NAME_CHARS`
+
+Comportement après `OK` :
+
+- suppression des bonds BLE (`deleteAllBonds()`)
+- reboot pour appliquer le nouveau nom/PIN
 
 ## 🔋 Consommation Énergétique (Usage Van)
 
