@@ -9,15 +9,28 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.domovan.app",
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "Autoriser domo-van à se connecter au module de gestion des eaux via Bluetooth.",
+        "NSBluetoothPeripheralUsageDescription": "Autoriser domo-van à utiliser le Bluetooth pour se connecter au module de gestion des eaux."
+      }
     },
     "android": {
+      "package": "com.domovan.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "permissions": [
+        "BLUETOOTH",
+        "BLUETOOTH_ADMIN",
+        "BLUETOOTH_SCAN",
+        "BLUETOOTH_CONNECT",
+        "ACCESS_FINE_LOCATION"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
@@ -37,6 +50,15 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "react-native-ble-plx",
+        {
+          "modes": [
+            "central"
+          ],
+          "bluetoothAlwaysPermission": "Autoriser domo-van à se connecter au module de gestion des eaux via Bluetooth."
         }
       ]
     ],
