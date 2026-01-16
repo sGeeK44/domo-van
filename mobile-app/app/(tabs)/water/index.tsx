@@ -3,6 +3,7 @@ import { WaterTank } from "@/app/(tabs)/water/water-tank";
 import { Observable } from "@/core/observable";
 import { Colors } from "@/design-system";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
+import { ValveState } from "@/domain/water/DrainValve";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useConnectedDevice } from "@/hooks/useConnectedDevice";
@@ -25,6 +26,13 @@ const DEFAULT_TANK_STATE = {
   heightMm: 0,
   percentage: 0,
   lastDistanceMm: null,
+};
+
+const DEFAULT_VALVE_STATE: ValveState = {
+  position: "unknown",
+  autoCloseSeconds: 30,
+  remainingSeconds: 0,
+  lastMessage: null,
 };
 
 export default function WaterScreen() {
@@ -51,6 +59,8 @@ export default function WaterScreen() {
     useObservable(waterSystem?.cleanTank ?? null) ?? DEFAULT_TANK_STATE;
   const grey =
     useObservable(waterSystem?.greyTank ?? null) ?? DEFAULT_TANK_STATE;
+  const valve =
+    useObservable(waterSystem?.greyDrainValve ?? null) ?? DEFAULT_VALVE_STATE;
 
   const handleDrain = () => {
     void waterSystem?.greyDrainValve.open();
@@ -64,6 +74,10 @@ export default function WaterScreen() {
   const cleanPercentage = isConnected ? clean.percentage : 0;
   const greyCapacity = isConnected ? grey.capacityLiters : 0;
   const greyPercentage = isConnected ? grey.percentage : 0;
+
+  // Valve state
+  const isDraining = isConnected && valve.position === "open";
+  const remainingSeconds = isConnected ? valve.remainingSeconds : 0;
 
   return (
     <View style={styles.container}>
@@ -102,7 +116,12 @@ export default function WaterScreen() {
               color={colors["water"]["grey"]}
             />
           </View>
-          <DrainSlider onDrain={handleDrain} onStopDrain={handleStopDrain} />
+          <DrainSlider
+            isDraining={isDraining}
+            remainingSeconds={remainingSeconds}
+            onDrain={handleDrain}
+            onStopDrain={handleStopDrain}
+          />
         </View>
       </SafeAreaView>
     </View>

@@ -5,6 +5,7 @@ import { ScanSection } from "@/app/_components/water-settings/ScanSection";
 import { getWaterSettingsStyles } from "@/app/_components/water-settings/styles";
 import { TankSettingsSection } from "@/app/_components/water-settings/TankSettingsSection";
 import { useAutoScanWithTimeout } from "@/app/_components/water-settings/useAutoScanWithTimeout";
+import { ValveSettingsSection } from "@/app/_components/water-settings/ValveSettingsSection";
 import { useBle } from "@/components/BleProvider";
 import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
@@ -138,6 +139,7 @@ export default function WaterSettingsScreen() {
             connectedDevice={device}
             name="grey"
           />
+          <ValveSettingsSection styles={styles} connectedDevice={device} />
         </ScrollView>
       ) : (
         <>

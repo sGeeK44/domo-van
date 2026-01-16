@@ -1,5 +1,6 @@
+import { IconSymbol } from "@/design-system";
 import { LinearGradient } from "expo-linear-gradient";
-import { useCallback, useEffect, useState } from "react"; // Ajout de useEffect
+import { useCallback, useState } from "react";
 import {
   LayoutChangeEvent,
   Pressable,
@@ -18,48 +19,45 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { IconSymbol } from "@/design-system";
 
 const HANDLE_SIZE = 54;
-const AUTO_CLOSE_TIME = 30; // Temps en secondes avant fermeture auto
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export function DrainSlider({
+  isDraining,
+  remainingSeconds,
   onDrain,
   onStopDrain,
 }: {
+  isDraining: boolean;
+  remainingSeconds: number;
   onDrain: () => void;
   onStopDrain: () => void;
 }) {
-  const [isDraining, setIsDraining] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(AUTO_CLOSE_TIME);
   const [containerWidth, setContainerWidth] = useState(0);
 
   const translateX = useSharedValue(0);
   const contextX = useSharedValue(0);
 
   const handleStop = useCallback(() => {
-    setIsDraining(false);
-    setTimeLeft(AUTO_CLOSE_TIME);
     translateX.value = withSpring(0);
     onStopDrain();
   }, [onStopDrain, translateX]);
 
-  // Gestion du compte à rebours
-  useEffect(() => {
-    let timer: ReturnType<typeof setInterval> | undefined;
-    if (isDraining && timeLeft > 0) {
-      timer = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0 && isDraining) {
-      handleStop(); // Fermeture automatique
-    }
+  // Reset slider position when draining stops
+  const handleDrainStart = useCallback(() => {
+    onDrain();
+  }, [onDrain]);
 
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [handleStop, isDraining, timeLeft]);
+  // Reset slider when valve closes
+  const resetSlider = useCallback(() => {
+    translateX.value = withSpring(0);
+  }, [translateX]);
+
+  // When isDraining becomes false, reset slider position
+  if (!isDraining && translateX.value !== 0) {
+    resetSlider();
+  }
 
   const maxTranslate = containerWidth - HANDLE_SIZE - 8;
 
@@ -74,14 +72,13 @@ export function DrainSlider({
     .onUpdate((event) => {
       translateX.value = Math.min(
         Math.max(0, contextX.value + event.translationX),
-        maxTranslate,
+        maxTranslate
       );
     })
     .onEnd(() => {
       if (translateX.value > maxTranslate * 0.8) {
         translateX.value = withSpring(maxTranslate);
-        runOnJS(setIsDraining)(true);
-        runOnJS(onDrain)();
+        runOnJS(handleDrainStart)();
       } else {
         translateX.value = withSpring(0);
       }
@@ -96,7 +93,7 @@ export function DrainSlider({
       translateX.value,
       [0, maxTranslate],
       [HANDLE_SIZE, containerWidth - 8],
-      Extrapolation.CLAMP,
+      Extrapolation.CLAMP
     );
     return { width };
   });
@@ -145,7 +142,7 @@ export function DrainSlider({
             {/* Nouveau texte de signalement */}
             <Text style={[styles.instruction, { color: "#FF5E3A" }]}>
               Fermeture automatique dans{" "}
-              <Text style={{ fontWeight: "900" }}>{timeLeft}s</Text>
+              <Text style={{ fontWeight: "900" }}>{remainingSeconds}s</Text>
             </Text>
 
             <Pressable
