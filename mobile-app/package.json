@@ -19,6 +19,7 @@
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
+    "base-64": "^1.0.0",
     "expo": "~54.0.31",
     "expo-constants": "~18.0.13",
     "expo-dev-client": "~6.0.20",
@@ -46,6 +47,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
+    "@types/base-64": "^1.0.2",
     "@types/node": "^25.0.8",
     "@types/react": "~19.1.0",
     "typescript": "~5.9.2",
