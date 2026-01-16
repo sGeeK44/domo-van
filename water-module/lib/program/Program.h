@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "SensorBase.h"
 #include "Settings.h"
+#include "TankValveListner.h"
 #include "WaterTankNotifier.h"
 #include <Arduino.h>
 
@@ -20,6 +21,7 @@ private:
   Settings *_settings = nullptr;
   WaterTankNotifier *_cleanTank = nullptr;
   WaterTankNotifier *_greyTank = nullptr;
+  TankValveListner *_greyValve = nullptr;
   WaterTankNotifier *createNotifier(const char *name, const char *txUuid, const char *rxUuid, Stream &stream,
                                     Logger *logger);
 };

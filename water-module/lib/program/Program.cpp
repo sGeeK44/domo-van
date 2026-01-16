@@ -6,6 +6,7 @@
 #include "MedianFilter.h"
 #include "TankValveListner.h"
 #include "UltrasonicSensor.h"
+#include "ValveSettings.h"
 #include "WaterTankListner.h"
 #include <Arduino.h>
 #include <string>
@@ -25,8 +26,9 @@ void Program::setup(Stream &serial, Stream &serial1, Stream &serial2, int relayP
   _greyTank = createNotifier("grey_tank", "aaf8707e-2734-4e30-94b8-8d2725a5ced2",
                              "aaf8707e-2734-4e30-94b8-8d2725a5ced3", serial2, _logger);
 
-  _bleManager->addChannel(new TankValveListner("grey_valve", "aaf8707e-2734-4e30-94b8-8d2725a5ced4",
-                                               "aaf8707e-2734-4e30-94b8-8d2725a5ced5", relayPin));
+  _greyValve = new TankValveListner("grey_valve", "aaf8707e-2734-4e30-94b8-8d2725a5ced4",
+                                    "aaf8707e-2734-4e30-94b8-8d2725a5ced5", relayPin, _settings);
+  _bleManager->addChannel(_greyValve);
 
   _bleManager->start();
 
@@ -38,6 +40,7 @@ void Program::loop() {
   if (_bleManager->isConnected()) {
     _cleanTank->notify();
     _greyTank->notify();
+    _greyValve->loop();
     delay(110);
   } else if (millis() - _startAt > (ADVERTISE_SECONDS * 1000)) {
     _logger->info("Timeout -> Deep Sleep");
