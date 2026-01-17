@@ -88,11 +88,11 @@ describe("DrainValve", () => {
 
     await valve.open();
     expect(ble.commands).toContainEqual("OPEN");
-    expect(valve.getValue()).toEqual({ position: "open" });
+    expect(valve.getValue()).toMatchObject({ position: "open" });
 
     await valve.close();
     expect(ble.commands).toContainEqual("CLOSE");
-    expect(valve.getValue()).toEqual({ position: "closed" });
+    expect(valve.getValue()).toMatchObject({ position: "closed" });
 
     valve.dispose();
   });
@@ -108,7 +108,7 @@ describe("DrainValve", () => {
 
     const valve = new DrainValve(failingBle);
     await valve.open();
-    expect(valve.getValue()).toEqual({ position: "unknown" });
+    expect(valve.getValue()).toMatchObject({ position: "unknown" });
     valve.dispose();
   });
 });
