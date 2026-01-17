@@ -1,6 +1,6 @@
 import { AdminSection } from "@/app/_components/water-settings/AdminSection";
-import { ConnectedModuleSection } from "@/app/_components/water-settings/ConnectedModuleSection";
 import { DiscoveredDevicesList } from "@/app/_components/water-settings/DiscoveredDevicesList";
+import { SavedDeviceSection } from "@/app/_components/water-settings/SavedDeviceSection";
 import { ScanSection } from "@/app/_components/water-settings/ScanSection";
 import { getWaterSettingsStyles } from "@/app/_components/water-settings/styles";
 import { TankSettingsSection } from "@/app/_components/water-settings/TankSettingsSection";
@@ -13,7 +13,7 @@ import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useConnectedDevice } from "@/hooks/useConnectedDevice";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -26,7 +26,8 @@ export default function WaterSettingsScreen() {
   const { bluetooth } = useBle();
 
   // Connection state from hook (state-only)
-  const { device, setDevice, isConnected } = useConnectedDevice();
+  const { device, setDevice, isConnected, lastDevice, forgetDevice } =
+    useConnectedDevice();
 
   // Local scanning state
   const [isScanning, setIsScanning] = useState(false);
@@ -67,9 +68,9 @@ export default function WaterSettingsScreen() {
     };
   }, [bluetooth]);
 
-  // Auto scan only when not connected; stop after 30s
+  // Auto scan only when no saved device; stop after 30s
   useAutoScanWithTimeout({
-    enabled: !isModuleConnected,
+    enabled: !lastDevice,
     isScanning,
     startScan,
     stopScan,
@@ -104,12 +105,6 @@ export default function WaterSettingsScreen() {
     }
   }, [device, setDevice]);
 
-  // Connected device info for components
-  const connectedDeviceInfo = useMemo(
-    () => (device ? { id: device.id, name: device.name } : null),
-    [device]
-  );
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -120,34 +115,39 @@ export default function WaterSettingsScreen() {
         <View style={{ width: 22 }} />
       </View>
 
-      {isModuleConnected && connectedDeviceInfo ? (
+      {lastDevice ? (
         <ScrollView>
-          <ConnectedModuleSection
+          <SavedDeviceSection
             styles={styles}
-            connectedDevice={connectedDeviceInfo}
-            lastError={lastError}
-            onDisconnect={() => void disconnect()}
+            device={lastDevice}
+            isConnected={isModuleConnected}
+            onConnect={connect}
+            onDisconnect={disconnect}
+            onForget={forgetDevice}
           />
-          <AdminSection styles={styles} connectedDevice={device} />
-          <TankSettingsSection
-            styles={styles}
-            connectedDevice={device}
-            name="clean"
-          />
-          <TankSettingsSection
-            styles={styles}
-            connectedDevice={device}
-            name="grey"
-          />
-          <ValveSettingsSection styles={styles} connectedDevice={device} />
+          {isModuleConnected && device && (
+            <>
+              <AdminSection styles={styles} connectedDevice={device} />
+              <TankSettingsSection
+                styles={styles}
+                connectedDevice={device}
+                name="clean"
+              />
+              <TankSettingsSection
+                styles={styles}
+                connectedDevice={device}
+                name="grey"
+              />
+              <ValveSettingsSection styles={styles} connectedDevice={device} />
+            </>
+          )}
         </ScrollView>
       ) : (
-        <>
+        <View style={{ flex: 1 }}>
           <ScanSection
             styles={styles}
             isScanning={isScanning}
             lastError={lastError}
-            onToggleScan={onToggleScan}
           />
 
           <DiscoveredDevicesList
@@ -156,7 +156,15 @@ export default function WaterSettingsScreen() {
             discoveredDevices={discoveredDevices}
             onConnect={connect}
           />
-        </>
+
+          <View style={styles.bottomButtonContainer}>
+            <Pressable onPress={onToggleScan} style={styles.primaryButton}>
+              <Text style={styles.primaryButtonText}>
+                {isScanning ? "Arrêter la recherche" : "Rechercher"}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       )}
     </SafeAreaView>
   );

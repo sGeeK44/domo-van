@@ -1,21 +1,32 @@
 import * as SecureStore from "expo-secure-store";
 
-const LAST_DEVICE_ID_KEY = "water_module_last_device_id";
+const LAST_DEVICE_KEY = "water_module_last_device";
+
+export type DeviceInfo = {
+  id: string;
+  name: string;
+};
 
 /**
- * Service for persisting and retrieving the last connected device ID.
+ * Service for persisting and retrieving the last connected device info.
  * Extracted for testability.
  */
 export const DeviceStorage = {
-  async getLastDeviceId(): Promise<string | null> {
-    return SecureStore.getItemAsync(LAST_DEVICE_ID_KEY);
+  async getLastDevice(): Promise<DeviceInfo | null> {
+    const json = await SecureStore.getItemAsync(LAST_DEVICE_KEY);
+    if (!json) return null;
+    try {
+      return JSON.parse(json) as DeviceInfo;
+    } catch {
+      return null;
+    }
   },
 
-  async setLastDeviceId(deviceId: string): Promise<void> {
-    await SecureStore.setItemAsync(LAST_DEVICE_ID_KEY, deviceId);
+  async setLastDevice(device: DeviceInfo): Promise<void> {
+    await SecureStore.setItemAsync(LAST_DEVICE_KEY, JSON.stringify(device));
   },
 
-  async clearLastDeviceId(): Promise<void> {
-    await SecureStore.deleteItemAsync(LAST_DEVICE_ID_KEY);
+  async clearLastDevice(): Promise<void> {
+    await SecureStore.deleteItemAsync(LAST_DEVICE_KEY);
   },
 };

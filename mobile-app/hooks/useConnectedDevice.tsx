@@ -1,12 +1,12 @@
 import type { Bluetooth } from "@/core/bluetooth/Bluetooth";
-import { DeviceStorage } from "@/hooks/DeviceStorage";
-import {
+import { DeviceStorage, type DeviceInfo } from "@/hooks/DeviceStorage";
+import React, {
   createContext,
-  type PropsWithChildren,
   useCallback,
   useContext,
   useEffect,
   useState,
+  type PropsWithChildren,
 } from "react";
 import { Device, Subscription } from "react-native-ble-plx";
 
@@ -14,9 +14,10 @@ export type ConnectedDeviceContextValue = {
   device: Device | null;
   isConnected: boolean;
   isConnecting: boolean;
-  lastDeviceId: string | null;
+  lastDevice: DeviceInfo | null;
   setDevice: (device: Device | null) => void;
   autoConnect: (bluetooth: Bluetooth) => Promise<void>;
+  forgetDevice: () => Promise<void>;
 };
 
 const ConnectedDeviceContext =
@@ -24,24 +25,28 @@ const ConnectedDeviceContext =
 
 export function ConnectedDeviceProvider({ children }: PropsWithChildren) {
   const [device, setDeviceState] = useState<Device | null>(null);
-  const [lastDeviceId, setLastDeviceId] = useState<string | null>(null);
+  const [lastDevice, setLastDevice] = useState<DeviceInfo | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Load lastDeviceId from storage on mount
+  // Load lastDevice from storage on mount
   useEffect(() => {
-    DeviceStorage.getLastDeviceId().then((storedId) => {
-      if (storedId) {
-        setLastDeviceId(storedId);
+    DeviceStorage.getLastDevice().then((storedDevice) => {
+      if (storedDevice) {
+        setLastDevice(storedDevice);
       }
     });
   }, []);
 
-  // Wrapper to persist device ID when setting device
+  // Wrapper to persist device info when setting device
   const setDevice = useCallback((newDevice: Device | null) => {
     setDeviceState(newDevice);
     if (newDevice) {
-      setLastDeviceId(newDevice.id);
-      void DeviceStorage.setLastDeviceId(newDevice.id);
+      const deviceInfo: DeviceInfo = {
+        id: newDevice.id,
+        name: newDevice.name ?? "Water Module",
+      };
+      setLastDevice(deviceInfo);
+      void DeviceStorage.setLastDevice(deviceInfo);
     }
   }, []);
 
@@ -63,13 +68,13 @@ export function ConnectedDeviceProvider({ children }: PropsWithChildren) {
   // Auto-connect to the last known device
   const autoConnect = useCallback(
     async (bluetooth: Bluetooth) => {
-      if (!lastDeviceId || device !== null || isConnecting) {
+      if (!lastDevice || device !== null || isConnecting) {
         return;
       }
 
       setIsConnecting(true);
       try {
-        const connectedDevice = await bluetooth.connect(lastDeviceId);
+        const connectedDevice = await bluetooth.connect(lastDevice.id);
         await connectedDevice.discoverAllServicesAndCharacteristics();
         setDevice(connectedDevice);
       } catch {
@@ -78,16 +83,31 @@ export function ConnectedDeviceProvider({ children }: PropsWithChildren) {
         setIsConnecting(false);
       }
     },
-    [lastDeviceId, device, isConnecting, setDevice]
+    [lastDevice, device, isConnecting, setDevice]
   );
+
+  // Forget the saved device and disconnect if connected
+  const forgetDevice = useCallback(async () => {
+    if (device) {
+      try {
+        await device.cancelConnection();
+      } catch {
+        // Ignore disconnection errors
+      }
+      setDeviceState(null);
+    }
+    setLastDevice(null);
+    await DeviceStorage.clearLastDevice();
+  }, [device]);
 
   const value: ConnectedDeviceContextValue = {
     device,
     isConnected: device !== null,
     isConnecting,
-    lastDeviceId,
+    lastDevice,
     setDevice,
     autoConnect,
+    forgetDevice,
   };
 
   return (

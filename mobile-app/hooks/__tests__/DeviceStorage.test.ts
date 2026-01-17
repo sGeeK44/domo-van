@@ -17,7 +17,7 @@ vi.mock("expo-secure-store", () => {
   };
 });
 
-import { DeviceStorage } from "@/hooks/DeviceStorage";
+import { DeviceStorage, type DeviceInfo } from "@/hooks/DeviceStorage";
 import * as SecureStore from "expo-secure-store";
 
 describe("DeviceStorage", () => {
@@ -31,62 +31,73 @@ describe("DeviceStorage", () => {
     vi.restoreAllMocks();
   });
 
-  describe("getLastDeviceId", () => {
-    it("returns null when no device ID is stored", async () => {
-      const result = await DeviceStorage.getLastDeviceId();
+  describe("getLastDevice", () => {
+    it("returns null when no device is stored", async () => {
+      const result = await DeviceStorage.getLastDevice();
       expect(result).toBeNull();
       expect(SecureStore.getItemAsync).toHaveBeenCalledWith(
-        "water_module_last_device_id"
+        "water_module_last_device"
       );
     });
 
-    it("returns stored device ID", async () => {
-      const deviceId = "AA:BB:CC:DD:EE:FF";
+    it("returns stored device info", async () => {
+      const deviceInfo: DeviceInfo = { id: "AA:BB:CC:DD:EE:FF", name: "Water Module" };
       (SecureStore as unknown as { __store: Map<string, string> }).__store.set(
-        "water_module_last_device_id",
-        deviceId
+        "water_module_last_device",
+        JSON.stringify(deviceInfo)
       );
 
-      const result = await DeviceStorage.getLastDeviceId();
-      expect(result).toBe(deviceId);
+      const result = await DeviceStorage.getLastDevice();
+      expect(result).toEqual(deviceInfo);
+    });
+
+    it("returns null for invalid JSON", async () => {
+      (SecureStore as unknown as { __store: Map<string, string> }).__store.set(
+        "water_module_last_device",
+        "invalid-json"
+      );
+
+      const result = await DeviceStorage.getLastDevice();
+      expect(result).toBeNull();
     });
   });
 
-  describe("setLastDeviceId", () => {
-    it("stores the device ID", async () => {
-      const deviceId = "11:22:33:44:55:66";
-      await DeviceStorage.setLastDeviceId(deviceId);
+  describe("setLastDevice", () => {
+    it("stores the device info", async () => {
+      const deviceInfo: DeviceInfo = { id: "11:22:33:44:55:66", name: "My Module" };
+      await DeviceStorage.setLastDevice(deviceInfo);
 
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-        "water_module_last_device_id",
-        deviceId
+        "water_module_last_device",
+        JSON.stringify(deviceInfo)
       );
 
       // Verify it was actually stored
-      const stored = await DeviceStorage.getLastDeviceId();
-      expect(stored).toBe(deviceId);
+      const stored = await DeviceStorage.getLastDevice();
+      expect(stored).toEqual(deviceInfo);
     });
 
-    it("overwrites existing device ID", async () => {
-      await DeviceStorage.setLastDeviceId("first-device");
-      await DeviceStorage.setLastDeviceId("second-device");
+    it("overwrites existing device info", async () => {
+      await DeviceStorage.setLastDevice({ id: "first-device", name: "First" });
+      await DeviceStorage.setLastDevice({ id: "second-device", name: "Second" });
 
-      const stored = await DeviceStorage.getLastDeviceId();
-      expect(stored).toBe("second-device");
+      const stored = await DeviceStorage.getLastDevice();
+      expect(stored).toEqual({ id: "second-device", name: "Second" });
     });
   });
 
-  describe("clearLastDeviceId", () => {
-    it("removes the stored device ID", async () => {
-      await DeviceStorage.setLastDeviceId("device-to-remove");
-      expect(await DeviceStorage.getLastDeviceId()).toBe("device-to-remove");
+  describe("clearLastDevice", () => {
+    it("removes the stored device info", async () => {
+      const deviceInfo: DeviceInfo = { id: "device-to-remove", name: "Remove Me" };
+      await DeviceStorage.setLastDevice(deviceInfo);
+      expect(await DeviceStorage.getLastDevice()).toEqual(deviceInfo);
 
-      await DeviceStorage.clearLastDeviceId();
+      await DeviceStorage.clearLastDevice();
       expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
-        "water_module_last_device_id"
+        "water_module_last_device"
       );
 
-      const result = await DeviceStorage.getLastDeviceId();
+      const result = await DeviceStorage.getLastDevice();
       expect(result).toBeNull();
     });
   });

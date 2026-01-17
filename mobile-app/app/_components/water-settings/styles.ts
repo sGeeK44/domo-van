@@ -1,5 +1,5 @@
-import { StyleSheet } from "react-native";
 import { Colors } from "@/design-system";
+import { StyleSheet } from "react-native";
 
 export type WaterSettingsStyles = ReturnType<typeof getWaterSettingsStyles>;
 
@@ -150,5 +150,10 @@ export const getWaterSettingsStyles = (
       color: "#FFFFFF",
       fontSize: 12,
       opacity: 0.6,
+    },
+    bottomButtonContainer: {
+      marginTop: "auto",
+      paddingHorizontal: 16,
+      paddingBottom: 16,
     },
   });

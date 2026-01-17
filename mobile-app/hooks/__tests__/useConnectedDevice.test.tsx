@@ -28,6 +28,7 @@ vi.mock("react-native-ble-plx", () => ({
 }));
 
 import type { Bluetooth } from "@/core/bluetooth/Bluetooth";
+import type { DeviceInfo } from "@/hooks/DeviceStorage";
 import {
   ConnectedDeviceProvider,
   useConnectedDevice,
@@ -40,7 +41,13 @@ const createMockDevice = (id: string, name = "Test Device"): Device =>
     name,
     discoverAllServicesAndCharacteristics: vi.fn().mockResolvedValue(undefined),
     onDisconnected: vi.fn().mockReturnValue({ remove: vi.fn() }),
+    cancelConnection: vi.fn().mockResolvedValue(undefined),
   } as unknown as Device);
+
+const createDeviceInfo = (id: string, name = "Test Device"): DeviceInfo => ({
+  id,
+  name,
+});
 
 const createMockBluetooth = (
   mockDevice?: Device,
@@ -77,14 +84,17 @@ describe("useConnectedDevice", () => {
       expect(result.current.isConnecting).toBe(false);
     });
 
-    it("loads lastDeviceId from storage on mount", async () => {
-      const storedId = "stored-device-id";
-      mockStore.set("water_module_last_device_id", storedId);
+    it("loads lastDevice from storage on mount", async () => {
+      const storedDevice = createDeviceInfo(
+        "stored-device-id",
+        "Stored Device"
+      );
+      mockStore.set("water_module_last_device", JSON.stringify(storedDevice));
 
       const { result } = renderHook(() => useConnectedDevice(), { wrapper });
 
       await waitFor(() => {
-        expect(result.current.lastDeviceId).toBe(storedId);
+        expect(result.current.lastDevice).toEqual(storedDevice);
       });
     });
   });
@@ -102,17 +112,23 @@ describe("useConnectedDevice", () => {
       expect(result.current.isConnected).toBe(true);
     });
 
-    it("persists device ID to storage when setting device", async () => {
+    it("persists device info to storage when setting device", async () => {
       const { result } = renderHook(() => useConnectedDevice(), { wrapper });
       const deviceId = "persisted-device-id";
-      const mockDevice = createMockDevice(deviceId);
+      const deviceName = "Persisted Device";
+      const mockDevice = createMockDevice(deviceId, deviceName);
 
       act(() => {
         result.current.setDevice(mockDevice);
       });
 
-      expect(result.current.lastDeviceId).toBe(deviceId);
-      expect(mockStore.get("water_module_last_device_id")).toBe(deviceId);
+      expect(result.current.lastDevice).toEqual({
+        id: deviceId,
+        name: deviceName,
+      });
+      expect(mockStore.get("water_module_last_device")).toBe(
+        JSON.stringify({ id: deviceId, name: deviceName })
+      );
     });
 
     it("sets device to null on disconnect", () => {
@@ -133,7 +149,7 @@ describe("useConnectedDevice", () => {
   });
 
   describe("autoConnect", () => {
-    it("does not connect when lastDeviceId is null", async () => {
+    it("does not connect when lastDevice is null", async () => {
       const { result } = renderHook(() => useConnectedDevice(), { wrapper });
       const bluetooth = createMockBluetooth();
 
@@ -146,13 +162,14 @@ describe("useConnectedDevice", () => {
     });
 
     it("does not connect when already connected", async () => {
-      mockStore.set("water_module_last_device_id", "some-device");
+      const storedDevice = createDeviceInfo("some-device", "Some Device");
+      mockStore.set("water_module_last_device", JSON.stringify(storedDevice));
       const { result } = renderHook(() => useConnectedDevice(), { wrapper });
       const bluetooth = createMockBluetooth();
 
-      // Wait for lastDeviceId to load
+      // Wait for lastDevice to load
       await waitFor(() => {
-        expect(result.current.lastDeviceId).toBe("some-device");
+        expect(result.current.lastDevice).toEqual(storedDevice);
       });
 
       // Set a device first
@@ -169,15 +186,16 @@ describe("useConnectedDevice", () => {
 
     it("connects to last known device when available", async () => {
       const deviceId = "last-known-device";
-      mockStore.set("water_module_last_device_id", deviceId);
+      const storedDevice = createDeviceInfo(deviceId, "Last Known Device");
+      mockStore.set("water_module_last_device", JSON.stringify(storedDevice));
       const mockDevice = createMockDevice(deviceId);
       const bluetooth = createMockBluetooth(mockDevice);
 
       const { result } = renderHook(() => useConnectedDevice(), { wrapper });
 
-      // Wait for lastDeviceId to load
+      // Wait for lastDevice to load
       await waitFor(() => {
-        expect(result.current.lastDeviceId).toBe(deviceId);
+        expect(result.current.lastDevice).toEqual(storedDevice);
       });
 
       await act(async () => {
@@ -191,7 +209,8 @@ describe("useConnectedDevice", () => {
 
     it("sets isConnecting during connection attempt", async () => {
       const deviceId = "device-id";
-      mockStore.set("water_module_last_device_id", deviceId);
+      const storedDevice = createDeviceInfo(deviceId, "Device");
+      mockStore.set("water_module_last_device", JSON.stringify(storedDevice));
 
       // Create a bluetooth mock that delays connection
       let resolveConnect: (device: Device) => void;
@@ -207,7 +226,7 @@ describe("useConnectedDevice", () => {
       const { result } = renderHook(() => useConnectedDevice(), { wrapper });
 
       await waitFor(() => {
-        expect(result.current.lastDeviceId).toBe(deviceId);
+        expect(result.current.lastDevice).toEqual(storedDevice);
       });
 
       // Start connection (don't await)
@@ -232,13 +251,14 @@ describe("useConnectedDevice", () => {
 
     it("handles connection failure gracefully", async () => {
       const deviceId = "failing-device";
-      mockStore.set("water_module_last_device_id", deviceId);
+      const storedDevice = createDeviceInfo(deviceId, "Failing Device");
+      mockStore.set("water_module_last_device", JSON.stringify(storedDevice));
       const bluetooth = createMockBluetooth(undefined, true);
 
       const { result } = renderHook(() => useConnectedDevice(), { wrapper });
 
       await waitFor(() => {
-        expect(result.current.lastDeviceId).toBe(deviceId);
+        expect(result.current.lastDevice).toEqual(storedDevice);
       });
 
       await act(async () => {
@@ -248,6 +268,84 @@ describe("useConnectedDevice", () => {
       expect(bluetooth.connect).toHaveBeenCalledWith(deviceId);
       expect(result.current.isConnected).toBe(false);
       expect(result.current.isConnecting).toBe(false);
+    });
+  });
+
+  describe("forgetDevice", () => {
+    it("clears lastDevice from state and storage", async () => {
+      const storedDevice = createDeviceInfo(
+        "device-to-forget",
+        "Device to Forget"
+      );
+      mockStore.set("water_module_last_device", JSON.stringify(storedDevice));
+
+      const { result } = renderHook(() => useConnectedDevice(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.lastDevice).toEqual(storedDevice);
+      });
+
+      await act(async () => {
+        await result.current.forgetDevice();
+      });
+
+      expect(result.current.lastDevice).toBeNull();
+      expect(mockStore.has("water_module_last_device")).toBe(false);
+    });
+
+    it("disconnects device if connected before forgetting", async () => {
+      const deviceId = "connected-device";
+      const mockDevice = createMockDevice(deviceId);
+
+      const { result } = renderHook(() => useConnectedDevice(), { wrapper });
+
+      // Set a connected device
+      act(() => {
+        result.current.setDevice(mockDevice);
+      });
+
+      // Wait for state to settle and verify connection
+      await waitFor(() => {
+        expect(result.current.isConnected).toBe(true);
+        expect(result.current.lastDevice).toEqual({
+          id: deviceId,
+          name: "Test Device",
+        });
+      });
+
+      await act(async () => {
+        await result.current.forgetDevice();
+      });
+
+      expect(mockDevice.cancelConnection).toHaveBeenCalled();
+      expect(result.current.device).toBeNull();
+      expect(result.current.isConnected).toBe(false);
+      expect(result.current.lastDevice).toBeNull();
+      expect(mockStore.has("water_module_last_device")).toBe(false);
+    });
+
+    it("works even when no device is connected", async () => {
+      const storedDevice = createDeviceInfo(
+        "saved-but-not-connected",
+        "Saved Device"
+      );
+      mockStore.set("water_module_last_device", JSON.stringify(storedDevice));
+
+      const { result } = renderHook(() => useConnectedDevice(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.lastDevice).toEqual(storedDevice);
+      });
+
+      // No device connected
+      expect(result.current.device).toBeNull();
+
+      await act(async () => {
+        await result.current.forgetDevice();
+      });
+
+      expect(result.current.lastDevice).toBeNull();
+      expect(mockStore.has("water_module_last_device")).toBe(false);
     });
   });
 });
