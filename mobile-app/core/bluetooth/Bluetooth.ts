@@ -67,7 +67,7 @@ export class Bluetooth {
   }
 
   public async connect(deviceId: string) : Promise<Device> {
-    let device = await this.BleManager.connectToDevice(deviceId, { autoConnect: false });
+    let device = await this.BleManager.connectToDevice(deviceId, { autoConnect: false, timeout: 10000 });
     if (Platform.OS === "android") {
       device = await device.requestMTU(185);
     }
