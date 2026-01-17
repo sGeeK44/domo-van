@@ -57,10 +57,8 @@ export function AdminSection({ styles, connectedDevice }: Props) {
 
   return (
     <View style={styles.adminSection}>
-      <Text style={styles.listTitle}>Administration</Text>
-
       <View style={styles.field}>
-        <Text style={styles.label}>Nom du module</Text>
+        <Text style={[styles.label, { marginBottom: 8 }]}>Administration</Text>
         <TextInput
           value={adminName}
           onChangeText={setAdminName}

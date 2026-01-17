@@ -156,4 +156,13 @@ export const getWaterSettingsStyles = (
       paddingHorizontal: 16,
       paddingBottom: 16,
     },
+    fieldHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 8,
+    },
+    refreshButton: {
+      padding: 4,
+    },
   });

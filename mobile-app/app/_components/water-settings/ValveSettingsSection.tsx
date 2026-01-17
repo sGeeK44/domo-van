@@ -1,4 +1,5 @@
 import type { WaterSettingsStyles } from "@/app/_components/water-settings/styles";
+import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TextInput, ToastAndroid, View } from "react-native";
@@ -64,19 +65,17 @@ export function ValveSettingsSection({ styles, connectedDevice }: Props) {
 
   return (
     <View style={styles.adminSection}>
-      <Text style={styles.listTitle}>Vanne de Vidange</Text>
-
-      <Pressable
-        onPress={() => void requestConfig()}
-        style={styles.secondaryButton}
-      >
-        <Text style={styles.secondaryButtonText}>
-          Récupérer depuis l{"'"}ESP32
-        </Text>
-      </Pressable>
-
       <View style={styles.field}>
-        <Text style={styles.label}>Fermeture Automatique</Text>
+        <View style={styles.fieldHeader}>
+          <Text style={styles.label}>Vanne de Vidange</Text>
+          <Pressable
+            onPress={() => void requestConfig()}
+            style={styles.refreshButton}
+            hitSlop={8}
+          >
+            <IconSymbol name="refresh" size={18} color="rgba(255,255,255,0.7)" />
+          </Pressable>
+        </View>
 
         <TextInput
           value={autoCloseSeconds}
