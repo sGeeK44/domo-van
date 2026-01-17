@@ -5,7 +5,7 @@
 // Rates for serial communication
 #define STANDARD_BAUD 9600
 
-static Program program(new Esp32Settings("wt-settings"));
+static Program program(new Esp32Settings("ht-settings"));
 
 void setup() {
   Serial.begin(STANDARD_BAUD);
