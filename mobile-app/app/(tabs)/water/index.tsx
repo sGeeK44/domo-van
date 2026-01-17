@@ -1,5 +1,6 @@
 import { DrainSlider } from "@/app/(tabs)/water/drain-slider";
 import { WaterTank } from "@/app/(tabs)/water/water-tank";
+import { useBle } from "@/components/BleProvider";
 import { Observable } from "@/core/observable";
 import { Colors } from "@/design-system";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
@@ -9,7 +10,14 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { useConnectedDevice } from "@/hooks/useConnectedDevice";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useSyncExternalStore } from "react";
-import { Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /** React adapter for Observable<T> */
@@ -40,7 +48,16 @@ export default function WaterScreen() {
   const styles = getStyles(colors);
   const router = useRouter();
 
-  const { device, isConnected } = useConnectedDevice();
+  const { bluetooth } = useBle();
+  const { device, isConnected, isConnecting, autoConnect } =
+    useConnectedDevice();
+
+  // Auto-connect on mount if not already connected
+  useEffect(() => {
+    if (!isConnected && !isConnecting) {
+      void autoConnect(bluetooth);
+    }
+  }, []);
 
   // Create WaterSystem when device is connected
   const waterSystem = useMemo(
@@ -92,12 +109,18 @@ export default function WaterScreen() {
           >
             <View style={styles.iconCircle}>
               <IconSymbol name="settings" size={18} color="#FFFFFF" />
-              <View
-                style={[
-                  styles.badge,
-                  { backgroundColor: isConnected ? "#2ECC71" : "#E74C3C" },
-                ]}
-              />
+              {isConnecting ? (
+                <View style={styles.badgeContainer}>
+                  <ActivityIndicator size={10} color="#FFFFFF" />
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.badge,
+                    { backgroundColor: isConnected ? "#2ECC71" : "#E74C3C" },
+                  ]}
+                />
+              )}
             </View>
           </Pressable>
         </View>
@@ -166,6 +189,15 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
       borderRadius: 5,
       borderWidth: 2,
       borderColor: "rgba(0, 0, 0, 0.25)",
+    },
+    badgeContainer: {
+      position: "absolute",
+      top: 6,
+      right: 6,
+      width: 10,
+      height: 10,
+      justifyContent: "center",
+      alignItems: "center",
     },
     title: {
       fontSize: 38,
