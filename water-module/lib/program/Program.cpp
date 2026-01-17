@@ -19,7 +19,7 @@ void Program::setup(Stream &serial, Stream &serial1, Stream &serial2, int relayP
   _logger->info("Starting water tank module...");
 
   _bleManager = new BleManager(_logger, _settings);
-  _bleManager->setup();
+  _bleManager->setup("Water Tank", "aaf8707e-2734-4e30-94b8-8d2725a5ceca");
 
   _cleanTank = createNotifier("clean_tank", "aaf8707e-2734-4e30-94b8-8d2725a5ced0",
                               "aaf8707e-2734-4e30-94b8-8d2725a5ced1", serial1, _logger);

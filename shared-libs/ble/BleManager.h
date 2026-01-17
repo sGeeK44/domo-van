@@ -6,8 +6,10 @@
 #include <NimBLEDevice.h>
 #include <string>
 
-class BleManager {
+class BleManager
+{
 private:
+  std::string _serviceUuid;
   Logger *_logger = nullptr;
   Settings *_settings = nullptr;
   BleChannel *_adminChannel = nullptr;
@@ -16,7 +18,7 @@ private:
 
 public:
   BleManager(Logger *logger, Settings *settings) : _logger(logger), _settings(settings) {}
-  void setup();
+  void setup(std::string defaultName, std::string serviceUuid);
   BleChannel *addChannel(BleListner *listner);
   void start();
   bool isConnected();

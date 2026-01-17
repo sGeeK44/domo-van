@@ -4,12 +4,12 @@
 #include "Logger.h"
 #include <Arduino.h>
 
-const char *SERVICE_UUID = "aaf8707e-2734-4e30-94b8-8d2725a5ceca";
-
-void BleManager::setup() {
+void BleManager::setup(std::string defaultName, std::string serviceUuid)
+{
   _logger->info("Setup BLE...");
+  _serviceUuid = serviceUuid;
   AdminSettings adminSettings(_settings);
-  const std::string deviceName = adminSettings.getDeviceName();
+  const std::string deviceName = adminSettings.getDeviceName(defaultName);
 
   // Set display name for bluetooth discovery
   NimBLEDevice::init(deviceName.c_str());
@@ -34,22 +34,24 @@ void BleManager::setup() {
   _connectionListner = new BleConnectionListner(_logger);
   server->setCallbacks(_connectionListner);
 
-  _service = server->createService(SERVICE_UUID);
+  _service = server->createService(serviceUuid.c_str());
   _adminChannel = new BleChannel(_service, _connectionListner, new AdminListener(_settings, _logger), _logger);
   _logger->info("BLE setup complete, advertising as %s", deviceName.c_str());
 }
 
-void BleManager::start() {
+void BleManager::start()
+{
   _logger->info("Starting BLE service...");
   _service->start();
 
   _logger->debug("Starting advertising...");
   NimBLEAdvertising *advertising = NimBLEDevice::getAdvertising();
-  advertising->addServiceUUID(SERVICE_UUID);
+  advertising->addServiceUUID(_serviceUuid.c_str());
   advertising->start();
 }
 
-BleChannel *BleManager::addChannel(BleListner *listner) {
+BleChannel *BleManager::addChannel(BleListner *listner)
+{
   return new BleChannel(_service, _connectionListner, listner, _logger);
 }
 

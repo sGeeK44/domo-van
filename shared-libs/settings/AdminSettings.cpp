@@ -1,6 +1,6 @@
 #include "AdminSettings.h"
 
-std::string AdminSettings::getDeviceName() { return std::string(_settings->get("device_name", "Water Tank").c_str()); }
+std::string AdminSettings::getDeviceName(std::string defaultName) { return std::string(_settings->get("device_name", defaultName).c_str()); }
 
 void AdminSettings::setDeviceName(std::string newName) { _settings->save("device_name", newName.c_str()); }
 

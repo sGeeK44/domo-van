@@ -3,12 +3,13 @@
 #include <cstdint>
 #include <string>
 
-class AdminSettings {
+class AdminSettings
+{
   Settings *_settings = nullptr;
 
 public:
   AdminSettings(Settings *settings) : _settings(settings) {}
-  std::string getDeviceName();
+  std::string getDeviceName(std::string defaultName);
   void setDeviceName(std::string newName);
   uint32_t getPinCode();
   void setPinCode(uint32_t newPin);
