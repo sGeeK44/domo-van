@@ -14,6 +14,10 @@
     {
       "name": "Esp32: shared libs",
       "path": "shared-libs"
+    },
+    {
+      "name": "Esp32: heater module",
+      "path": "heater-module"
     }
   ],
   "settings": {
