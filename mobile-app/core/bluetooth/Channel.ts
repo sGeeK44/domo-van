@@ -25,7 +25,12 @@ export class BlePlxChannel implements Channel {
       );
       return () => {
         this.listener = null;
-        sub.remove();
+        try {
+          sub.remove();
+        } catch {
+          // Ignore errors when removing subscription - this can happen
+          // due to a bug in react-native-ble-plx when canceling transactions
+        }
       };
   }
 
