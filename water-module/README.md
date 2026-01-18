@@ -170,3 +170,66 @@ Le projet est structuré pour séparer strictement le code embarqué (`embedded`
             ├── test_embedded/      # Tests sur hardware réel
             └── test_local/         # Tests logiques sur PC (avec Mocks)
     ```
+
+---
+
+## 🛠️ Développement Local
+
+### Prérequis
+
+1. **VS Code** avec l'extension [PlatformIO IDE](https://marketplace.visualstudio.com/items?itemName=platformio.platformio-ide)
+2. **Git** pour le versioning
+3. (Optionnel) **Clang** pour le formatage/linting
+
+### Installation
+
+```bash
+# Cloner le dépôt
+git clone <repo_url>
+cd water-module
+
+# PlatformIO installe automatiquement les dépendances au premier build
+```
+
+### Commandes PlatformIO
+
+| Action | Commande CLI | Raccourci VS Code |
+| :----- | :----------- | :---------------- |
+| **Build local** | `pio run -e local` | `Ctrl+Alt+B` |
+| **Build ESP32** | `pio run -e esp32doit-devkit-v1` | — |
+| **Tests unitaires** | `pio test -e local` | Icône 🧪 PlatformIO |
+| **Upload ESP32** | `pio run -e esp32doit-devkit-v1 -t upload` | `Ctrl+Alt+U` |
+| **Monitor série** | `pio device monitor` | Icône 🔌 PlatformIO |
+| **Clean** | `pio run -t clean` | — |
+
+### Environnements
+
+Le projet dispose de deux environnements configurés dans `platformio.ini` :
+
+- **`local`** (défaut) : Compilation native pour PC, utilisé pour les tests unitaires avec GoogleTest et ArduinoFake.
+- **`esp32doit-devkit-v1`** : Compilation pour l'ESP32 réel avec les dépendances NimBLE.
+
+### Lancer les tests
+
+```bash
+# Tous les tests
+pio test -e local
+
+# Un fichier de test spécifique
+pio test -e local -f test_filters
+
+# Avec verbose
+pio test -e local -v
+```
+
+### Debug sur ESP32
+
+1. Connecter un debugger JTAG (ex: ESP-Prog) ou utiliser le debug USB natif (ESP32-S3)
+
+2. Lancer le debug : `F5` dans VS Code ou `pio debug`
+
+### Tips
+
+- **Hot Reload des tests** : Utiliser `pio test -e local` en watch mode avec un outil externe (ex: `nodemon`)
+- **Logs série** : Le baudrate par défaut est `115200`
+- **Shared libs** : Les bibliothèques partagées sont dans `../shared-libs` (configuré via `lib_extra_dirs`)
