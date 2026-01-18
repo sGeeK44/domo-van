@@ -1,13 +1,15 @@
 #include "BleManager.h"
 #include "AdminListner.h"
+#include "BleUuid.h"
 #include "Check.h"
 #include "Logger.h"
 #include <Arduino.h>
 
-void BleManager::setup(std::string defaultName, std::string serviceUuid)
+void BleManager::setup(std::string defaultName, std::string serviceId)
 {
   _logger->info("Setup BLE...");
-  _serviceUuid = serviceUuid;
+  _serviceId = serviceId;
+  _serviceUuid = buildServiceUuid(serviceId.c_str());
   AdminSettings adminSettings(_settings);
   const std::string deviceName = adminSettings.getDeviceName(defaultName);
 
@@ -34,8 +36,8 @@ void BleManager::setup(std::string defaultName, std::string serviceUuid)
   _connectionListner = new BleConnectionListner(_logger);
   server->setCallbacks(_connectionListner);
 
-  _service = server->createService(serviceUuid.c_str());
-  _adminChannel = new BleChannel(_service, _connectionListner, new AdminListener(_settings, _logger), _logger);
+  _service = server->createService(_serviceUuid.c_str());
+  _adminChannel = new BleChannel(_service, _connectionListner, new AdminListener(_settings, _logger), _serviceId.c_str(), _logger);
   _logger->info("BLE setup complete, advertising as %s", deviceName.c_str());
 }
 
@@ -52,7 +54,7 @@ void BleManager::start()
 
 BleChannel *BleManager::addChannel(BleListner *listner)
 {
-  return new BleChannel(_service, _connectionListner, listner, _logger);
+  return new BleChannel(_service, _connectionListner, listner, _serviceId.c_str(), _logger);
 }
 
 bool BleManager::isConnected() { return _connectionListner->isConnected(); }

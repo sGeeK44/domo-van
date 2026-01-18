@@ -15,6 +15,7 @@ class BleChannel : public NimBLECharacteristicCallbacks {
   void onWrite(NimBLECharacteristic *channel) override;
 
 public:
-  BleChannel(NimBLEService *service, BleConnectionListner *connectionListner, BleListner *lisner, Logger *logger);
+  BleChannel(NimBLEService *service, BleConnectionListner *connectionListner, BleListner *listner,
+             const char *serviceId, Logger *logger);
   void sendData(const std::string &data);
 };

@@ -1,19 +1,23 @@
 #include "BleChannel.h"
+#include "BleUuid.h"
 
 BleChannel::BleChannel(NimBLEService *service, BleConnectionListner *connectionListner, BleListner *listner,
-                       Logger *logger) {
+                       const char *serviceId, Logger *logger) {
   logger->info("Creating BLE Channel: %s", listner->name);
   _connectionListner = connectionListner;
   _listner = listner;
   _logger = logger;
 
-  logger->debug("Creating TX Port: %s", listner->txUuid);
-  _txPort = service->createCharacteristic(listner->txUuid, NIMBLE_PROPERTY::READ_AUTHEN | NIMBLE_PROPERTY::NOTIFY);
+  std::string txUuid = buildTxUuid(serviceId, listner->channelId);
+  std::string rxUuid = buildRxUuid(serviceId, listner->channelId);
+
+  logger->debug("Creating TX Port: %s", txUuid.c_str());
+  _txPort = service->createCharacteristic(txUuid.c_str(), NIMBLE_PROPERTY::READ_AUTHEN | NIMBLE_PROPERTY::NOTIFY);
   _txPort->createDescriptor(HUMAN_READABLE_NAME, NIMBLE_PROPERTY::READ)->setValue(std::string(listner->name) + " (TX)");
 
-  logger->debug("Creating RX Port: %s", listner->rxUuid);
+  logger->debug("Creating RX Port: %s", rxUuid.c_str());
   NimBLECharacteristic *rxChannel =
-      service->createCharacteristic(listner->rxUuid, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_AUTHEN);
+      service->createCharacteristic(rxUuid.c_str(), NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_AUTHEN);
   rxChannel->createDescriptor(HUMAN_READABLE_NAME, NIMBLE_PROPERTY::READ)
       ->setValue(std::string(listner->name) + " (RX)");
   rxChannel->setCallbacks(this);

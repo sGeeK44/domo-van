@@ -13,7 +13,6 @@ class HeaterListner : public BleListner {
   void onReceive(std::string value) override;
 
 public:
-  HeaterListner(const char *name, const char *txUuid, const char *rxUuid, TemperatureRegulator *regulator,
-                Settings *settings);
+  HeaterListner(const char *name, const char *channelId, TemperatureRegulator *regulator, Settings *settings);
   ~HeaterListner();
 };

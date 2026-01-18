@@ -1,12 +1,10 @@
 #include "TankValveListner.h"
 #include "Arduino.h"
 
-TankValveListner::TankValveListner(const char *name, const char *txUuid, const char *rxUuid, int relayPin,
-                                   Settings *settings)
+TankValveListner::TankValveListner(const char *name, const char *channelId, int relayPin, Settings *settings)
     : _relayPin(relayPin), _settings(new ValveSettings(settings, name)) {
   this->name = name;
-  this->txUuid = txUuid;
-  this->rxUuid = rxUuid;
+  this->channelId = channelId;
   _protocol = new ValveCfgProtocol(this->_settings);
   pinMode(relayPin, OUTPUT);
   digitalWrite(relayPin, LOW);

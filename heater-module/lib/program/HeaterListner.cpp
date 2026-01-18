@@ -1,11 +1,10 @@
 #include "HeaterListner.h"
 
-HeaterListner::HeaterListner(const char *name, const char *txUuid, const char *rxUuid, TemperatureRegulator *regulator,
+HeaterListner::HeaterListner(const char *name, const char *channelId, TemperatureRegulator *regulator,
                              Settings *settings)
     : _regulator(regulator), _settings(new HeaterSettings(settings, name)) {
   this->name = name;
-  this->txUuid = txUuid;
-  this->rxUuid = rxUuid;
+  this->channelId = channelId;
   _protocol = new HeaterCfgProtocol(_settings, _regulator);
 }
 

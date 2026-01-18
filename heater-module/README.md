@@ -6,7 +6,27 @@ Ce module gère l'asservissement du chauffage multizone (4 canaux) et le pilotag
 
 ## 📱 API Bluetooth (BLE)
 
-**Service UUID :** `b1f8707e-2734-4e30-94b8-8d2725a5ce00`
+### Format des UUIDs
+
+Tous les UUIDs suivent le format commun domo-van :
+
+    b1f8707e-SSSS-CCCC-0000-00000000000X
+             ^    ^                   ^
+             |    |                   +-- 0=TX, 1=RX
+             |    +-- Channel ID
+             +-- Service ID
+
+### Heater Module
+
+**Service ID :** `0002`
+
+| Channel | ID | Rôle |
+| :------ | :- | :--- |
+| Admin | `0001` | Nom / PIN (Passkey) |
+| Heater 0 (`heater_0`) | `0002` | Régulation zone 0 |
+| Heater 1 (`heater_1`) | `0003` | Régulation zone 1 |
+| Heater 2 (`heater_2`) | `0004` | Régulation zone 2 |
+| Heater 3 (`heater_3`) | `0005` | Régulation zone 3 |
 
 Chaque **Channel** est une paire de caractéristiques :
 
@@ -14,14 +34,6 @@ Chaque **Channel** est une paire de caractéristiques :
 - **RX (IN)** : `WRITE` + `WRITE_AUTHEN` (écriture authentifiée)
 
 Toutes les payloads sont des **chaînes ASCII/UTF-8** (pas du binaire).
-
-| Channel | Rôle | UUID TX (Notify/Read) | UUID RX (Write) |
-| :-- | :-- | :-- | :-- |
-| **Heater 0** (`heater_0`) | Régulation zone 0 | `b1f8707e-2734-4e30-94b8-8d2725a5ce00` | `b1f8707e-2734-4e30-94b8-8d2725a5ce01` |
-| **Heater 1** (`heater_1`) | Régulation zone 1 | `b1f8707e-2734-4e30-94b8-8d2725a5ce02` | `b1f8707e-2734-4e30-94b8-8d2725a5ce03` |
-| **Heater 2** (`heater_2`) | Régulation zone 2 | `b1f8707e-2734-4e30-94b8-8d2725a5ce04` | `b1f8707e-2734-4e30-94b8-8d2725a5ce05` |
-| **Heater 3** (`heater_3`) | Régulation zone 3 | `b1f8707e-2734-4e30-94b8-8d2725a5ce06` | `b1f8707e-2734-4e30-94b8-8d2725a5ce07` |
-| **Admin** (`Admin Channel`) | Nom / PIN (Passkey) | `b1f8707e-2734-4e30-94b8-8d2725a5cedb` | `b1f8707e-2734-4e30-94b8-8d2725a5cedc` |
 
 > *Valeurs par défaut : Nom = `Heater`, PIN = `123456`.*
 

@@ -22,6 +22,5 @@ private:
   WaterTankNotifier *_cleanTank = nullptr;
   WaterTankNotifier *_greyTank = nullptr;
   TankValveListner *_greyValve = nullptr;
-  WaterTankNotifier *createNotifier(const char *name, const char *txUuid, const char *rxUuid, Stream &stream,
-                                    Logger *logger);
+  WaterTankNotifier *createNotifier(const char *name, const char *channelId, Stream &stream, Logger *logger);
 };

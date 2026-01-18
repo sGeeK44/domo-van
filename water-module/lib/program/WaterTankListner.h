@@ -15,10 +15,9 @@ private:
   }
 
 public:
-  WaterTankListner(const char *name, const char *txUuid, const char *rxUuid, Settings *settings)
+  WaterTankListner(const char *name, const char *channelId, Settings *settings)
       : _protocol(TankCfgProtocol(new TankSettings(settings, name))) {
     this->name = name;
-    this->txUuid = txUuid;
-    this->rxUuid = rxUuid;
+    this->channelId = channelId;
   }
 };

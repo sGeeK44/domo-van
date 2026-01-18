@@ -10,8 +10,7 @@ protected:
 
 public:
   const char *name;
-  const char *txUuid;
-  const char *rxUuid;
+  const char *channelId;
 
   void onChannelAttach(BleChannel *channel);
   bool send(const std::string &data);

@@ -19,15 +19,12 @@ void Program::setup(Stream &serial, Stream &serial1, Stream &serial2, int relayP
   _logger->info("Starting water tank module...");
 
   _bleManager = new BleManager(_logger, _settings);
-  _bleManager->setup("Water Tank", "aaf8707e-2734-4e30-94b8-8d2725a5ceca");
+  _bleManager->setup("Water Tank", "0001");
 
-  _cleanTank = createNotifier("clean_tank", "aaf8707e-2734-4e30-94b8-8d2725a5ced0",
-                              "aaf8707e-2734-4e30-94b8-8d2725a5ced1", serial1, _logger);
-  _greyTank = createNotifier("grey_tank", "aaf8707e-2734-4e30-94b8-8d2725a5ced2",
-                             "aaf8707e-2734-4e30-94b8-8d2725a5ced3", serial2, _logger);
+  _cleanTank = createNotifier("clean_tank", "0002", serial1, _logger);
+  _greyTank = createNotifier("grey_tank", "0003", serial2, _logger);
 
-  _greyValve = new TankValveListner("grey_valve", "aaf8707e-2734-4e30-94b8-8d2725a5ced4",
-                                    "aaf8707e-2734-4e30-94b8-8d2725a5ced5", relayPin, _settings);
+  _greyValve = new TankValveListner("grey_valve", "0004", relayPin, _settings);
   _bleManager->addChannel(_greyValve);
 
   _bleManager->start();
@@ -50,11 +47,10 @@ void Program::loop() {
   }
 }
 
-WaterTankNotifier *Program::createNotifier(const char *name, const char *txUuid, const char *rxUuid, Stream &stream,
-                                           Logger *logger) {
+WaterTankNotifier *Program::createNotifier(const char *name, const char *channelId, Stream &stream, Logger *logger) {
   logger->info("Setup %s...", name);
 
-  BleChannel *tankChannel = _bleManager->addChannel(new WaterTankListner(name, txUuid, rxUuid, _settings));
+  BleChannel *tankChannel = _bleManager->addChannel(new WaterTankListner(name, channelId, _settings));
   InputSignal *tankInput = new InputSignal(new UltrasonicSensor(stream, _logger));
   tankInput->addFilter(new MedianFilter(9));
   tankInput->addFilter(new EmaFilter(0.5));

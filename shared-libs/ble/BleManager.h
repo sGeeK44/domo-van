@@ -9,6 +9,7 @@
 class BleManager
 {
 private:
+  std::string _serviceId;
   std::string _serviceUuid;
   Logger *_logger = nullptr;
   Settings *_settings = nullptr;
@@ -18,7 +19,7 @@ private:
 
 public:
   BleManager(Logger *logger, Settings *settings) : _logger(logger), _settings(settings) {}
-  void setup(std::string defaultName, std::string serviceUuid);
+  void setup(std::string defaultName, std::string serviceId);
   BleChannel *addChannel(BleListner *listner);
   void start();
   bool isConnected();

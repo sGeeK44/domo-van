@@ -6,7 +6,26 @@ Ce module gère la mesure des niveaux de cuves (propre/grise) et le contrôle de
 
 ## 📱 API Bluetooth (BLE)
 
-**Service UUID :** `aaf8707e-2734-4e30-94b8-8d2725a5ceca`
+### Format des UUIDs
+
+Tous les UUIDs suivent le format commun domo-van :
+
+    b1f8707e-SSSS-CCCC-0000-00000000000X
+             ^    ^                   ^
+             |    |                   +-- 0=TX, 1=RX
+             |    +-- Channel ID
+             +-- Service ID
+
+### Water Module
+
+**Service ID :** `0001`
+
+| Channel | ID | Rôle |
+| :------ | :- | :--- |
+| Admin | `0001` | Nom / PIN (Passkey) |
+| Eau Propre (`clean_tank`) | `0002` | Mesure + config cuve |
+| Eau Grise (`grey_tank`) | `0003` | Mesure + config cuve |
+| Vanne Grise (`grey_valve`) | `0004` | Contrôle relais |
 
 Chaque **Channel** est une paire de caractéristiques :
 
@@ -14,13 +33,6 @@ Chaque **Channel** est une paire de caractéristiques :
 - **RX (IN)** : `WRITE` + `WRITE_AUTHEN` (écriture authentifiée)
 
 Toutes les payloads sont des **chaînes ASCII/UTF-8** (pas du binaire).
-
-| Channel | Rôle | UUID TX (Notify/Read) | UUID RX (Write) |
-| :-- | :-- | :-- | :-- |
-| **Eau Propre** (`clean_tank`) | Mesure + config cuve | `aaf8707e-2734-4e30-94b8-8d2725a5ced0` | `aaf8707e-2734-4e30-94b8-8d2725a5ced1` |
-| **Eau Grise** (`grey_tank`) | Mesure + config cuve | `aaf8707e-2734-4e30-94b8-8d2725a5ced2` | `aaf8707e-2734-4e30-94b8-8d2725a5ced3` |
-| **Vanne Grise** (`grey_valve`) | Contrôle relais | `aaf8707e-2734-4e30-94b8-8d2725a5ced4` | `aaf8707e-2734-4e30-94b8-8d2725a5ced5` |
-| **Admin** (`Admin Channel`) | Nom / PIN (Passkey) | `aaf8707e-2734-4e30-94b8-8d2725a5cedb` | `aaf8707e-2734-4e30-94b8-8d2725a5cedc` |
 
 > *Valeurs par défaut : Nom = `Water Tank`, PIN = `123456`.*
 

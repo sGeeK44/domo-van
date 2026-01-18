@@ -19,7 +19,7 @@ class TankValveListner : public BleListner {
   void closeValve(const char *reason);
 
 public:
-  TankValveListner(const char *name, const char *txUuid, const char *rxUuid, int relayPin, Settings *settings);
+  TankValveListner(const char *name, const char *channelId, int relayPin, Settings *settings);
   ~TankValveListner();
 
   // Call this from main loop to handle countdown
