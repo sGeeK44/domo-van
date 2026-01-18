@@ -14,6 +14,7 @@ export class BlePlxChannel implements Channel {
   private readonly serviceUuid: string;
   private readonly txUuid: string;
   private readonly rxUuid: string;
+  private buffer = "";
 
   constructor(private readonly device: Device, serviceId: string, channelId: string) {
     this.serviceUuid = buildServiceUuid(serviceId);
@@ -23,6 +24,7 @@ export class BlePlxChannel implements Channel {
 
   public listen(listner: Listener<string>): Unsubscribe {
     this.listener = listner;
+    this.buffer = "";
     const sub = this.device.monitorCharacteristicForService(
       this.serviceUuid,
       this.txUuid,
@@ -30,6 +32,7 @@ export class BlePlxChannel implements Channel {
     );
     return () => {
       this.listener = null;
+      this.buffer = "";
       try {
         sub.remove();
       } catch {
@@ -50,12 +53,22 @@ export class BlePlxChannel implements Channel {
       return;
     }
 
-    if (!this.listener) return;
-    try {
-      this.listener(decoded);
-    } catch (e) {
-      // never crash listeners
-      console.warn(e);
+    // Buffer chunks until we receive complete message (ending with \n)
+    this.buffer += decoded;
+
+    // Process all complete messages in the buffer
+    while (this.buffer.includes("\n")) {
+      const idx = this.buffer.indexOf("\n");
+      const message = this.buffer.substring(0, idx);
+      this.buffer = this.buffer.substring(idx + 1);
+
+      if (!this.listener || !message) continue;
+      try {
+        this.listener(message);
+      } catch (e) {
+        // never crash listeners
+        console.warn(e);
+      }
     }
   };
 

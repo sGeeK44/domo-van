@@ -31,11 +31,14 @@ void BleChannel::sendData(const std::string &data) {
     return;
   }
 
+  // Append end-of-message marker for mobile app to reassemble chunks
+  std::string dataWithMarker = data + "\n";
+
   // In standard BLE, we avoid sending more than 20 bytes per packet
   // to ensure it works on all phones (Android/iOS) without negotiating the MTU.
   size_t chunkSize = 20;
-  for (size_t i = 0; i < data.length(); i += chunkSize) {
-    std::string chunck = data.substr(i, std::min(data.length() - i, chunkSize));
+  for (size_t i = 0; i < dataWithMarker.length(); i += chunkSize) {
+    std::string chunck = dataWithMarker.substr(i, std::min(dataWithMarker.length() - i, chunkSize));
     _txPort->setValue((uint8_t *)chunck.c_str(), chunck.length());
     _txPort->notify();
 
