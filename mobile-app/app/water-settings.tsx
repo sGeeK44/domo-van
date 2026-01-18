@@ -13,7 +13,7 @@ import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { useConnectedDevice } from "@/hooks/useConnectedDevice";
+import { useWaterDevice } from "@/hooks/useModuleDevice";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -29,7 +29,7 @@ export default function WaterSettingsScreen() {
 
   // Connection state from hook (state-only)
   const { device, setDevice, isConnected, lastDevice, forgetDevice } =
-    useConnectedDevice();
+    useWaterDevice();
 
   // Local scanning state
   const [isScanning, setIsScanning] = useState(false);

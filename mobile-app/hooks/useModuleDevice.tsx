@@ -17,6 +17,7 @@ export type ModuleDeviceContextValue = {
   lastDevice: DeviceInfo | null;
   setDevice: (device: Device | null) => void;
   autoConnect: (bluetooth: Bluetooth) => Promise<void>;
+  disconnect: () => Promise<void>;
   forgetDevice: () => Promise<void>;
 };
 
@@ -101,6 +102,18 @@ export function ModuleDeviceProvider({
     [lastDevice, device, isConnecting, setDevice]
   );
 
+  // Disconnect without forgetting the device
+  const disconnect = useCallback(async () => {
+    if (device) {
+      try {
+        await device.cancelConnection();
+      } catch {
+        // Ignore disconnection errors
+      }
+      setDeviceState(null);
+    }
+  }, [device]);
+
   // Forget the saved device and disconnect if connected
   const forgetDevice = useCallback(async () => {
     if (device) {
@@ -122,6 +135,7 @@ export function ModuleDeviceProvider({
     lastDevice,
     setDevice,
     autoConnect,
+    disconnect,
     forgetDevice,
   };
 
@@ -219,6 +233,18 @@ export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
     [lastDevice, device, isConnecting, setDevice]
   );
 
+  // Disconnect without forgetting the device
+  const disconnect = useCallback(async () => {
+    if (device) {
+      try {
+        await device.cancelConnection();
+      } catch {
+        // Ignore disconnection errors
+      }
+      setDeviceState(null);
+    }
+  }, [device]);
+
   const forgetDevice = useCallback(async () => {
     if (device) {
       try {
@@ -237,6 +263,7 @@ export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
     lastDevice,
     setDevice,
     autoConnect,
+    disconnect,
     forgetDevice,
   };
 
@@ -294,6 +321,18 @@ export function HeaterDeviceProviderV2({ children }: PropsWithChildren) {
     [lastDevice, device, isConnecting, setDevice]
   );
 
+  // Disconnect without forgetting the device
+  const disconnect = useCallback(async () => {
+    if (device) {
+      try {
+        await device.cancelConnection();
+      } catch {
+        // Ignore disconnection errors
+      }
+      setDeviceState(null);
+    }
+  }, [device]);
+
   const forgetDevice = useCallback(async () => {
     if (device) {
       try {
@@ -312,6 +351,7 @@ export function HeaterDeviceProviderV2({ children }: PropsWithChildren) {
     lastDevice,
     setDevice,
     autoConnect,
+    disconnect,
     forgetDevice,
   };
 

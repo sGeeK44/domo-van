@@ -7,9 +7,10 @@ import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { ValveState } from "@/domain/water/DrainValve";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { useConnectedDevice } from "@/hooks/useConnectedDevice";
-import { useRouter } from "expo-router";
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useActiveModule } from "@/hooks/useActiveModule";
+import { useWaterDevice } from "@/hooks/useModuleDevice";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -49,15 +50,17 @@ export default function WaterScreen() {
   const router = useRouter();
 
   const { bluetooth } = useBle();
-  const { device, isConnected, isConnecting, autoConnect } =
-    useConnectedDevice();
+  const { device, isConnected, isConnecting } = useWaterDevice();
+  const { isSwitching, switchToModule } = useActiveModule();
 
-  // Auto-connect on mount if not already connected
-  useEffect(() => {
-    if (!isConnected && !isConnecting) {
-      void autoConnect(bluetooth);
-    }
-  }, []);
+  // Switch to water module when screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      void switchToModule("water", bluetooth);
+    }, [bluetooth, switchToModule])
+  );
+
+  const isLoading = isConnecting || isSwitching;
 
   // Create WaterSystem when device is connected
   const waterSystem = useMemo(
@@ -109,7 +112,7 @@ export default function WaterScreen() {
           >
             <View style={styles.iconCircle}>
               <IconSymbol name="settings" size={18} color="#FFFFFF" />
-              {isConnecting ? (
+              {isLoading ? (
                 <View style={styles.badgeContainer}>
                   <ActivityIndicator size={10} color="#FFFFFF" />
                 </View>

@@ -9,8 +9,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
 import { BleProvider } from "@/components/BleProvider";
-import { ConnectedDeviceProvider } from "@/hooks/useConnectedDevice";
-import { HeaterDeviceProviderV2 } from "@/hooks/useModuleDevice";
+import { ActiveModuleProvider } from "@/hooks/useActiveModule";
+import { HeaterDeviceProviderV2, WaterDeviceProviderV2 } from "@/hooks/useModuleDevice";
 import { useColorScheme } from "react-native";
 
 export const unstable_settings = {
@@ -24,25 +24,27 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <BleProvider>
-          <ConnectedDeviceProvider>
+          <WaterDeviceProviderV2>
             <HeaterDeviceProviderV2>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="water-settings"
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="heater-settings"
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="modal"
-                  options={{ presentation: "modal", title: "Modal" }}
-                />
-              </Stack>
+              <ActiveModuleProvider>
+                <Stack>
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="water-settings"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="heater-settings"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="modal"
+                    options={{ presentation: "modal", title: "Modal" }}
+                  />
+                </Stack>
+              </ActiveModuleProvider>
             </HeaterDeviceProviderV2>
-          </ConnectedDeviceProvider>
+          </WaterDeviceProviderV2>
         </BleProvider>
         <StatusBar style="auto" />
       </ThemeProvider>

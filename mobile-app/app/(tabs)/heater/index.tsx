@@ -6,16 +6,17 @@ import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { useActiveModule } from "@/hooks/useActiveModule";
 import { useHeaterDevice } from "@/hooks/useModuleDevice";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import {
-  ActivityIndicator,
-  Pressable,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Pressable,
+    StatusBar,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -44,14 +45,17 @@ export default function HeaterScreen() {
   const router = useRouter();
 
   const { bluetooth } = useBle();
-  const { device, isConnected, isConnecting, autoConnect } = useHeaterDevice();
+  const { device, isConnected, isConnecting } = useHeaterDevice();
+  const { isSwitching, switchToModule } = useActiveModule();
 
-  // Auto-connect on mount if not already connected
-  useEffect(() => {
-    if (!isConnected && !isConnecting) {
-      void autoConnect(bluetooth);
-    }
-  }, []);
+  // Switch to heater module when screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      void switchToModule("heater", bluetooth);
+    }, [bluetooth, switchToModule])
+  );
+
+  const isLoading = isConnecting || isSwitching;
 
   // Create HeaterSystem when device is connected
   const heaterSystem = useMemo(
@@ -116,7 +120,7 @@ export default function HeaterScreen() {
           >
             <View style={styles.iconCircle}>
               <IconSymbol name="settings" size={18} color="#FFFFFF" />
-              {isConnecting ? (
+              {isLoading ? (
                 <View style={styles.badgeContainer}>
                   <ActivityIndicator size={10} color="#FFFFFF" />
                 </View>
