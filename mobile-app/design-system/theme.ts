@@ -33,6 +33,11 @@ export const Colors = {
       clean: "#29E1E1",
       grey: "#8E7B61",
     },
+    heater: {
+      warm: "#FF6B35",
+      hot: "#E53935",
+      cold: "#42A5F5",
+    },
     background: {
       primary: "#131313",
       secondary: "#282828",
@@ -64,6 +69,11 @@ export const Colors = {
     water: {
       clean: "#29E1E1",
       grey: "#8E7B61",
+    },
+    heater: {
+      warm: "#FF6B35",
+      hot: "#E53935",
+      cold: "#42A5F5",
     },
     background: {
       primary: "#131313",

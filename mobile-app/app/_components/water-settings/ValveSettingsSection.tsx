@@ -1,4 +1,4 @@
-import type { WaterSettingsStyles } from "@/app/_components/water-settings/styles";
+import type { ModuleSettingsStyles } from "@/app/_components/module-settings/styles";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useEffect, useMemo, useState } from "react";
@@ -16,7 +16,7 @@ function validatePositiveInt(label: string, value: string): string | null {
 }
 
 type Props = {
-  styles: WaterSettingsStyles;
+  styles: ModuleSettingsStyles;
   connectedDevice: Device;
 };
 

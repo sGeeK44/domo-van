@@ -6,20 +6,21 @@ import {
   getModuleSettingsStyles,
   useAutoScanWithTimeout,
 } from "@/app/_components/module-settings";
-import { TankSettingsSection } from "@/app/_components/water-settings/TankSettingsSection";
-import { ValveSettingsSection } from "@/app/_components/water-settings/ValveSettingsSection";
+import { HeaterPidSection } from "@/app/_components/heater-settings";
 import { useBle } from "@/components/BleProvider";
 import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
-import { WaterSystem } from "@/domain/water/WaterSystem";
+import { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { useConnectedDevice } from "@/hooks/useConnectedDevice";
+import { useHeaterDevice } from "@/hooks/useModuleDevice";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function WaterSettingsScreen() {
+const ZONE_NAMES = ["Cabine", "Cellule", "Soute", "Garage"];
+
+export default function HeaterSettingsScreen() {
   const colors = useThemeColor();
   const styles = getModuleSettingsStyles(colors);
   const router = useRouter();
@@ -27,9 +28,9 @@ export default function WaterSettingsScreen() {
   // Bluetooth for scanning and connecting
   const { bluetooth } = useBle();
 
-  // Connection state from hook (state-only)
+  // Connection state from heater device hook
   const { device, setDevice, isConnected, lastDevice, forgetDevice } =
-    useConnectedDevice();
+    useHeaterDevice();
 
   // Local scanning state
   const [isScanning, setIsScanning] = useState(false);
@@ -40,18 +41,18 @@ export default function WaterSettingsScreen() {
 
   const isModuleConnected = isConnected && device != null;
 
-  // Create WaterSystem when device is connected (for AdminSection)
-  const waterSystem = useMemo(
-    () => (device ? new WaterSystem(device) : null),
+  // Create HeaterSystem when device is connected
+  const heaterSystem = useMemo(
+    () => (device ? new HeaterSystem(device) : null),
     [device]
   );
 
-  // Cleanup WaterSystem on unmount or device change
+  // Cleanup HeaterSystem on unmount or device change
   useEffect(() => {
     return () => {
-      waterSystem?.dispose();
+      heaterSystem?.dispose();
     };
-  }, [waterSystem]);
+  }, [heaterSystem]);
 
   // Scanning functions
   const startScan = useCallback(async () => {
@@ -59,7 +60,7 @@ export default function WaterSettingsScreen() {
     setLastError(null);
     setIsScanning(true);
     try {
-      await bluetooth.startScan(WaterSystem.serviceId, (foundDevice) => {
+      await bluetooth.startScan(HeaterSystem.serviceId, (foundDevice) => {
         setDiscoveredDevices((prev) => {
           if (prev.some((d) => d.id === foundDevice.id)) return prev;
           return [...prev, foundDevice];
@@ -126,7 +127,7 @@ export default function WaterSettingsScreen() {
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <IconSymbol name="arrow-back" size={22} color="#FFFFFF" />
         </Pressable>
-        <Text style={styles.title}>Bluetooth</Text>
+        <Text style={styles.title}>Chauffage - Bluetooth</Text>
         <View style={{ width: 22 }} />
       </View>
 
@@ -140,24 +141,21 @@ export default function WaterSettingsScreen() {
             onDisconnect={disconnect}
             onForget={forgetDevice}
           />
-          {isModuleConnected && device && waterSystem && (
+          {isModuleConnected && device && heaterSystem && (
             <>
               <AdminSection
                 styles={styles}
-                adminModule={waterSystem.admin}
+                adminModule={heaterSystem.admin}
                 deviceName={device.name}
               />
-              <TankSettingsSection
-                styles={styles}
-                connectedDevice={device}
-                name="clean"
-              />
-              <TankSettingsSection
-                styles={styles}
-                connectedDevice={device}
-                name="grey"
-              />
-              <ValveSettingsSection styles={styles} connectedDevice={device} />
+              {heaterSystem.zones.map((zone, index) => (
+                <HeaterPidSection
+                  key={index}
+                  styles={styles}
+                  heaterZone={zone}
+                  zoneName={ZONE_NAMES[index]}
+                />
+              ))}
             </>
           )}
         </ScrollView>

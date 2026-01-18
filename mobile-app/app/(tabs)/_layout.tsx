@@ -30,6 +30,15 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="heater/index"
+        options={{
+          title: "Heater",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="local-fire-department" color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
