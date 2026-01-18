@@ -15,4 +15,5 @@ class HeaterListner : public BleListner {
 public:
   HeaterListner(const char *name, const char *channelId, TemperatureRegulator *regulator, Settings *settings);
   ~HeaterListner();
+  void notify();
 };

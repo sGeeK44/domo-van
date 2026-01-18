@@ -23,3 +23,17 @@ void HeaterListner::onReceive(std::string value) {
     send(response);
   }
 }
+
+void HeaterListner::notify() {
+  float temp = _regulator->getCurrentTemp();
+  float sp = _regulator->getSetpoint();
+  bool running = _regulator->isRunning();
+
+  int tempInt = static_cast<int>(temp * 10);
+  int spInt = static_cast<int>(sp * 10);
+
+  std::string message = "STATUS:T=" + std::to_string(tempInt) +
+                        ";SP=" + std::to_string(spInt) +
+                        ";RUN=" + (running ? "1" : "0");
+  send(message);
+}

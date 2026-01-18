@@ -62,6 +62,21 @@ export function parseSetpointMessage(msg: string): number | null {
 }
 
 /**
+ * Parse temperature notification: <name>:T=<temperature>
+ * Example: "heater_0:T=22.50"
+ */
+export function parseTemperatureNotification(msg: string): number | null {
+  const trimmed = msg.trim();
+  const match = /:T=(-?\d+(?:\.\d+)?)$/.exec(trimmed);
+  if (!match?.[1]) return null;
+
+  const temp = Number(match[1]);
+  if (!Number.isFinite(temp)) return null;
+
+  return temp;
+}
+
+/**
  * Parse PID config response: CFG:KP=<kp>;KI=<ki>;KD=<kd>
  * Values are stored as integers × 100
  */
@@ -99,24 +114,18 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
     lastMessage: null,
   });
   private channelUnsub: Unsubscribe | null = null;
-  private statusInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private readonly channel: Channel,
     public readonly zoneIndex: number,
   ) {
-    // Subscribe first, then request status
+    // Subscribe to receive status notifications from the module
     this.channelUnsub = this.channel.listen(this.onMessageReceived);
 
-    // Initial status request
+    // Initial status request (module will then push updates automatically)
     this.channel.send("STATUS?").catch(() => {
       // Best-effort: may fail when not connected yet
     });
-
-    // Poll status every 2 seconds for live temperature updates
-    this.statusInterval = setInterval(() => {
-      this.channel.send("STATUS?").catch(() => {});
-    }, 2000);
   }
 
   getValue = () => this.state.getValue();
@@ -229,6 +238,16 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
       return;
     }
 
+    // Try parsing temperature notification (e.g., "heater_0:T=22.50")
+    const temp = parseTemperatureNotification(msg);
+    if (temp !== null) {
+      this.state.update((prev) => ({
+        ...prev,
+        temperatureCelsius: temp,
+      }));
+      return;
+    }
+
     // Try parsing setpoint response
     const setpoint = parseSetpointMessage(msg);
     if (setpoint !== null) {
@@ -271,10 +290,6 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
   };
 
   dispose = () => {
-    if (this.statusInterval) {
-      clearInterval(this.statusInterval);
-      this.statusInterval = null;
-    }
     this.channelUnsub?.();
     this.channelUnsub = null;
     this.state.destroy();

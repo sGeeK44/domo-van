@@ -41,9 +41,10 @@ void Program::setup(Stream &serial) {
 
 void Program::loop() {
   if (_bleManager->isConnected()) {
-    // Update all temperature regulators
+    // Update all temperature regulators and send notifications
     for (int i = 0; i < 4; i++) {
       _regulators[i]->update();
+      _heaterListners[i]->notify();
     }
     delay(110);
     return;
