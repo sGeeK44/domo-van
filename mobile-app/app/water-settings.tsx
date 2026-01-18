@@ -44,7 +44,7 @@ export default function WaterSettingsScreen() {
     setLastError(null);
     setIsScanning(true);
     try {
-      await bluetooth.startScan(WaterSystem.serviceUuid, (foundDevice) => {
+      await bluetooth.startScan(WaterSystem.serviceId, (foundDevice) => {
         setDiscoveredDevices((prev) => {
           if (prev.some((d) => d.id === foundDevice.id)) return prev;
           return [...prev, foundDevice];
