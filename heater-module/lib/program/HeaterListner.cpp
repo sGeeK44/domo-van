@@ -6,6 +6,14 @@ HeaterListner::HeaterListner(const char *name, const char *channelId, Temperatur
   this->name = name;
   this->channelId = channelId;
   _protocol = new HeaterCfgProtocol(_settings, _regulator);
+
+  // Load persisted state
+  int setpointTenths = _settings->getSetpoint();
+  _regulator->setSetpoint(setpointTenths / 10.0f);
+
+  if (_settings->getRunning()) {
+    _regulator->start();
+  }
 }
 
 HeaterListner::~HeaterListner() {

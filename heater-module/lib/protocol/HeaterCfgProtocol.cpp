@@ -61,12 +61,14 @@ std::string HeaterCfgProtocol::handle(std::string rx) {
   // START - Start the regulator
   if (rx == "START") {
     _regulator->start();
+    _heaterSettings->setRunning(true);
     return "OK";
   }
 
   // STOP - Stop the regulator
   if (rx == "STOP") {
     _regulator->stop();
+    _heaterSettings->setRunning(false);
     return "OK";
   }
 
@@ -93,6 +95,7 @@ std::string HeaterCfgProtocol::handle(std::string rx) {
     }
 
     _regulator->setSetpoint(spInt / 10.0f);
+    _heaterSettings->setSetpoint(spInt);
     return "OK";
   }
 
