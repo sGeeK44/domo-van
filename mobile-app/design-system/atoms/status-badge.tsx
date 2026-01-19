@@ -1,3 +1,4 @@
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 export type StatusBadgeProps = {
@@ -12,10 +13,12 @@ const STATUS_COLORS = {
 };
 
 export function StatusBadge({ status, size = 10 }: StatusBadgeProps) {
+  const colors = useThemeColor();
+
   if (status === "loading") {
     return (
       <View style={[styles.container, { width: size, height: size }]}>
-        <ActivityIndicator size={size} color="#FFFFFF" />
+        <ActivityIndicator size={size} color={colors.text.primary} />
       </View>
     );
   }
@@ -29,6 +32,7 @@ export function StatusBadge({ status, size = 10 }: StatusBadgeProps) {
           height: size,
           borderRadius: size / 2,
           backgroundColor: STATUS_COLORS[status],
+          borderColor: colors.background.secondary,
         },
       ]}
     />
@@ -48,6 +52,5 @@ const styles = StyleSheet.create({
     top: 6,
     right: 6,
     borderWidth: 2,
-    borderColor: "rgba(0, 0, 0, 0.25)",
   },
 });
