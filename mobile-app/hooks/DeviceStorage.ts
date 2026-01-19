@@ -1,7 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 
 /** Module keys for different BLE modules */
-export type ModuleKey = "water" | "heater";
+export type ModuleKey = "water" | "heater" | "battery";
 
 export type DeviceInfo = {
   id: string;

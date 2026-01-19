@@ -7,7 +7,11 @@ import React, {
   useRef,
 } from "react";
 import { useBle } from "@/components/BleProvider";
-import { useHeaterDevice, useWaterDevice } from "@/hooks/useModuleDevice";
+import {
+  useBatteryDevice,
+  useHeaterDevice,
+  useWaterDevice,
+} from "@/hooks/useModuleDevice";
 
 export type GlobalConnectionStatus =
   | "connected"
@@ -38,35 +42,41 @@ export function MultiModuleConnectionProvider({ children }: PropsWithChildren) {
   const { bluetooth } = useBle();
   const waterDevice = useWaterDevice();
   const heaterDevice = useHeaterDevice();
+  const batteryDevice = useBatteryDevice();
   const hasAutoConnected = useRef(false);
 
   // Compute global connection status
-  const isConnecting = waterDevice.isConnecting || heaterDevice.isConnecting;
+  const isConnecting =
+    waterDevice.isConnecting ||
+    heaterDevice.isConnecting ||
+    batteryDevice.isConnecting;
 
   const waterConnected = waterDevice.isConnected;
   const heaterConnected = heaterDevice.isConnected;
+  const batteryConnected = batteryDevice.isConnected;
 
   const waterHasSavedDevice = waterDevice.lastDevice !== null;
   const heaterHasSavedDevice = heaterDevice.lastDevice !== null;
+  const batteryHasSavedDevice = batteryDevice.lastDevice !== null;
+
+  // Count how many modules are connected vs have saved devices
+  const connectedCount =
+    (waterConnected ? 1 : 0) +
+    (heaterConnected ? 1 : 0) +
+    (batteryConnected ? 1 : 0);
+  const savedCount =
+    (waterHasSavedDevice ? 1 : 0) +
+    (heaterHasSavedDevice ? 1 : 0) +
+    (batteryHasSavedDevice ? 1 : 0);
 
   let globalStatus: GlobalConnectionStatus;
   if (isConnecting) {
     globalStatus = "connecting";
-  } else if (waterConnected && heaterConnected) {
+  } else if (savedCount > 0 && connectedCount === savedCount) {
     globalStatus = "connected";
-  } else if (waterConnected || heaterConnected) {
-    // At least one connected, but not all
+  } else if (connectedCount > 0) {
+    // At least one connected, but not all saved devices
     globalStatus = "partial";
-  } else if (waterHasSavedDevice || heaterHasSavedDevice) {
-    // Has saved devices but none connected - check if we expect both
-    if (
-      (waterHasSavedDevice && !waterConnected) ||
-      (heaterHasSavedDevice && !heaterConnected)
-    ) {
-      globalStatus = "disconnected";
-    } else {
-      globalStatus = "disconnected";
-    }
   } else {
     globalStatus = "disconnected";
   }
@@ -81,9 +91,12 @@ export function MultiModuleConnectionProvider({ children }: PropsWithChildren) {
     if (heaterDevice.lastDevice && !heaterDevice.isConnected) {
       promises.push(heaterDevice.autoConnect(bluetooth));
     }
+    if (batteryDevice.lastDevice && !batteryDevice.isConnected) {
+      promises.push(batteryDevice.autoConnect(bluetooth));
+    }
 
     await Promise.all(promises);
-  }, [bluetooth, waterDevice, heaterDevice]);
+  }, [bluetooth, waterDevice, heaterDevice, batteryDevice]);
 
   // Disconnect from all modules
   const disconnectAll = useCallback(async () => {
@@ -95,9 +108,12 @@ export function MultiModuleConnectionProvider({ children }: PropsWithChildren) {
     if (heaterDevice.isConnected) {
       promises.push(heaterDevice.disconnect());
     }
+    if (batteryDevice.isConnected) {
+      promises.push(batteryDevice.disconnect());
+    }
 
     await Promise.all(promises);
-  }, [waterDevice, heaterDevice]);
+  }, [waterDevice, heaterDevice, batteryDevice]);
 
   // Auto-connect on mount (app startup only)
   useEffect(() => {

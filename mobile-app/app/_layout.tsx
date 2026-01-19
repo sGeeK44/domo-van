@@ -12,6 +12,7 @@ import { useColorScheme } from "react-native";
 import { BleProvider } from "@/components/BleProvider";
 import { MultiModuleConnectionProvider } from "@/hooks/useMultiModuleConnection";
 import {
+  BatteryDeviceProviderV2,
   HeaterDeviceProviderV2,
   WaterDeviceProviderV2,
 } from "@/hooks/useModuleDevice";
@@ -29,26 +30,32 @@ export default function RootLayout() {
         <BleProvider>
           <WaterDeviceProviderV2>
             <HeaterDeviceProviderV2>
-              <MultiModuleConnectionProvider>
-                <Stack>
-                  <Stack.Screen
-                    name="(tabs)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="water-settings"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="heater-settings"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="modal"
-                    options={{ presentation: "modal", title: "Modal" }}
-                  />
-                </Stack>
-              </MultiModuleConnectionProvider>
+              <BatteryDeviceProviderV2>
+                <MultiModuleConnectionProvider>
+                  <Stack>
+                    <Stack.Screen
+                      name="(tabs)"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="water-settings"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="heater-settings"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="battery-settings"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="modal"
+                      options={{ presentation: "modal", title: "Modal" }}
+                    />
+                  </Stack>
+                </MultiModuleConnectionProvider>
+              </BatteryDeviceProviderV2>
             </HeaterDeviceProviderV2>
           </WaterDeviceProviderV2>
         </BleProvider>

@@ -193,6 +193,9 @@ const WaterDeviceContext = createContext<ModuleDeviceContextValue | null>(null);
 const HeaterDeviceContext = createContext<ModuleDeviceContextValue | null>(
   null,
 );
+const BatteryDeviceContext = createContext<ModuleDeviceContextValue | null>(
+  null,
+);
 
 /** Specialized water device provider with its own context */
 export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
@@ -387,6 +390,105 @@ export function useHeaterDevice(): ModuleDeviceContextValue {
   if (!ctx) {
     throw new Error(
       "useHeaterDevice must be used within a HeaterDeviceProviderV2",
+    );
+  }
+  return ctx;
+}
+
+/** Specialized battery device provider with its own context */
+export function BatteryDeviceProviderV2({ children }: PropsWithChildren) {
+  const [device, setDeviceState] = useState<Device | null>(null);
+  const [lastDevice, setLastDevice] = useState<DeviceInfo | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  useEffect(() => {
+    DeviceStorage.getLastDevice("battery").then((storedDevice) => {
+      if (storedDevice) setLastDevice(storedDevice);
+    });
+  }, []);
+
+  const setDevice = useCallback((newDevice: Device | null) => {
+    setDeviceState(newDevice);
+    if (newDevice) {
+      const deviceInfo: DeviceInfo = {
+        id: newDevice.id,
+        name: newDevice.name ?? "JK BMS",
+      };
+      setLastDevice(deviceInfo);
+      void DeviceStorage.setLastDevice(deviceInfo, "battery");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!device) return;
+    const subscription = device.onDisconnected(() => setDeviceState(null));
+    return () => subscription?.remove();
+  }, [device]);
+
+  const autoConnect = useCallback(
+    async (bluetooth: Bluetooth) => {
+      if (!lastDevice || device !== null || isConnecting) return;
+      setIsConnecting(true);
+      try {
+        const connectedDevice = await bluetooth.connect(lastDevice.id);
+        await connectedDevice.discoverAllServicesAndCharacteristics();
+        setDevice(connectedDevice);
+      } catch {
+        // Silently fail
+      } finally {
+        setIsConnecting(false);
+      }
+    },
+    [lastDevice, device, isConnecting, setDevice],
+  );
+
+  // Disconnect without forgetting the device
+  const disconnect = useCallback(async () => {
+    if (device) {
+      try {
+        await device.cancelConnection();
+      } catch {
+        // Ignore disconnection errors
+      }
+      setDeviceState(null);
+    }
+  }, [device]);
+
+  const forgetDevice = useCallback(async () => {
+    if (device) {
+      try {
+        await device.cancelConnection();
+      } catch {}
+      setDeviceState(null);
+    }
+    setLastDevice(null);
+    await DeviceStorage.clearLastDevice("battery");
+  }, [device]);
+
+  const value: ModuleDeviceContextValue = {
+    device,
+    isConnected: device !== null,
+    isConnecting,
+    lastDevice,
+    setDevice,
+    autoConnect,
+    disconnect,
+    forgetDevice,
+  };
+
+  return (
+    <BatteryDeviceContext.Provider value={value}>
+      {children}
+    </BatteryDeviceContext.Provider>
+  );
+}
+
+/** Hook for battery module device - uses dedicated context */
+export function useBatteryDevice(): ModuleDeviceContextValue {
+  const ctx = useContext(BatteryDeviceContext);
+  if (!ctx) {
+    throw new Error(
+      "useBatteryDevice must be used within a BatteryDeviceProviderV2",
     );
   }
   return ctx;
