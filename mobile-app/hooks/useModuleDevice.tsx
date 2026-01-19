@@ -1,3 +1,9 @@
+import type { Bluetooth } from "@/core/bluetooth/Bluetooth";
+import {
+  type DeviceInfo,
+  DeviceStorage,
+  type ModuleKey,
+} from "@/hooks/DeviceStorage";
 import React, {
   createContext,
   type PropsWithChildren,
@@ -7,12 +13,30 @@ import React, {
   useState,
 } from "react";
 import { Device, Subscription } from "react-native-ble-plx";
-import type { Bluetooth } from "@/core/bluetooth/Bluetooth";
-import {
-  type DeviceInfo,
-  DeviceStorage,
-  type ModuleKey,
-} from "@/hooks/DeviceStorage";
+
+/** Connection timeout in milliseconds */
+const CONNECTION_TIMEOUT_MS = 15_000;
+
+/**
+ * Wraps a promise with a timeout. Rejects with TimeoutError if timeout expires.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error("Connection timeout"));
+    }, ms);
+
+    promise
+      .then((result) => {
+        clearTimeout(timer);
+        resolve(result);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
 
 export type ModuleDeviceContextValue = {
   device: Device | null;
@@ -96,8 +120,12 @@ export function ModuleDeviceProvider({
 
       setIsConnecting(true);
       try {
-        const connectedDevice = await bluetooth.connect(lastDevice.id);
-        await connectedDevice.discoverAllServicesAndCharacteristics();
+        const connectionPromise = (async () => {
+          const connectedDevice = await bluetooth.connect(lastDevice.id);
+          await connectedDevice.discoverAllServicesAndCharacteristics();
+          return connectedDevice;
+        })();
+        const connectedDevice = await withTimeout(connectionPromise, CONNECTION_TIMEOUT_MS);
         setDevice(connectedDevice);
       } catch {
         // Silently fail - user can manually connect via settings
@@ -232,8 +260,12 @@ export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
       if (!lastDevice || device !== null || isConnecting) return;
       setIsConnecting(true);
       try {
-        const connectedDevice = await bluetooth.connect(lastDevice.id);
-        await connectedDevice.discoverAllServicesAndCharacteristics();
+        const connectionPromise = (async () => {
+          const connectedDevice = await bluetooth.connect(lastDevice.id);
+          await connectedDevice.discoverAllServicesAndCharacteristics();
+          return connectedDevice;
+        })();
+        const connectedDevice = await withTimeout(connectionPromise, CONNECTION_TIMEOUT_MS);
         setDevice(connectedDevice);
       } catch {
         // Silently fail
@@ -320,8 +352,12 @@ export function HeaterDeviceProviderV2({ children }: PropsWithChildren) {
       if (!lastDevice || device !== null || isConnecting) return;
       setIsConnecting(true);
       try {
-        const connectedDevice = await bluetooth.connect(lastDevice.id);
-        await connectedDevice.discoverAllServicesAndCharacteristics();
+        const connectionPromise = (async () => {
+          const connectedDevice = await bluetooth.connect(lastDevice.id);
+          await connectedDevice.discoverAllServicesAndCharacteristics();
+          return connectedDevice;
+        })();
+        const connectedDevice = await withTimeout(connectionPromise, CONNECTION_TIMEOUT_MS);
         setDevice(connectedDevice);
       } catch {
         // Silently fail
@@ -430,8 +466,12 @@ export function BatteryDeviceProviderV2({ children }: PropsWithChildren) {
       if (!lastDevice || device !== null || isConnecting) return;
       setIsConnecting(true);
       try {
-        const connectedDevice = await bluetooth.connect(lastDevice.id);
-        await connectedDevice.discoverAllServicesAndCharacteristics();
+        const connectionPromise = (async () => {
+          const connectedDevice = await bluetooth.connect(lastDevice.id);
+          await connectedDevice.discoverAllServicesAndCharacteristics();
+          return connectedDevice;
+        })();
+        const connectedDevice = await withTimeout(connectionPromise, CONNECTION_TIMEOUT_MS);
         setDevice(connectedDevice);
       } catch {
         // Silently fail
