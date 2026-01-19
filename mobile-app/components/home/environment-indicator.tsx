@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { Colors, FontSize, FontWeight, IconSymbol } from "@/design-system";
+import { FontSize, FontWeight, IconSymbol, type ThemeColors } from "@/design-system";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import type { ComponentProps } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -20,14 +20,14 @@ export function EnvironmentIndicator({
 
   return (
     <View style={styles.container}>
-      <IconSymbol name={icon} size={24} color={colors.neutral["500"]} />
+      <IconSymbol name={icon} size={24} color={colors.text.secondary} />
       <Text style={styles.value}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
     </View>
   );
 }
 
-const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
+const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       alignItems: "center",
@@ -36,10 +36,10 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
     value: {
       fontSize: FontSize.l,
       fontWeight: FontWeight.semiBold,
-      color: colors.info["500"],
+      color: colors.text.primary,
     },
     label: {
       fontSize: FontSize.xs,
-      color: colors.neutral["500"],
+      color: colors.text.secondary,
     },
   });

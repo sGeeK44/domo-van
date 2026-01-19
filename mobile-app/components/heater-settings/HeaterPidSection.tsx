@@ -6,7 +6,6 @@ import {
   FontWeight,
   Opacity,
   Spacing,
-  TextColors,
   type ThemeColors,
 } from "@/design-system";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
@@ -111,7 +110,7 @@ export function HeaterPidSection({ heaterZone, zoneName }: Props) {
             <IconSymbol
               name="refresh"
               size={18}
-              color={`rgba(255,255,255,${Opacity.low})`}
+              color={colors.text.secondary}
             />
           </Pressable>
         </View>
@@ -123,7 +122,7 @@ export function HeaterPidSection({ heaterZone, zoneName }: Props) {
               value={kp}
               onChangeText={setKp}
               placeholder="10.00"
-              placeholderTextColor={`rgba(255,255,255,${Opacity.faint})`}
+              placeholderTextColor={colors.text.secondary}
               keyboardType="decimal-pad"
               style={[styles.input, { flex: 1 }]}
             />
@@ -135,7 +134,7 @@ export function HeaterPidSection({ heaterZone, zoneName }: Props) {
               value={ki}
               onChangeText={setKi}
               placeholder="0.10"
-              placeholderTextColor={`rgba(255,255,255,${Opacity.faint})`}
+              placeholderTextColor={colors.text.secondary}
               keyboardType="decimal-pad"
               style={[styles.input, { flex: 1 }]}
             />
@@ -147,7 +146,7 @@ export function HeaterPidSection({ heaterZone, zoneName }: Props) {
               value={kd}
               onChangeText={setKd}
               placeholder="0.50"
-              placeholderTextColor={`rgba(255,255,255,${Opacity.faint})`}
+              placeholderTextColor={colors.text.secondary}
               keyboardType="decimal-pad"
               style={[styles.input, { flex: 1 }]}
             />
@@ -177,9 +176,9 @@ const createStyles = (colors: ThemeColors) =>
       gap: Spacing.s,
       padding: Spacing.l,
       borderRadius: BorderRadius.m,
-      backgroundColor: `rgba(255,255,255,${Opacity.hint})`,
+      backgroundColor: colors.background.secondary,
       borderWidth: 1,
-      borderColor: `rgba(255,255,255,${Opacity.overlay})`,
+      borderColor: colors.neutral["500"],
     },
     fieldHeader: {
       flexDirection: "row",
@@ -191,7 +190,7 @@ const createStyles = (colors: ThemeColors) =>
       padding: Spacing.xxs,
     },
     label: {
-      color: TextColors.primary,
+      color: colors.text.primary,
       fontSize: FontSize.xs,
       opacity: Opacity.medium,
       fontWeight: `${FontWeight.extraBold}`,
@@ -205,13 +204,13 @@ const createStyles = (colors: ThemeColors) =>
       width: 30,
     },
     input: {
-      color: TextColors.primary,
+      color: colors.text.primary,
       paddingVertical: Spacing.m,
       paddingHorizontal: Spacing.l,
       borderRadius: BorderRadius.s,
       borderWidth: 1,
-      borderColor: `rgba(255,255,255,${Opacity.dim})`,
-      backgroundColor: "rgba(0,0,0,0.15)",
+      borderColor: colors.neutral["600"],
+      backgroundColor: colors.background.primary,
     },
     primaryButton: {
       backgroundColor: colors.primary["500"],
@@ -220,7 +219,7 @@ const createStyles = (colors: ThemeColors) =>
       borderRadius: BorderRadius.s,
     },
     primaryButtonText: {
-      color: TextColors.dark,
+      color: colors.text.inverse,
       fontWeight: `${FontWeight.extraBold}`,
     },
   });

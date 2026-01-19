@@ -1,4 +1,4 @@
-import { Colors, FontSize, FontWeight } from "@/design-system/theme";
+import { FontSize, FontWeight, type ThemeColors } from "@/design-system/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -11,8 +11,8 @@ export const Card = ({
   subtitle: string;
   children: React.ReactNode;
 }) => {
-  const mode = useThemeColor();
-  const styles = getStyles(mode);
+  const colors = useThemeColor();
+  const styles = getStyles(colors);
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -24,11 +24,11 @@ export const Card = ({
   );
 };
 
-const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
+const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     card: {
       flex: 1,
-      backgroundColor: colors["background"]["secondary"],
+      backgroundColor: colors.background.secondary,
       borderRadius: 20,
       padding: 20,
     },
@@ -38,12 +38,12 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
       paddingBottom: 10,
     },
     title: {
-      color: colors.info["500"],
+      color: colors.text.primary,
       fontSize: FontSize.m,
       fontWeight: FontWeight.medium,
     },
     subtitle: {
-      color: colors.neutral["600"],
+      color: colors.text.secondary,
       fontSize: FontSize.s,
       fontWeight: FontWeight.regular,
     },

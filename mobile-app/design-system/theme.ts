@@ -11,36 +11,41 @@ export const Colors = {
       500: "#0a7ea4",
     },
     secondary: {
-      500: "#687076",
+      500: "#5C6166",
     },
     info: {
-      500: "#ECEDEE",
+      500: "#E0E2E4",
     },
     success: {
       500: "#008000",
     },
     warning: {
-      500: "#FFA500",
+      500: "#E69500",
     },
     danger: {
-      500: "#FF0000",
+      500: "#DC0000",
     },
     neutral: {
-      500: "#9BA1A6",
-      600: "#687076",
+      500: "#6B7075",
+      600: "#4A4F54",
     },
     water: {
-      clean: "#29E1E1",
-      grey: "#8E7B61",
+      clean: "#1CBDBD",
+      grey: "#7A6A54",
     },
     heater: {
-      warm: "#FF6B35",
-      hot: "#E53935",
-      cold: "#42A5F5",
+      warm: "#E85A2A",
+      hot: "#D32F2F",
+      cold: "#2196F3",
     },
     background: {
-      primary: "#131313",
-      secondary: "#282828",
+      primary: "#F5F5F5",
+      secondary: "#FFFFFF",
+    },
+    text: {
+      primary: "#1A1A1A",
+      secondary: "#4A4F54",
+      inverse: "#FFFFFF",
     },
   },
   dark: {
@@ -78,6 +83,11 @@ export const Colors = {
     background: {
       primary: "#131313",
       secondary: "#282828",
+    },
+    text: {
+      primary: "#FFFFFF",
+      secondary: "#9BA1A6",
+      inverse: "#1A1A1A",
     },
   },
 };

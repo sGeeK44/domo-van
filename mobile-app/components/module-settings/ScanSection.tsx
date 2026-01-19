@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { FontSize, Spacing, TextColors } from "@/design-system";
+import { FontSize, Spacing, type ThemeColors } from "@/design-system";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 type Props = {
   isScanning: boolean;
@@ -7,6 +8,9 @@ type Props = {
 };
 
 export function ScanSection({ isScanning, lastError }: Props) {
+  const colors = useThemeColor();
+  const styles = getStyles(colors);
+
   if (!lastError && !isScanning) return null;
 
   return (
@@ -16,14 +20,15 @@ export function ScanSection({ isScanning, lastError }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  section: {
-    paddingHorizontal: Spacing.xxl,
-    paddingBottom: Spacing.l,
-    gap: Spacing.s,
-  },
-  error: {
-    color: TextColors.error,
-    fontSize: FontSize.xs,
-  },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    section: {
+      paddingHorizontal: Spacing.xxl,
+      paddingBottom: Spacing.l,
+      gap: Spacing.s,
+    },
+    error: {
+      color: colors.danger["500"],
+      fontSize: FontSize.xs,
+    },
+  });

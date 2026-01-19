@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet } from "react-native";
-import { Spacing, TextColors } from "@/design-system";
+import { Spacing } from "@/design-system";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { DeviceRow } from "@/design-system/molecules/device-row";
 import { Section } from "@/design-system/molecules/section";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 type BleDevice = {
   id: string;
@@ -21,6 +22,7 @@ export function DiscoveredDevicesList({
   discoveredDevices,
   onConnect,
 }: Props) {
+  const colors = useThemeColor();
   const [connectingId, setConnectingId] = useState<string | null>(null);
 
   return (
@@ -48,9 +50,9 @@ export function DiscoveredDevicesList({
                 }}
               >
                 {isConnecting ? (
-                  <ActivityIndicator size="small" color={TextColors.primary} />
+                  <ActivityIndicator size="small" color={colors.text.primary} />
                 ) : (
-                  <IconSymbol name="chevron-right" size={22} color={TextColors.primary} />
+                  <IconSymbol name="chevron-right" size={22} color={colors.text.primary} />
                 )}
               </DeviceRow>
             );

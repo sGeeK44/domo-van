@@ -1,4 +1,4 @@
-import { BorderRadius, FontWeight, Opacity, Spacing, TextColors } from "@/design-system/theme";
+import { BorderRadius, FontWeight, Opacity, Spacing } from "@/design-system/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { ActivityIndicator, Pressable, StyleSheet, Text, type PressableProps } from "react-native";
 
@@ -14,7 +14,8 @@ export function Button({ children, loading, disabled, variant = "primary", ...pr
   const colors = useThemeColor();
   const isPrimary = variant === "primary";
 
-  const textColor = isPrimary ? TextColors.dark : TextColors.primary;
+  const textColor = isPrimary ? colors.text.inverse : colors.text.primary;
+  const borderColor = colors.text.primary;
 
   return (
     <Pressable
@@ -22,7 +23,7 @@ export function Button({ children, loading, disabled, variant = "primary", ...pr
         styles.button,
         isPrimary
           ? { backgroundColor: colors.primary["500"] }
-          : { borderColor: `rgba(255,255,255,${Opacity.ghost})`, borderWidth: 1 },
+          : { borderColor: `${borderColor}${Math.round(Opacity.ghost * 255).toString(16).padStart(2, '0')}`, borderWidth: 1 },
         (disabled || loading) && { opacity: Opacity.subtle },
       ]}
       disabled={disabled || loading}

@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { BorderRadius, Colors, FontSize, FontWeight, IconSymbol } from "@/design-system";
+import { BorderRadius, FontSize, FontWeight, IconSymbol, type ThemeColors } from "@/design-system";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import type { ComponentProps } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -23,7 +23,7 @@ function EnvironmentItem({ icon, value }: EnvironmentItemData) {
 
   return (
     <View style={styles.item}>
-      <IconSymbol name={icon} size={20} color="#FFFFFF" />
+      <IconSymbol name={icon} size={20} color={colors.text.primary} />
       <Text style={styles.value}>{value}</Text>
     </View>
   );
@@ -56,7 +56,7 @@ export function EnvironmentCard({
   );
 }
 
-const getStyles = (_colors: typeof Colors.light | typeof Colors.dark) =>
+const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     card: {
       borderRadius: BorderRadius.l,
@@ -73,7 +73,7 @@ const getStyles = (_colors: typeof Colors.light | typeof Colors.dark) =>
     divider: {
       width: 1,
       alignSelf: "stretch",
-      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      backgroundColor: colors.neutral["500"],
       marginHorizontal: 16,
     },
     item: {
@@ -84,6 +84,6 @@ const getStyles = (_colors: typeof Colors.light | typeof Colors.dark) =>
     value: {
       fontSize: FontSize.l,
       fontWeight: FontWeight.semiBold,
-      color: "#FFFFFF",
+      color: colors.text.primary,
     },
   });

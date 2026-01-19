@@ -23,7 +23,7 @@ import Svg, {
   RadialGradient,
   Stop,
 } from "react-native-svg";
-import { Colors, FontSize, FontWeight } from "@/design-system";
+import { FontSize, FontWeight, type ThemeColors } from "@/design-system";
 import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import {
@@ -376,7 +376,7 @@ export function CircularTemperatureDial({
                 <Text
                   style={[
                     styles.currentTemp,
-                    { color: isRunning ? "#FFFFFF" : "#666666" },
+                    { color: isRunning ? colors.text.primary : colors.text.secondary },
                   ]}
                 >
                   {temperatureCelsius.toFixed(1)}
@@ -429,7 +429,7 @@ export function CircularTemperatureDial({
         <Text
           style={[
             styles.toggleButtonText,
-            { color: isRunning ? "#FFFFFF" : "#888888" },
+            { color: isRunning ? colors.text.primary : colors.text.secondary },
           ]}
         >
           {isRunning ? "ON" : "OFF"}
@@ -439,7 +439,7 @@ export function CircularTemperatureDial({
   );
 }
 
-const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
+const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -450,7 +450,7 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
     zoneName: {
       fontSize: FontSize.s,
       fontWeight: FontWeight.semiBold,
-      color: colors.info["500"],
+      color: colors.text.primary,
       letterSpacing: 2,
       marginBottom: 4,
     },
@@ -485,7 +485,7 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
     },
     targetTemp: {
       fontSize: FontSize.xs,
-      color: colors.neutral["500"],
+      color: colors.text.secondary,
       marginTop: 2,
     },
     precisionControls: {
@@ -497,14 +497,14 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: "rgba(255, 255, 255, 0.15)",
+      backgroundColor: colors.background.secondary,
       justifyContent: "center",
       alignItems: "center",
     },
     precisionButtonText: {
       fontSize: 20,
       fontWeight: "600",
-      color: "#FFFFFF",
+      color: colors.text.primary,
     },
     toggleButton: {
       paddingVertical: 6,
@@ -515,12 +515,12 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
     toggleButtonOn: {
       backgroundColor: "transparent",
       borderWidth: 1.5,
-      borderColor: "rgba(255, 255, 255, 0.3)",
+      borderColor: colors.neutral["500"],
     },
     toggleButtonOff: {
       backgroundColor: "transparent",
       borderWidth: 1.5,
-      borderColor: "rgba(255, 255, 255, 0.15)",
+      borderColor: colors.neutral["600"],
     },
     toggleButtonText: {
       fontSize: FontSize.s,

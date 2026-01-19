@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { ActivityIndicator, View } from "react-native";
-import { Spacing, TextColors } from "@/design-system";
+import { Spacing } from "@/design-system";
 import { Button } from "@/design-system/atoms/button";
 import { DeviceRow } from "@/design-system/molecules/device-row";
 import { Section } from "@/design-system/molecules/section";
 import type { DeviceInfo } from "@/hooks/DeviceStorage";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 type Props = {
   device: DeviceInfo;
@@ -21,6 +22,7 @@ export function SavedDeviceSection({
   onDisconnect,
   onForget,
 }: Props) {
+  const colors = useThemeColor();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isForgetting, setIsForgetting] = useState(false);
@@ -70,7 +72,7 @@ export function SavedDeviceSection({
             Déconnecter
           </Button>
         ) : isConnecting ? (
-          <ActivityIndicator size="small" color={TextColors.primary} />
+          <ActivityIndicator size="small" color={colors.text.primary} />
         ) : (
           <View style={{ flexDirection: "row", gap: Spacing.s }}>
             <Button

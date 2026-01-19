@@ -18,7 +18,8 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { IconSymbol } from "@/design-system";
+import { IconSymbol, type ThemeColors } from "@/design-system";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 const HANDLE_SIZE = 54;
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
@@ -59,6 +60,7 @@ export function DrainSlider({
     resetSlider();
   }
 
+  const colors = useThemeColor();
   const maxTranslate = containerWidth - HANDLE_SIZE - 8;
 
   const onLayout = (event: LayoutChangeEvent) => {
@@ -98,7 +100,7 @@ export function DrainSlider({
     return { width };
   });
 
-  const styles = getStyles();
+  const styles = getStyles(colors);
 
   return (
     <View style={styles.container}>
@@ -177,10 +179,10 @@ export function DrainSlider({
   );
 }
 
-const getStyles = () =>
+const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
-      backgroundColor: "#1C1C1E",
+      backgroundColor: colors.background.secondary,
       borderRadius: 20,
       overflow: "hidden",
       borderWidth: 1,
@@ -210,7 +212,7 @@ const getStyles = () =>
       alignItems: "center",
     },
     instruction: {
-      color: "#FFF",
+      color: colors.text.primary,
       textAlign: "center",
       fontSize: 14,
       marginBottom: 15,
@@ -220,14 +222,14 @@ const getStyles = () =>
     sliderTrack: {
       height: 62,
       width: "100%",
-      backgroundColor: "#000",
+      backgroundColor: colors.background.primary,
       borderRadius: 31,
       padding: 4,
       justifyContent: "center",
     },
     trackBackground: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: "#000",
+      backgroundColor: colors.background.primary,
       borderRadius: 31,
     },
     progressBar: {
@@ -239,14 +241,14 @@ const getStyles = () =>
     handle: {
       width: HANDLE_SIZE,
       height: HANDLE_SIZE,
-      backgroundColor: "#F2F2F7",
+      backgroundColor: colors.neutral["500"],
       borderRadius: HANDLE_SIZE / 2,
       justifyContent: "center",
       alignItems: "center",
       zIndex: 10,
     },
     stopButton: {
-      backgroundColor: "#3A4A5E",
+      backgroundColor: colors.neutral["600"],
       height: 62,
       borderRadius: 31,
       flexDirection: "row",
@@ -255,7 +257,7 @@ const getStyles = () =>
       width: "100%",
     },
     stopButtonText: {
-      color: "#FFF",
+      color: colors.text.inverse,
       fontWeight: "bold",
       fontSize: 15,
       marginLeft: 10,
@@ -266,7 +268,7 @@ const getStyles = () =>
       marginTop: 20,
     },
     statusText: {
-      color: "#FFF",
+      color: colors.text.primary,
       fontSize: 17,
     },
     statusBold: {

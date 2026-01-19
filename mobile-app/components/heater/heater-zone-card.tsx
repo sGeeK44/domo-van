@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Card, Colors, FontSize, FontWeight } from "@/design-system";
+import { Card, FontSize, FontWeight, type ThemeColors } from "@/design-system";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
 import { useThemeColor } from "@/hooks/use-theme-color";
@@ -62,7 +62,7 @@ export function HeaterZoneCard({
             ]}
             hitSlop={8}
           >
-            <IconSymbol name="remove" size={24} color="#FFFFFF" />
+            <IconSymbol name="remove" size={24} color={colors.text.primary} />
           </Pressable>
 
           <View style={styles.setpointDisplay}>
@@ -80,7 +80,7 @@ export function HeaterZoneCard({
             ]}
             hitSlop={8}
           >
-            <IconSymbol name="add" size={24} color="#FFFFFF" />
+            <IconSymbol name="add" size={24} color={colors.text.primary} />
           </Pressable>
         </View>
 
@@ -96,12 +96,12 @@ export function HeaterZoneCard({
           <IconSymbol
             name={isRunning ? "power-settings-new" : "power-off"}
             size={20}
-            color={isRunning ? "#000000" : "#FFFFFF"}
+            color={isRunning ? colors.text.inverse : colors.text.primary}
           />
           <Text
             style={[
               styles.toggleButtonText,
-              { color: isRunning ? "#000000" : "#FFFFFF" },
+              { color: isRunning ? colors.text.inverse : colors.text.primary },
             ]}
           >
             {isRunning ? "ON" : "OFF"}
@@ -112,7 +112,7 @@ export function HeaterZoneCard({
   );
 }
 
-const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
+const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     content: {
       flex: 1,
@@ -130,7 +130,7 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
     },
     tempLabel: {
       fontSize: FontSize.xs,
-      color: colors.neutral["500"],
+      color: colors.text.secondary,
       marginTop: -4,
     },
     setpointSection: {
@@ -143,12 +143,12 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: "rgba(255, 255, 255, 0.15)",
+      backgroundColor: colors.background.primary,
       justifyContent: "center",
       alignItems: "center",
     },
     controlButtonPressed: {
-      backgroundColor: "rgba(255, 255, 255, 0.25)",
+      backgroundColor: colors.neutral["500"],
     },
     setpointDisplay: {
       alignItems: "center",
@@ -157,11 +157,11 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
     setpointValue: {
       fontSize: FontSize.xl,
       fontWeight: FontWeight.bold,
-      color: colors.info["500"],
+      color: colors.text.primary,
     },
     setpointLabel: {
       fontSize: FontSize.xxs,
-      color: colors.neutral["500"],
+      color: colors.text.secondary,
     },
     toggleButton: {
       flexDirection: "row",
@@ -176,9 +176,9 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
       backgroundColor: colors.heater?.warm ?? "#FF6B35",
     },
     toggleButtonOff: {
-      backgroundColor: "rgba(255, 255, 255, 0.1)",
+      backgroundColor: colors.background.primary,
       borderWidth: 1,
-      borderColor: "rgba(255, 255, 255, 0.2)",
+      borderColor: colors.neutral["500"],
     },
     toggleButtonText: {
       fontSize: FontSize.s,
