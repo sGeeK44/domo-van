@@ -1,7 +1,7 @@
+import { Device } from "react-native-ble-plx";
 import { BlePlxChannel } from "@/core/bluetooth/Channel";
 import { DrainValve } from "@/domain/water/DrainValve";
 import { TankLevelSensor } from "@/domain/water/TankLevelSensor";
-import { Device } from "react-native-ble-plx";
 import { AdminModule } from "../AdminModule";
 
 export type WaterModuleChannel =

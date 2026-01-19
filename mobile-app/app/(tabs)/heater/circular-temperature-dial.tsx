@@ -1,6 +1,3 @@
-import { Colors, FontSize, FontWeight } from "@/design-system";
-import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -26,22 +23,25 @@ import Svg, {
   RadialGradient,
   Stop,
 } from "react-native-svg";
+import { Colors, FontSize, FontWeight } from "@/design-system";
+import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import {
+  getTemperatureColor,
+  getTemperatureColorDimmed,
   MAX_TEMP,
   MIN_TEMP,
   TEMP_STEP,
-  getTemperatureColor,
-  getTemperatureColorDimmed,
 } from "./temperature-colors";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 // Arc configuration
 const ARC_START_ANGLE = 135; // Bottom-left (degrees)
-const ARC_END_ANGLE = 45; // Bottom-right (degrees)
+const _ARC_END_ANGLE = 45; // Bottom-right (degrees)
 const ARC_SWEEP = 270; // Total arc sweep in degrees
 const STROKE_WIDTH = 6;
-const TOUCH_ZONE_WIDTH = 40; // Wide touch area for van ergonomics
+const _TOUCH_ZONE_WIDTH = 40; // Wide touch area for van ergonomics
 
 export type CircularTemperatureDialProps = {
   name: string;

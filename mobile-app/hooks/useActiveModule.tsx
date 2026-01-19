@@ -1,13 +1,13 @@
-import type { Bluetooth } from "@/core/bluetooth/Bluetooth";
-import type { ModuleKey } from "@/hooks/DeviceStorage";
-import { useHeaterDevice, useWaterDevice } from "@/hooks/useModuleDevice";
 import React, {
   createContext,
+  type PropsWithChildren,
   useCallback,
   useContext,
   useState,
-  type PropsWithChildren,
 } from "react";
+import type { Bluetooth } from "@/core/bluetooth/Bluetooth";
+import type { ModuleKey } from "@/hooks/DeviceStorage";
+import { useHeaterDevice, useWaterDevice } from "@/hooks/useModuleDevice";
 
 export type ActiveModuleContextValue = {
   activeModule: ModuleKey | null;

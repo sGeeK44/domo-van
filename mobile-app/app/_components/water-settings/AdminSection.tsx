@@ -1,8 +1,8 @@
-import type { WaterSettingsStyles } from "@/app/_components/water-settings/styles";
-import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useEffect, useState } from "react";
 import { Pressable, Text, TextInput, ToastAndroid, View } from "react-native";
 import { Device } from "react-native-ble-plx";
+import type { WaterSettingsStyles } from "@/app/_components/water-settings/styles";
+import { WaterSystem } from "@/domain/water/WaterSystem";
 
 const showToast = (message: string) => {
   ToastAndroid.show(message, ToastAndroid.SHORT);

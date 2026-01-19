@@ -1,9 +1,13 @@
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   AdminSection,
   DiscoveredDevicesList,
+  getModuleSettingsStyles,
   SavedDeviceSection,
   ScanSection,
-  getModuleSettingsStyles,
   useAutoScanWithTimeout,
 } from "@/app/_components/module-settings";
 import { TankSettingsSection } from "@/app/_components/water-settings/TankSettingsSection";
@@ -14,10 +18,6 @@ import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useWaterDevice } from "@/hooks/useModuleDevice";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function WaterSettingsScreen() {
   const colors = useThemeColor();

@@ -1,22 +1,22 @@
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { HeaterPidSection } from "@/app/_components/heater-settings";
 import {
   AdminSection,
   DiscoveredDevicesList,
+  getModuleSettingsStyles,
   SavedDeviceSection,
   ScanSection,
-  getModuleSettingsStyles,
   useAutoScanWithTimeout,
 } from "@/app/_components/module-settings";
-import { HeaterPidSection } from "@/app/_components/heater-settings";
 import { useBle } from "@/components/BleProvider";
 import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useHeaterDevice } from "@/hooks/useModuleDevice";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const ZONE_NAMES = ["Cabine", "Cellule", "Soute", "Garage"];
 

@@ -1,5 +1,5 @@
-import type { WaterSettingsStyles } from "@/app/_components/water-settings/styles";
 import { Text, View } from "react-native";
+import type { WaterSettingsStyles } from "@/app/_components/water-settings/styles";
 
 type Props = {
   styles: WaterSettingsStyles;

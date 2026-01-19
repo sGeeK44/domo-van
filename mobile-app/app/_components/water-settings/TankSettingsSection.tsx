@@ -1,9 +1,9 @@
-import type { ModuleSettingsStyles } from "@/app/_components/module-settings/styles";
-import { IconSymbol } from "@/design-system/atoms/icon-symbol";
-import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TextInput, ToastAndroid, View } from "react-native";
 import { Device } from "react-native-ble-plx";
+import type { ModuleSettingsStyles } from "@/app/_components/module-settings/styles";
+import { IconSymbol } from "@/design-system/atoms/icon-symbol";
+import { WaterSystem } from "@/domain/water/WaterSystem";
 
 function validatePositiveInt(label: string, value: string): string | null {
   const trimmed = value.trim();
@@ -62,7 +62,7 @@ export function TankSettingsSection({ styles, connectedDevice, name }: Props) {
     return () => {
       sub();
     };
-  }, [tankSettings]);
+  }, [tankSettings, requestAllCfg]);
 
   return (
     <View style={styles.adminSection}>

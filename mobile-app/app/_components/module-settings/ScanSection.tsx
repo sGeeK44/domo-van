@@ -1,5 +1,5 @@
-import type { ModuleSettingsStyles } from "@/app/_components/module-settings/styles";
 import { Text, View } from "react-native";
+import type { ModuleSettingsStyles } from "@/app/_components/module-settings/styles";
 
 type Props = {
   styles: ModuleSettingsStyles;

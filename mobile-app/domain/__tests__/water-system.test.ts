@@ -1,8 +1,8 @@
+import { describe, expect, it } from "vitest";
 import { Channel } from "@/core/bluetooth/Channel";
 import { Listener, Unsubscribe } from "@/core/observable";
 import { DrainValve } from "@/domain/water/DrainValve";
 import { TankLevelSensor } from "@/domain/water/TankLevelSensor";
-import { describe, expect, it } from "vitest";
 
 class FakeChannel implements Channel {
   private listener: Listener<string> | null = null;

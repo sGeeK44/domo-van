@@ -1,7 +1,7 @@
-import type { ModuleSettingsStyles } from "@/app/_components/module-settings/styles";
-import type { AdminModule } from "@/domain/AdminModule";
 import { useEffect, useState } from "react";
 import { Pressable, Text, TextInput, ToastAndroid, View } from "react-native";
+import type { ModuleSettingsStyles } from "@/app/_components/module-settings/styles";
+import type { AdminModule } from "@/domain/AdminModule";
 
 const showToast = (message: string) => {
   ToastAndroid.show(message, ToastAndroid.SHORT);

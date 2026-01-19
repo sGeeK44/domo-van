@@ -19,8 +19,8 @@ vi.mock("expo-secure-store", () => {
   };
 });
 
-import { DeviceStorage, type DeviceInfo } from "@/hooks/DeviceStorage";
 import * as SecureStore from "expo-secure-store";
+import { type DeviceInfo, DeviceStorage } from "@/hooks/DeviceStorage";
 
 describe("DeviceStorage", () => {
   beforeEach(() => {

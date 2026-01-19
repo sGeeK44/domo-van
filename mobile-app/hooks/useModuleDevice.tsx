@@ -1,18 +1,18 @@
-import type { Bluetooth } from "@/core/bluetooth/Bluetooth";
-import {
-  DeviceStorage,
-  type DeviceInfo,
-  type ModuleKey,
-} from "@/hooks/DeviceStorage";
 import React, {
   createContext,
+  type PropsWithChildren,
   useCallback,
   useContext,
   useEffect,
   useState,
-  type PropsWithChildren,
 } from "react";
 import { Device, Subscription } from "react-native-ble-plx";
+import type { Bluetooth } from "@/core/bluetooth/Bluetooth";
+import {
+  type DeviceInfo,
+  DeviceStorage,
+  type ModuleKey,
+} from "@/hooks/DeviceStorage";
 
 export type ModuleDeviceContextValue = {
   device: Device | null;

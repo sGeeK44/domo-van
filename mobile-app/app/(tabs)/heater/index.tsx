@@ -1,13 +1,3 @@
-import { CircularTemperatureDial } from "@/app/(tabs)/heater/circular-temperature-dial";
-import { useBle } from "@/components/BleProvider";
-import { Observable } from "@/core/observable";
-import { Colors } from "@/design-system";
-import { IconSymbol } from "@/design-system/atoms/icon-symbol";
-import { HeaterSystem } from "@/domain/heater/HeaterSystem";
-import { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
-import { useThemeColor } from "@/hooks/use-theme-color";
-import { useActiveModule } from "@/hooks/useActiveModule";
-import { useHeaterDevice } from "@/hooks/useModuleDevice";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import {
@@ -19,6 +9,16 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { CircularTemperatureDial } from "@/app/(tabs)/heater/circular-temperature-dial";
+import { useBle } from "@/components/BleProvider";
+import { Observable } from "@/core/observable";
+import { Colors } from "@/design-system";
+import { IconSymbol } from "@/design-system/atoms/icon-symbol";
+import { HeaterSystem } from "@/domain/heater/HeaterSystem";
+import { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { useActiveModule } from "@/hooks/useActiveModule";
+import { useHeaterDevice } from "@/hooks/useModuleDevice";
 
 /** React adapter for Observable<T> */
 function useObservable<T>(obs: Observable<T> | null): T | null {

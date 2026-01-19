@@ -1,5 +1,5 @@
-import { Colors } from "@/design-system";
 import { StyleSheet } from "react-native";
+import { Colors } from "@/design-system";
 
 export type WaterSettingsStyles = ReturnType<typeof getWaterSettingsStyles>;
 

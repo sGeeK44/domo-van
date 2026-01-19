@@ -1,5 +1,3 @@
-import type { ModuleSettingsStyles } from "@/app/_components/module-settings/styles";
-import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -8,6 +6,8 @@ import {
   Text,
   View,
 } from "react-native";
+import type { ModuleSettingsStyles } from "@/app/_components/module-settings/styles";
+import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 
 type BleDevice = {
   id: string;

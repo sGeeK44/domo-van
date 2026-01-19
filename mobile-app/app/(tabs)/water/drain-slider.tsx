@@ -1,4 +1,3 @@
-import { IconSymbol } from "@/design-system";
 import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useState } from "react";
 import {
@@ -19,6 +18,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
+import { IconSymbol } from "@/design-system";
 
 const HANDLE_SIZE = 54;
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);

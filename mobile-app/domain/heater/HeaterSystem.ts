@@ -1,7 +1,7 @@
+import { Device } from "react-native-ble-plx";
 import { BlePlxChannel } from "@/core/bluetooth/Channel";
 import { AdminModule } from "@/domain/AdminModule";
 import { HeaterZone } from "@/domain/heater/HeaterZone";
-import { Device } from "react-native-ble-plx";
 
 export type HeaterModuleChannel =
   | "admin"

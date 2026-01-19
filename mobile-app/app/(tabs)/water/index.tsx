@@ -1,14 +1,3 @@
-import { DrainSlider } from "@/app/(tabs)/water/drain-slider";
-import { WaterTank } from "@/app/(tabs)/water/water-tank";
-import { useBle } from "@/components/BleProvider";
-import { Observable } from "@/core/observable";
-import { Colors } from "@/design-system";
-import { IconSymbol } from "@/design-system/atoms/icon-symbol";
-import { ValveState } from "@/domain/water/DrainValve";
-import { WaterSystem } from "@/domain/water/WaterSystem";
-import { useThemeColor } from "@/hooks/use-theme-color";
-import { useActiveModule } from "@/hooks/useActiveModule";
-import { useWaterDevice } from "@/hooks/useModuleDevice";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import {
@@ -20,6 +9,17 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { DrainSlider } from "@/app/(tabs)/water/drain-slider";
+import { WaterTank } from "@/app/(tabs)/water/water-tank";
+import { useBle } from "@/components/BleProvider";
+import { Observable } from "@/core/observable";
+import { Colors } from "@/design-system";
+import { IconSymbol } from "@/design-system/atoms/icon-symbol";
+import { ValveState } from "@/domain/water/DrainValve";
+import { WaterSystem } from "@/domain/water/WaterSystem";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { useActiveModule } from "@/hooks/useActiveModule";
+import { useWaterDevice } from "@/hooks/useModuleDevice";
 
 /** React adapter for Observable<T> */
 function useObservable<T>(obs: Observable<T> | null): T | null {

@@ -1,8 +1,8 @@
+import { useState } from "react";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import type { WaterSettingsStyles } from "@/app/_components/water-settings/styles";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import type { DeviceInfo } from "@/hooks/DeviceStorage";
-import { useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 type Props = {
   styles: WaterSettingsStyles;

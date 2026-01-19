@@ -1,8 +1,8 @@
+import { useState } from "react";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import type { ModuleSettingsStyles } from "@/app/_components/module-settings/styles";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import type { DeviceInfo } from "@/hooks/DeviceStorage";
-import { useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 type Props = {
   styles: ModuleSettingsStyles;

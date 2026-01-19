@@ -1,8 +1,8 @@
+import { useCallback, useEffect, useState } from "react";
+import { Pressable, Text, TextInput, ToastAndroid, View } from "react-native";
 import type { ModuleSettingsStyles } from "@/app/_components/module-settings/styles";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import type { HeaterZone, PidConfig } from "@/domain/heater/HeaterZone";
-import { useEffect, useState } from "react";
-import { Pressable, Text, TextInput, ToastAndroid, View } from "react-native";
 
 const showToast = (message: string) => {
   ToastAndroid.show(message, ToastAndroid.SHORT);
@@ -11,11 +11,11 @@ const showToast = (message: string) => {
 function validatePidValue(label: string, value: string): string | null {
   const trimmed = value.trim();
   if (!/^\d+(\.\d+)?$/.test(trimmed)) {
-    return `${label} doit être un nombre positif.`;
+    return `${label} doit etre un nombre positif.`;
   }
   const n = Number(trimmed);
   if (!Number.isFinite(n) || n < 0.01 || n > 100) {
-    return `${label} doit être entre 0.01 et 100.`;
+    return `${label} doit etre entre 0.01 et 100.`;
   }
   return null;
 }
@@ -32,14 +32,14 @@ export function HeaterPidSection({ styles, heaterZone, zoneName }: Props) {
   const [kd, setKd] = useState("");
   const [sending, setSending] = useState(false);
 
-  const requestConfig = async () => {
+  const requestConfig = useCallback(async () => {
     try {
       await heaterZone.getPidConfig();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erreur lors de la lecture.";
       showToast(msg);
     }
-  };
+  }, [heaterZone]);
 
   useEffect(() => {
     const sub = heaterZone.subscribe((snapshot) => {
@@ -58,7 +58,7 @@ export function HeaterPidSection({ styles, heaterZone, zoneName }: Props) {
     return () => {
       sub();
     };
-  }, [heaterZone]);
+  }, [heaterZone, requestConfig]);
 
   const handleSave = async () => {
     const kpErr = validatePidValue("Kp", kp);
@@ -71,7 +71,7 @@ export function HeaterPidSection({ styles, heaterZone, zoneName }: Props) {
     }
 
     setSending(true);
-    showToast("Envoi configuration PID…");
+    showToast("Envoi configuration PID...");
 
     try {
       const config: PidConfig = {
