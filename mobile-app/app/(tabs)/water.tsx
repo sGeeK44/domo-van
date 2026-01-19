@@ -1,25 +1,18 @@
-import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { DrainSlider } from "@/app/(tabs)/water/drain-slider";
-import { WaterTank } from "@/app/(tabs)/water/water-tank";
 import { useBle } from "@/components/BleProvider";
+import { DrainSlider } from "@/components/water/drain-slider";
+import { WaterTank } from "@/components/water/water-tank";
 import { Observable } from "@/core/observable";
 import { Colors } from "@/design-system";
-import { IconSymbol } from "@/design-system/atoms/icon-symbol";
+import { PageHeader } from "@/design-system/molecules/page-header";
 import { ValveState } from "@/domain/water/DrainValve";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useActiveModule } from "@/hooks/useActiveModule";
 import { useWaterDevice } from "@/hooks/useModuleDevice";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import { StatusBar, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 /** React adapter for Observable<T> */
 function useObservable<T>(obs: Observable<T> | null): T | null {
@@ -103,30 +96,12 @@ export default function WaterScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="default" />
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Niveaux d{"'"}Eau</Text>
-          <Pressable
-            onPress={() => router.push("/water-settings")}
-            style={styles.iconButton}
-            hitSlop={10}
-          >
-            <View style={styles.iconCircle}>
-              <IconSymbol name="settings" size={18} color="#FFFFFF" />
-              {isLoading ? (
-                <View style={styles.badgeContainer}>
-                  <ActivityIndicator size={10} color="#FFFFFF" />
-                </View>
-              ) : (
-                <View
-                  style={[
-                    styles.badge,
-                    { backgroundColor: isConnected ? "#2ECC71" : "#E74C3C" },
-                  ]}
-                />
-              )}
-            </View>
-          </Pressable>
-        </View>
+        <PageHeader
+          title="Niveaux d'Eau"
+          onSettingsPress={() => router.push("/water-settings")}
+          isLoading={isLoading}
+          isConnected={isConnected}
+        />
         <View style={styles.content}>
           <View style={styles.tanksRow}>
             <WaterTank
@@ -165,59 +140,11 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
       padding: 20,
       gap: 20,
     },
-    header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingHorizontal: 10,
-    },
-    iconButton: {
-      borderRadius: 999,
-    },
-    iconCircle: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: "rgba(255, 255, 255, 0.12)",
-      justifyContent: "center",
-      alignItems: "center",
-      position: "relative",
-    },
-    badge: {
-      position: "absolute",
-      top: 6,
-      right: 6,
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      borderWidth: 2,
-      borderColor: "rgba(0, 0, 0, 0.25)",
-    },
-    badgeContainer: {
-      position: "absolute",
-      top: 6,
-      right: 6,
-      width: 10,
-      height: 10,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    title: {
-      fontSize: 38,
-      fontWeight: "900",
-      color: "#FFFFFF",
-      letterSpacing: -1,
-    },
     tanksRow: {
       flex: 1,
       flexDirection: "row",
       alignSelf: "stretch",
       backgroundColor: "transparent",
       gap: 10,
-    },
-    drainSlider: {
-      flex: 1,
-      backgroundColor: "transparent",
-      alignSelf: "flex-end",
     },
   });

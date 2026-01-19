@@ -22,7 +22,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="water/index"
+        name="water"
         options={{
           title: "Water",
           tabBarIcon: ({ color }) => (
@@ -31,7 +31,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="heater/index"
+        name="heater"
         options={{
           title: "Heater",
           tabBarIcon: ({ color }) => (

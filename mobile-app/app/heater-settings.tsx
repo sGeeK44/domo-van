@@ -1,19 +1,20 @@
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { HeaterPidSection } from "@/app/_components/heater-settings";
+import { HeaterPidSection } from "@/components/heater-settings";
 import {
   AdminSection,
   DiscoveredDevicesList,
-  getModuleSettingsStyles,
   SavedDeviceSection,
   ScanSection,
-  useAutoScanWithTimeout,
-} from "@/app/_components/module-settings";
+} from "@/components/module-settings";
+import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
 import { useBle } from "@/components/BleProvider";
 import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
-import { IconSymbol } from "@/design-system/atoms/icon-symbol";
+import { Spacing, type ThemeColors } from "@/design-system";
+import { Button } from "@/design-system/atoms/button";
+import { SettingsHeader } from "@/design-system/molecules/settings-header";
 import { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useHeaterDevice } from "@/hooks/useModuleDevice";
@@ -22,7 +23,7 @@ const ZONE_NAMES = ["Cabine", "Cellule", "Soute", "Garage"];
 
 export default function HeaterSettingsScreen() {
   const colors = useThemeColor();
-  const styles = getModuleSettingsStyles(colors);
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
 
   // Bluetooth for scanning and connecting
@@ -123,18 +124,11 @@ export default function HeaterSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <IconSymbol name="arrow-back" size={22} color="#FFFFFF" />
-        </Pressable>
-        <Text style={styles.title}>Chauffage - Bluetooth</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <SettingsHeader title="Chauffage - Bluetooth" onBackPress={() => router.back()} />
 
       {lastDevice ? (
         <ScrollView>
           <SavedDeviceSection
-            styles={styles}
             device={lastDevice}
             isConnected={isModuleConnected}
             onConnect={connect}
@@ -144,14 +138,12 @@ export default function HeaterSettingsScreen() {
           {isModuleConnected && device && heaterSystem && (
             <>
               <AdminSection
-                styles={styles}
                 adminModule={heaterSystem.admin}
                 deviceName={device.name}
               />
               {heaterSystem.zones.map((zone, index) => (
                 <HeaterPidSection
                   key={index}
-                  styles={styles}
                   heaterZone={zone}
                   zoneName={ZONE_NAMES[index]}
                 />
@@ -162,27 +154,36 @@ export default function HeaterSettingsScreen() {
       ) : (
         <View style={{ flex: 1 }}>
           <ScanSection
-            styles={styles}
             isScanning={isScanning}
             lastError={lastError}
           />
 
           <DiscoveredDevicesList
-            styles={styles}
             isScanning={isScanning}
             discoveredDevices={discoveredDevices}
             onConnect={connect}
           />
 
           <View style={styles.bottomButtonContainer}>
-            <Pressable onPress={onToggleScan} style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>
-                {isScanning ? "Arrêter la recherche" : "Rechercher"}
-              </Text>
-            </Pressable>
+            <Button onPress={onToggleScan}>
+              {isScanning ? "Arrêter la recherche" : "Rechercher"}
+            </Button>
           </View>
         </View>
       )}
     </SafeAreaView>
   );
 }
+
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    bottomButtonContainer: {
+      marginTop: "auto",
+      paddingHorizontal: Spacing.xxl,
+      paddingBottom: Spacing.xxl,
+    },
+  });

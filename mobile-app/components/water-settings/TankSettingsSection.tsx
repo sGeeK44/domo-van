@@ -1,9 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, Text, TextInput, ToastAndroid, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, ToastAndroid, View } from "react-native";
 import { Device } from "react-native-ble-plx";
-import type { ModuleSettingsStyles } from "@/app/_components/module-settings/styles";
+import {
+  BorderRadius,
+  FontSize,
+  FontWeight,
+  Opacity,
+  Spacing,
+  TextColors,
+  type ThemeColors,
+} from "@/design-system";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { WaterSystem } from "@/domain/water/WaterSystem";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 function validatePositiveInt(label: string, value: string): string | null {
   const trimmed = value.trim();
@@ -15,7 +24,6 @@ function validatePositiveInt(label: string, value: string): string | null {
 }
 
 type Props = {
-  styles: ModuleSettingsStyles;
   connectedDevice: Device;
   name: string;
 };
@@ -24,7 +32,10 @@ const showToast = (message: string) => {
   ToastAndroid.show(message, ToastAndroid.SHORT);
 };
 
-export function TankSettingsSection({ styles, connectedDevice, name }: Props) {
+export function TankSettingsSection({ connectedDevice, name }: Props) {
+  const colors = useThemeColor();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [volumeLiters, setVolumeLiters] = useState("");
   const [heightMm, setHeightMm] = useState("");
   const waterSystem = useMemo(
@@ -79,7 +90,7 @@ export function TankSettingsSection({ styles, connectedDevice, name }: Props) {
             <IconSymbol
               name="refresh"
               size={18}
-              color="rgba(255,255,255,0.7)"
+              color={`rgba(255,255,255,${Opacity.low})`}
             />
           </Pressable>
         </View>
@@ -88,7 +99,7 @@ export function TankSettingsSection({ styles, connectedDevice, name }: Props) {
           value={volumeLiters}
           onChangeText={setVolumeLiters}
           placeholder="Volume (L)"
-          placeholderTextColor="rgba(255,255,255,0.45)"
+          placeholderTextColor={`rgba(255,255,255,${Opacity.faint})`}
           keyboardType="number-pad"
           style={styles.input}
         />
@@ -97,7 +108,7 @@ export function TankSettingsSection({ styles, connectedDevice, name }: Props) {
           value={heightMm}
           onChangeText={setHeightMm}
           placeholder="Hauteur vide (mm)"
-          placeholderTextColor="rgba(255,255,255,0.45)"
+          placeholderTextColor={`rgba(255,255,255,${Opacity.faint})`}
           keyboardType="number-pad"
           style={styles.input}
         />
@@ -130,3 +141,54 @@ export function TankSettingsSection({ styles, connectedDevice, name }: Props) {
     </View>
   );
 }
+
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    adminSection: {
+      paddingHorizontal: Spacing.xxl,
+      paddingBottom: Spacing.l,
+      gap: Spacing.l,
+    },
+    field: {
+      gap: Spacing.s,
+      padding: Spacing.l,
+      borderRadius: BorderRadius.m,
+      backgroundColor: `rgba(255,255,255,${Opacity.hint})`,
+      borderWidth: 1,
+      borderColor: `rgba(255,255,255,${Opacity.overlay})`,
+    },
+    fieldHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: Spacing.s,
+    },
+    refreshButton: {
+      padding: Spacing.xxs,
+    },
+    label: {
+      color: TextColors.primary,
+      fontSize: FontSize.xs,
+      opacity: Opacity.medium,
+      fontWeight: `${FontWeight.extraBold}`,
+    },
+    input: {
+      color: TextColors.primary,
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.l,
+      borderRadius: BorderRadius.s,
+      borderWidth: 1,
+      borderColor: `rgba(255,255,255,${Opacity.dim})`,
+      backgroundColor: "rgba(0,0,0,0.15)",
+    },
+    primaryButton: {
+      backgroundColor: colors.primary["500"],
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.xl,
+      borderRadius: BorderRadius.s,
+    },
+    primaryButtonText: {
+      color: TextColors.dark,
+      fontWeight: `${FontWeight.extraBold}`,
+    },
+  });

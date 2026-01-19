@@ -1,8 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
-import { Pressable, Text, TextInput, ToastAndroid, View } from "react-native";
-import type { ModuleSettingsStyles } from "@/app/_components/module-settings/styles";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Pressable, StyleSheet, Text, TextInput, ToastAndroid, View } from "react-native";
+import {
+  BorderRadius,
+  FontSize,
+  FontWeight,
+  Opacity,
+  Spacing,
+  TextColors,
+  type ThemeColors,
+} from "@/design-system";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import type { HeaterZone, PidConfig } from "@/domain/heater/HeaterZone";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 const showToast = (message: string) => {
   ToastAndroid.show(message, ToastAndroid.SHORT);
@@ -21,12 +30,14 @@ function validatePidValue(label: string, value: string): string | null {
 }
 
 type Props = {
-  styles: ModuleSettingsStyles;
   heaterZone: HeaterZone;
   zoneName: string;
 };
 
-export function HeaterPidSection({ styles, heaterZone, zoneName }: Props) {
+export function HeaterPidSection({ heaterZone, zoneName }: Props) {
+  const colors = useThemeColor();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [kp, setKp] = useState("");
   const [ki, setKi] = useState("");
   const [kd, setKd] = useState("");
@@ -100,43 +111,43 @@ export function HeaterPidSection({ styles, heaterZone, zoneName }: Props) {
             <IconSymbol
               name="refresh"
               size={18}
-              color="rgba(255,255,255,0.7)"
+              color={`rgba(255,255,255,${Opacity.low})`}
             />
           </Pressable>
         </View>
 
-        <View style={{ gap: 8 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text style={[styles.label, { width: 30 }]}>Kp</Text>
+        <View style={{ gap: Spacing.s }}>
+          <View style={styles.pidRow}>
+            <Text style={[styles.label, styles.pidLabel]}>Kp</Text>
             <TextInput
               value={kp}
               onChangeText={setKp}
               placeholder="10.00"
-              placeholderTextColor="rgba(255,255,255,0.45)"
+              placeholderTextColor={`rgba(255,255,255,${Opacity.faint})`}
               keyboardType="decimal-pad"
               style={[styles.input, { flex: 1 }]}
             />
           </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text style={[styles.label, { width: 30 }]}>Ki</Text>
+          <View style={styles.pidRow}>
+            <Text style={[styles.label, styles.pidLabel]}>Ki</Text>
             <TextInput
               value={ki}
               onChangeText={setKi}
               placeholder="0.10"
-              placeholderTextColor="rgba(255,255,255,0.45)"
+              placeholderTextColor={`rgba(255,255,255,${Opacity.faint})`}
               keyboardType="decimal-pad"
               style={[styles.input, { flex: 1 }]}
             />
           </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text style={[styles.label, { width: 30 }]}>Kd</Text>
+          <View style={styles.pidRow}>
+            <Text style={[styles.label, styles.pidLabel]}>Kd</Text>
             <TextInput
               value={kd}
               onChangeText={setKd}
               placeholder="0.50"
-              placeholderTextColor="rgba(255,255,255,0.45)"
+              placeholderTextColor={`rgba(255,255,255,${Opacity.faint})`}
               keyboardType="decimal-pad"
               style={[styles.input, { flex: 1 }]}
             />
@@ -145,7 +156,7 @@ export function HeaterPidSection({ styles, heaterZone, zoneName }: Props) {
 
         <Pressable
           onPress={handleSave}
-          style={[styles.primaryButton, sending && { opacity: 0.6 }]}
+          style={[styles.primaryButton, sending && { opacity: Opacity.subtle }]}
           disabled={sending}
         >
           <Text style={styles.primaryButtonText}>Enregistrer PID</Text>
@@ -154,3 +165,62 @@ export function HeaterPidSection({ styles, heaterZone, zoneName }: Props) {
     </View>
   );
 }
+
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    adminSection: {
+      paddingHorizontal: Spacing.xxl,
+      paddingBottom: Spacing.l,
+      gap: Spacing.l,
+    },
+    field: {
+      gap: Spacing.s,
+      padding: Spacing.l,
+      borderRadius: BorderRadius.m,
+      backgroundColor: `rgba(255,255,255,${Opacity.hint})`,
+      borderWidth: 1,
+      borderColor: `rgba(255,255,255,${Opacity.overlay})`,
+    },
+    fieldHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: Spacing.s,
+    },
+    refreshButton: {
+      padding: Spacing.xxs,
+    },
+    label: {
+      color: TextColors.primary,
+      fontSize: FontSize.xs,
+      opacity: Opacity.medium,
+      fontWeight: `${FontWeight.extraBold}`,
+    },
+    pidRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.s,
+    },
+    pidLabel: {
+      width: 30,
+    },
+    input: {
+      color: TextColors.primary,
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.l,
+      borderRadius: BorderRadius.s,
+      borderWidth: 1,
+      borderColor: `rgba(255,255,255,${Opacity.dim})`,
+      backgroundColor: "rgba(0,0,0,0.15)",
+    },
+    primaryButton: {
+      backgroundColor: colors.primary["500"],
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.xl,
+      borderRadius: BorderRadius.s,
+    },
+    primaryButtonText: {
+      color: TextColors.dark,
+      fontWeight: `${FontWeight.extraBold}`,
+    },
+  });

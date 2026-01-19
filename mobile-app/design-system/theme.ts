@@ -129,3 +129,43 @@ export const Fonts = Platform.select({
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
+
+export const Spacing = {
+  xxs: 4,
+  xs: 6,
+  s: 8,
+  m: 10,
+  l: 12,
+  xl: 14,
+  xxl: 16,
+  xxxl: 20,
+} as const;
+
+export const BorderRadius = {
+  s: 12,
+  m: 14,
+  l: 20,
+  pill: 999,
+} as const;
+
+export const Opacity = {
+  full: 1,
+  high: 0.9,
+  medium: 0.85,
+  low: 0.75,
+  subtle: 0.6,
+  faint: 0.45,
+  ghost: 0.2,
+  dim: 0.18,
+  muted: 0.12,
+  overlay: 0.08,
+  hint: 0.06,
+} as const;
+
+export const TextColors = {
+  primary: "#FFFFFF",
+  error: "#FF6B6B",
+  dark: "#000000",
+} as const;
+
+export type ThemeColors = typeof Colors.light | typeof Colors.dark;

@@ -1,27 +1,28 @@
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   AdminSection,
   DiscoveredDevicesList,
-  getModuleSettingsStyles,
   SavedDeviceSection,
   ScanSection,
-  useAutoScanWithTimeout,
-} from "@/app/_components/module-settings";
-import { TankSettingsSection } from "@/app/_components/water-settings/TankSettingsSection";
-import { ValveSettingsSection } from "@/app/_components/water-settings/ValveSettingsSection";
+} from "@/components/module-settings";
+import { TankSettingsSection } from "@/components/water-settings/TankSettingsSection";
+import { ValveSettingsSection } from "@/components/water-settings/ValveSettingsSection";
+import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
 import { useBle } from "@/components/BleProvider";
 import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
-import { IconSymbol } from "@/design-system/atoms/icon-symbol";
+import { Spacing, type ThemeColors } from "@/design-system";
+import { Button } from "@/design-system/atoms/button";
+import { SettingsHeader } from "@/design-system/molecules/settings-header";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useWaterDevice } from "@/hooks/useModuleDevice";
 
 export default function WaterSettingsScreen() {
   const colors = useThemeColor();
-  const styles = getModuleSettingsStyles(colors);
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
 
   // Bluetooth for scanning and connecting
@@ -122,18 +123,11 @@ export default function WaterSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <IconSymbol name="arrow-back" size={22} color="#FFFFFF" />
-        </Pressable>
-        <Text style={styles.title}>Bluetooth</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <SettingsHeader title="Bluetooth" onBackPress={() => router.back()} />
 
       {lastDevice ? (
         <ScrollView>
           <SavedDeviceSection
-            styles={styles}
             device={lastDevice}
             isConnected={isModuleConnected}
             onConnect={connect}
@@ -143,48 +137,54 @@ export default function WaterSettingsScreen() {
           {isModuleConnected && device && waterSystem && (
             <>
               <AdminSection
-                styles={styles}
                 adminModule={waterSystem.admin}
                 deviceName={device.name}
               />
               <TankSettingsSection
-                styles={styles}
                 connectedDevice={device}
                 name="clean"
               />
               <TankSettingsSection
-                styles={styles}
                 connectedDevice={device}
                 name="grey"
               />
-              <ValveSettingsSection styles={styles} connectedDevice={device} />
+              <ValveSettingsSection connectedDevice={device} />
             </>
           )}
         </ScrollView>
       ) : (
         <View style={{ flex: 1 }}>
           <ScanSection
-            styles={styles}
             isScanning={isScanning}
             lastError={lastError}
           />
 
           <DiscoveredDevicesList
-            styles={styles}
             isScanning={isScanning}
             discoveredDevices={discoveredDevices}
             onConnect={connect}
           />
 
           <View style={styles.bottomButtonContainer}>
-            <Pressable onPress={onToggleScan} style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>
-                {isScanning ? "Arrêter la recherche" : "Rechercher"}
-              </Text>
-            </Pressable>
+            <Button onPress={onToggleScan}>
+              {isScanning ? "Arrêter la recherche" : "Rechercher"}
+            </Button>
           </View>
         </View>
       )}
     </SafeAreaView>
   );
 }
+
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    bottomButtonContainer: {
+      marginTop: "auto",
+      paddingHorizontal: Spacing.xxl,
+      paddingBottom: Spacing.xxl,
+    },
+  });
