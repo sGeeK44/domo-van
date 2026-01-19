@@ -1,4 +1,3 @@
-import { useBle } from "@/components/BleProvider";
 import { DrainSlider } from "@/components/water/drain-slider";
 import { WaterTank } from "@/components/water/water-tank";
 import { Observable } from "@/core/observable";
@@ -7,10 +6,10 @@ import { PageHeader } from "@/design-system/molecules/page-header";
 import { ValveState } from "@/domain/water/DrainValve";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { useActiveModule } from "@/hooks/useActiveModule";
+import { useMultiModuleConnection } from "@/hooks/useMultiModuleConnection";
 import { useWaterDevice } from "@/hooks/useModuleDevice";
-import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import { useRouter } from "expo-router";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -42,18 +41,18 @@ export default function WaterScreen() {
   const styles = getStyles(colors);
   const router = useRouter();
 
-  const { bluetooth } = useBle();
-  const { device, isConnected, isConnecting } = useWaterDevice();
-  const { isSwitching, switchToModule } = useActiveModule();
+  const { device, isConnected } = useWaterDevice();
+  const { globalStatus, connectAll, disconnectAll } = useMultiModuleConnection();
 
-  // Switch to water module when screen gains focus
-  useFocusEffect(
-    useCallback(() => {
-      void switchToModule("water", bluetooth);
-    }, [bluetooth, switchToModule]),
-  );
+  const handleBluetoothPress = () => {
+    if (globalStatus === "connected" || globalStatus === "partial") {
+      void disconnectAll();
+    } else {
+      void connectAll();
+    }
+  };
 
-  const isLoading = isConnecting || isSwitching;
+  const bluetoothStatus = globalStatus === "connecting" ? "loading" : globalStatus;
 
   // Create WaterSystem when device is connected
   const waterSystem = useMemo(
@@ -99,8 +98,8 @@ export default function WaterScreen() {
         <PageHeader
           title="Niveaux d'Eau"
           onSettingsPress={() => router.push("/water-settings")}
-          isLoading={isLoading}
-          isConnected={isConnected}
+          onBluetoothPress={handleBluetoothPress}
+          bluetoothStatus={bluetoothStatus}
         />
         <View style={styles.content}>
           <View style={styles.tanksRow}>

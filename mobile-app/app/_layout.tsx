@@ -10,7 +10,7 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "react-native";
 import { BleProvider } from "@/components/BleProvider";
-import { ActiveModuleProvider } from "@/hooks/useActiveModule";
+import { MultiModuleConnectionProvider } from "@/hooks/useMultiModuleConnection";
 import {
   HeaterDeviceProviderV2,
   WaterDeviceProviderV2,
@@ -29,7 +29,7 @@ export default function RootLayout() {
         <BleProvider>
           <WaterDeviceProviderV2>
             <HeaterDeviceProviderV2>
-              <ActiveModuleProvider>
+              <MultiModuleConnectionProvider>
                 <Stack>
                   <Stack.Screen
                     name="(tabs)"
@@ -48,7 +48,7 @@ export default function RootLayout() {
                     options={{ presentation: "modal", title: "Modal" }}
                   />
                 </Stack>
-              </ActiveModuleProvider>
+              </MultiModuleConnectionProvider>
             </HeaterDeviceProviderV2>
           </WaterDeviceProviderV2>
         </BleProvider>

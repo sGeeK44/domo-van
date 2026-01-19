@@ -1,12 +1,13 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 export type StatusBadgeProps = {
-  status: "connected" | "disconnected" | "loading";
+  status: "connected" | "partial" | "disconnected" | "loading";
   size?: number;
 };
 
 const STATUS_COLORS = {
   connected: "#2ECC71",
+  partial: "#F39C12",
   disconnected: "#E74C3C",
 };
 

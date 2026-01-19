@@ -1,4 +1,3 @@
-import { useBle } from "@/components/BleProvider";
 import { CircularTemperatureDial } from "@/components/heater/circular-temperature-dial";
 import { Observable } from "@/core/observable";
 import { Colors } from "@/design-system";
@@ -6,9 +5,9 @@ import { PageHeader } from "@/design-system/molecules/page-header";
 import { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { useActiveModule } from "@/hooks/useActiveModule";
+import { useMultiModuleConnection } from "@/hooks/useMultiModuleConnection";
 import { useHeaterDevice } from "@/hooks/useModuleDevice";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import { StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -37,18 +36,18 @@ export default function HeaterScreen() {
   const styles = getStyles(colors);
   const router = useRouter();
 
-  const { bluetooth } = useBle();
-  const { device, isConnected, isConnecting } = useHeaterDevice();
-  const { isSwitching, switchToModule } = useActiveModule();
+  const { device, isConnected } = useHeaterDevice();
+  const { globalStatus, connectAll, disconnectAll } = useMultiModuleConnection();
 
-  // Switch to heater module when screen gains focus
-  useFocusEffect(
-    useCallback(() => {
-      void switchToModule("heater", bluetooth);
-    }, [bluetooth, switchToModule]),
-  );
+  const handleBluetoothPress = () => {
+    if (globalStatus === "connected" || globalStatus === "partial") {
+      void disconnectAll();
+    } else {
+      void connectAll();
+    }
+  };
 
-  const isLoading = isConnecting || isSwitching;
+  const bluetoothStatus = globalStatus === "connecting" ? "loading" : globalStatus;
 
   // Create HeaterSystem when device is connected
   const heaterSystem = useMemo(
@@ -106,8 +105,8 @@ export default function HeaterScreen() {
         <PageHeader
           title="Chauffage"
           onSettingsPress={() => router.push("/heater-settings")}
-          isLoading={isLoading}
-          isConnected={isConnected}
+          onBluetoothPress={handleBluetoothPress}
+          bluetoothStatus={bluetoothStatus}
         />
 
         {/* 2x2 Grid of Circular Dials */}

@@ -4,8 +4,10 @@ import { useRouter } from "expo-router";
 import { BatteryGauge } from "@/components/home/battery-gauge";
 import { StatusCard } from "@/components/home/status-card";
 import { EnvironmentIndicator } from "@/components/home/environment-indicator";
-import { Colors, PageTitle, Spacing } from "@/design-system";
+import { Colors } from "@/design-system";
+import { PageHeader } from "@/design-system/molecules/page-header";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { useMultiModuleConnection } from "@/hooks/useMultiModuleConnection";
 
 // Mocked data for now - will be connected to actual modules later
 const MOCK_BATTERY = {
@@ -35,14 +37,28 @@ export default function HomeScreen() {
   const styles = getStyles(colors);
   const router = useRouter();
 
+  const { globalStatus, connectAll, disconnectAll } = useMultiModuleConnection();
+
+  const handleBluetoothPress = () => {
+    if (globalStatus === "connected" || globalStatus === "partial") {
+      void disconnectAll();
+    } else {
+      void connectAll();
+    }
+  };
+
+  const bluetoothStatus = globalStatus === "connecting" ? "loading" : globalStatus;
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={styles.safeArea}>
-        {/* Header */}
-        <View style={styles.header}>
-          <PageTitle>Home</PageTitle>
-        </View>
+        <PageHeader
+          title="Home"
+          onSettingsPress={() => router.push("/modal")}
+          onBluetoothPress={handleBluetoothPress}
+          bluetoothStatus={bluetoothStatus}
+        />
 
         {/* Content */}
         <View style={styles.content}>
@@ -105,10 +121,6 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
     },
     safeArea: {
       flex: 1,
-    },
-    header: {
-      paddingHorizontal: Spacing.m,
-      paddingBottom: Spacing.l,
     },
     content: {
       flex: 1,
