@@ -1,0 +1,33 @@
+name: Test ESP32 Module
+
+on:
+  workflow_call:
+    inputs:
+      module:
+        description: "Path to the module to test (water-module or heater-module)"
+        required: true
+        type: string
+
+jobs:
+  test:
+    name: Test ${{ inputs.module }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.module }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install platformio
+
+      - name: Run tests
+        run: pio test -e local

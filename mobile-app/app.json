@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.domovan.app",
+      "buildNumber": "1",
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "Autoriser domo-van à se connecter au module de gestion des eaux via Bluetooth.",
         "NSBluetoothPeripheralUsageDescription": "Autoriser domo-van à utiliser le Bluetooth pour se connecter au module de gestion des eaux."
@@ -18,6 +19,7 @@
     },
     "android": {
       "package": "com.domovan.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -29,7 +31,10 @@
         "BLUETOOTH_ADMIN",
         "BLUETOOTH_SCAN",
         "BLUETOOTH_CONNECT",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT"
       ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
@@ -44,8 +49,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
+          "resizeMode": "cover",
           "backgroundColor": "#ffffff",
           "dark": {
             "backgroundColor": "#000000"
@@ -66,6 +70,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "106ef7d9-607e-4105-9ddb-ffd96bf26b27"
+      }
+    },
+    "owner": "sgeek44-corp"
   }
 }

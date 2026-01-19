@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - '*.*.*'
+
+jobs:
+  # =============================================================================
+  # TEST JOBS - Run in parallel
+  # =============================================================================
+
+  test-mobile:
+    uses: ./.github/workflows/_test-mobile.yml
+
+  test-water:
+    uses: ./.github/workflows/_test-esp32.yml
+    with:
+      module: water-module
+
+  test-heater:
+    uses: ./.github/workflows/_test-esp32.yml
+    with:
+      module: heater-module
+
+  # =============================================================================
+  # BUILD JOBS - Run after tests pass (in parallel with each other)
+  # =============================================================================
+
+  version:
+    name: Extract Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION="${{ github.ref_name }}"
+          # Strip 'v' prefix if present
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+  build-mobile:
+    needs: [test-mobile, version]
+    uses: ./.github/workflows/_build-mobile.yml
+    with:
+      profile: production
+      message: Release ${{ needs.version.outputs.version }}
+    secrets:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+  build-water:
+    needs: [test-water, version]
+    uses: ./.github/workflows/_build-esp32.yml
+    with:
+      module: water-module
+      version: ${{ needs.version.outputs.version }}
+
+  build-heater:
+    needs: [test-heater, version]
+    uses: ./.github/workflows/_build-esp32.yml
+    with:
+      module: heater-module
+      version: ${{ needs.version.outputs.version }}
+
+  # =============================================================================
+  # RELEASE JOB - Upload artifacts to GitHub Release
+  # =============================================================================
+
+  release:
+    needs: [version, build-water, build-heater]
+    uses: ./.github/workflows/_publish-release.yml
+    with:
+      version: ${{ needs.version.outputs.version }}

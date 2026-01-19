@@ -1,0 +1,49 @@
+name: Build ESP32 Module
+
+on:
+  workflow_call:
+    inputs:
+      module:
+        description: "Path to the module to build (water-module or heater-module)"
+        required: true
+        type: string
+      version:
+        description: "Version string for artifact naming"
+        required: false
+        type: string
+        default: "dev"
+
+jobs:
+  build:
+    name: Build ${{ inputs.module }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.module }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install platformio
+
+      - name: Build firmware
+        run: pio run -e esp32doit-devkit-v1
+
+      - name: Rename firmware artifact
+        run: |
+          mkdir -p artifacts
+          cp .pio/build/esp32doit-devkit-v1/firmware.bin artifacts/${{ inputs.module }}-v${{ inputs.version }}.bin
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.module }}-firmware
+          path: ${{ inputs.module }}/artifacts/${{ inputs.module }}-v${{ inputs.version }}.bin

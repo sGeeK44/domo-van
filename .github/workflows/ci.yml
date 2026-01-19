@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # =============================================================================
+  # TEST JOBS - Run in parallel
+  # =============================================================================
+
+  test-mobile:
+    uses: ./.github/workflows/_test-mobile.yml
+
+  test-water:
+    uses: ./.github/workflows/_test-esp32.yml
+    with:
+      module: water-module
+
+  test-heater:
+    uses: ./.github/workflows/_test-esp32.yml
+    with:
+      module: heater-module
+
+  # =============================================================================
+  # BUILD JOBS - Validate builds (no publish)
+  # =============================================================================
+
+  build-water:
+    needs: test-water
+    uses: ./.github/workflows/_build-esp32.yml
+    with:
+      module: water-module
+      version: ci
+
+  build-heater:
+    needs: test-heater
+    uses: ./.github/workflows/_build-esp32.yml
+    with:
+      module: heater-module
+      version: ci

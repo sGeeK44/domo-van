@@ -1,0 +1,47 @@
+name: Build Mobile App
+
+on:
+  workflow_call:
+    inputs:
+      profile:
+        description: 'EAS build profile (preview or production)'
+        required: true
+        type: string
+      message:
+        description: 'Build message'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      EXPO_TOKEN:
+        required: true
+
+jobs:
+  build:
+    name: Build Mobile App (${{ inputs.profile }})
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile-app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Android
+        run: eas build --profile ${{ inputs.profile }} --platform android --non-interactive ${{ inputs.message && format('--message "{0}"', inputs.message) || '' }}

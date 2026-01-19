@@ -1,0 +1,35 @@
+name: Publish Release Assets
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Version string for artifact naming"
+        required: true
+        type: string
+
+jobs:
+  publish:
+    name: Upload Release Assets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download water module firmware
+        uses: actions/download-artifact@v4
+        with:
+          name: water-module-firmware
+          path: ./artifacts
+
+      - name: Download heater module firmware
+        uses: actions/download-artifact@v4
+        with:
+          name: heater-module-firmware
+          path: ./artifacts
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./artifacts/water-module-v${{ inputs.version }}.bin
+            ./artifacts/heater-module-v${{ inputs.version }}.bin
