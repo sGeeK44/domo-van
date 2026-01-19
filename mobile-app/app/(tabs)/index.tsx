@@ -1,13 +1,14 @@
-import { StatusBar, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 import { BatteryGauge } from "@/components/home/battery-gauge";
-import { StatusCard } from "@/components/home/status-card";
 import { EnvironmentIndicator } from "@/components/home/environment-indicator";
+import { StatusCard } from "@/components/home/status-card";
 import { Colors } from "@/design-system";
 import { PageHeader } from "@/design-system/molecules/page-header";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { useHeaterDevice, useWaterDevice } from "@/hooks/useModuleDevice";
 import { useMultiModuleConnection } from "@/hooks/useMultiModuleConnection";
+import { useRouter } from "expo-router";
+import { StatusBar, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Mocked data for now - will be connected to actual modules later
 const MOCK_BATTERY = {
@@ -38,6 +39,8 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const { globalStatus, connectAll, disconnectAll } = useMultiModuleConnection();
+  const waterDevice = useWaterDevice();
+  const heaterDevice = useHeaterDevice();
 
   const handleBluetoothPress = () => {
     if (globalStatus === "connected" || globalStatus === "partial") {
@@ -76,15 +79,15 @@ export default function HomeScreen() {
           <View style={styles.cardsRow}>
             <StatusCard
               icon="water-drop"
-              value={`${MOCK_WATER.percentage}%`}
-              backgroundColor={colors.water.clean}
+              value={waterDevice.isConnected ? `${MOCK_WATER.percentage}%` : "-"}
+              backgroundColor={waterDevice.isConnected ? colors.water.clean : colors.neutral["500"]}
               onPress={() => router.push("/water")}
             />
             <StatusCard
               icon="local-fire-department"
-              value="Chauffe"
-              label={`> ${MOCK_HEATER.setpoint}°C`}
-              backgroundColor={colors.heater.warm}
+              value={heaterDevice.isConnected ? "Chauffe" : "-"}
+              label={heaterDevice.isConnected ? `> ${MOCK_HEATER.setpoint}°C` : "-"}
+              backgroundColor={heaterDevice.isConnected ? colors.heater.warm : colors.neutral["500"]}
               onPress={() => router.push("/heater")}
             />
           </View>
@@ -93,17 +96,17 @@ export default function HomeScreen() {
           <View style={styles.indicatorsRow}>
             <EnvironmentIndicator
               icon="home"
-              value={`${MOCK_ENVIRONMENT.interiorTemp}°C`}
+              value={heaterDevice.isConnected ? `${MOCK_ENVIRONMENT.interiorTemp}°C` : "-"}
               label="Intérieur"
             />
             <EnvironmentIndicator
               icon="cloud"
-              value={`${MOCK_ENVIRONMENT.exteriorTemp}°C`}
+              value={heaterDevice.isConnected ? `${MOCK_ENVIRONMENT.exteriorTemp}°C` : "-"}
               label="Extérieur"
             />
             <EnvironmentIndicator
               icon="water-drop"
-              value={`${MOCK_ENVIRONMENT.humidity}%`}
+              value={heaterDevice.isConnected ? `${MOCK_ENVIRONMENT.humidity}%` : "-"}
               label="Humidité"
             />
           </View>
