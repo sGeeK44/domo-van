@@ -8,12 +8,10 @@ export interface DiscoveredBluetoothDevice {
 }
 
 export class Bluetooth {
-  constructor(private readonly BleManager: BleManager) {
-  }
+  constructor(private readonly BleManager: BleManager) {}
 
   private async ensureBlePermissionsAndroid(): Promise<boolean> {
-    if (Platform.OS !== "android")
-      return true;
+    if (Platform.OS !== "android") return true;
 
     const apiLevel =
       typeof Platform.Version === "number" ? Platform.Version : Number.NaN;
@@ -26,14 +24,14 @@ export class Bluetooth {
         ]);
         return (
           res[PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN] ===
-          PermissionsAndroid.RESULTS.GRANTED &&
+            PermissionsAndroid.RESULTS.GRANTED &&
           res[PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT] ===
-          PermissionsAndroid.RESULTS.GRANTED
+            PermissionsAndroid.RESULTS.GRANTED
         );
       }
 
       const res = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
       );
       return res === PermissionsAndroid.RESULTS.GRANTED;
     } catch (e) {
@@ -42,7 +40,10 @@ export class Bluetooth {
     }
   }
 
-  public async startScan(serviceId: string, onDeviceFound: (device: DiscoveredBluetoothDevice) => void): Promise<void> {
+  public async startScan(
+    serviceId: string,
+    onDeviceFound: (device: DiscoveredBluetoothDevice) => void,
+  ): Promise<void> {
     const ok = await this.ensureBlePermissionsAndroid();
     if (!ok) {
       throw new Error("Bluetooth permissions not granted.");
@@ -59,7 +60,7 @@ export class Bluetooth {
         if (!d) return;
 
         onDeviceFound({ id: d.id, name: d.name ?? "NO_NAME" });
-      }
+      },
     );
   }
 
@@ -68,7 +69,10 @@ export class Bluetooth {
   }
 
   public async connect(deviceId: string): Promise<Device> {
-    let device = await this.BleManager.connectToDevice(deviceId, { autoConnect: false, timeout: 10000 });
+    let device = await this.BleManager.connectToDevice(deviceId, {
+      autoConnect: false,
+      timeout: 10000,
+    });
     if (Platform.OS === "android") {
       device = await device.requestMTU(185);
     }

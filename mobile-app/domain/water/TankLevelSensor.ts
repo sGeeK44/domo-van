@@ -1,5 +1,10 @@
 import { Channel } from "@/core/bluetooth/Channel";
-import { createObservable, Listener, Observable, Unsubscribe } from "@/core/observable";
+import {
+  createObservable,
+  Listener,
+  Observable,
+  Unsubscribe,
+} from "@/core/observable";
 
 export type TankConfig = {
   volumeLiters: number;
@@ -39,17 +44,14 @@ export function distanceToPercentage(
 
 export function parseTankConfigMessage(msg: string): TankConfig | null {
   const trimmed = msg.trim();
-  if (!trimmed.startsWith("CFG:"))
-    return null;
+  if (!trimmed.startsWith("CFG:")) return null;
   const vMatch = /V=(\d+)/.exec(trimmed);
   const hMatch = /H=(\d+)/.exec(trimmed);
-  if (!vMatch?.[1] || !hMatch?.[1])
-    return null;
+  if (!vMatch?.[1] || !hMatch?.[1]) return null;
 
   const volumeLiters = Number(vMatch[1]);
   const heightMm = Number(hMatch[1]);
-  if (!Number.isFinite(volumeLiters) || !Number.isFinite(heightMm))
-    return null;
+  if (!Number.isFinite(volumeLiters) || !Number.isFinite(heightMm)) return null;
   return { volumeLiters, heightMm };
 }
 
@@ -76,12 +78,12 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
     return this.channel.send(`CFG:V=${volumeLiters};H=${heightMm}`);
   }
 
-  private readonly state: ReturnType<typeof createObservable<TankLevelSnapshot>>;
+  private readonly state: ReturnType<
+    typeof createObservable<TankLevelSnapshot>
+  >;
   private channelUnsub: Unsubscribe | null = null;
 
-  constructor(
-    private readonly channel: Channel,
-  ) {
+  constructor(private readonly channel: Channel) {
     this.state = createObservable<TankLevelSnapshot>({
       capacityLiters: 0,
       heightMm: 0,
@@ -108,47 +110,45 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
   };
 
   private onMessageReceived = (msg: string) => {
-      const cfg = parseTankConfigMessage(msg);
-      if (cfg)
-      {
-        this.state.update((prev) => {
-          return {
-            ...prev,
-            capacityLiters: cfg.volumeLiters,
-            heightMm: cfg.heightMm,
-            percentage: distanceToPercentage(prev.lastDistanceMm ?? 0, cfg.heightMm),
-          };
-        });
-        return;
-      }
-
-      const distance = parseDistanceMessage(msg);
-      if (distance != null)
-      {
-        this.state.update((prev) => {
-          const percentage = distanceToPercentage(
-                distance,
-                prev.heightMm,
-            );
-          return {
-            ...prev,
-            percentage: percentage,
-            lastDistanceMm: distance,
-          };
-        });
-        return;
-      }
-      if (msg === "OK") {
-        this.state.update((prev) => {
-          return {
-            ...prev,
-            lastMessage: msg,
-          };
-        });
-        return;
-      }
-      console.log("Unknown message:", msg);
+    const cfg = parseTankConfigMessage(msg);
+    if (cfg) {
+      this.state.update((prev) => {
+        return {
+          ...prev,
+          capacityLiters: cfg.volumeLiters,
+          heightMm: cfg.heightMm,
+          percentage: distanceToPercentage(
+            prev.lastDistanceMm ?? 0,
+            cfg.heightMm,
+          ),
+        };
+      });
+      return;
     }
+
+    const distance = parseDistanceMessage(msg);
+    if (distance != null) {
+      this.state.update((prev) => {
+        const percentage = distanceToPercentage(distance, prev.heightMm);
+        return {
+          ...prev,
+          percentage: percentage,
+          lastDistanceMm: distance,
+        };
+      });
+      return;
+    }
+    if (msg === "OK") {
+      this.state.update((prev) => {
+        return {
+          ...prev,
+          lastMessage: msg,
+        };
+      });
+      return;
+    }
+    console.log("Unknown message:", msg);
+  };
 
   dispose = () => {
     this.channelUnsub?.();

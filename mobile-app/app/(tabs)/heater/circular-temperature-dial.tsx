@@ -18,13 +18,20 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import Svg, { Circle, Defs, G, Path, RadialGradient, Stop } from "react-native-svg";
+import Svg, {
+  Circle,
+  Defs,
+  G,
+  Path,
+  RadialGradient,
+  Stop,
+} from "react-native-svg";
 import {
   MAX_TEMP,
   MIN_TEMP,
   TEMP_STEP,
   getTemperatureColor,
-  getTemperatureColorDimmed
+  getTemperatureColorDimmed,
 } from "./temperature-colors";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -47,7 +54,7 @@ export type CircularTemperatureDialProps = {
  * Convert temperature to angle (in degrees, 0 = right, counterclockwise)
  */
 function tempToAngle(temp: number): number {
-  'worklet';
+  "worklet";
   const clampedTemp = Math.max(MIN_TEMP, Math.min(MAX_TEMP, temp));
   const ratio = (clampedTemp - MIN_TEMP) / (MAX_TEMP - MIN_TEMP);
   return ARC_START_ANGLE + ratio * ARC_SWEEP;
@@ -57,7 +64,7 @@ function tempToAngle(temp: number): number {
  * Convert angle to temperature
  */
 function angleToTemp(angle: number): number {
-  'worklet';
+  "worklet";
   // Normalize angle to 0-360 range
   let normalizedAngle = angle % 360;
   if (normalizedAngle < 0) normalizedAngle += 360;
@@ -80,9 +87,9 @@ function polarToCartesian(
   cx: number,
   cy: number,
   radius: number,
-  angleDegrees: number
+  angleDegrees: number,
 ): { x: number; y: number } {
-  'worklet';
+  "worklet";
   const angleRadians = (angleDegrees * Math.PI) / 180;
   return {
     x: cx + radius * Math.cos(angleRadians),
@@ -98,9 +105,9 @@ function describeArc(
   cy: number,
   radius: number,
   startAngle: number,
-  endAngle: number
+  endAngle: number,
 ): string {
-  'worklet';
+  "worklet";
   const start = polarToCartesian(cx, cy, radius, startAngle);
   const end = polarToCartesian(cx, cy, radius, endAngle);
 
@@ -129,7 +136,7 @@ export function CircularTemperatureDial({
   // Precision mode state
   const [precisionMode, setPrecisionMode] = useState(false);
   const precisionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
+    null,
   );
 
   // Animated value for arc
@@ -169,7 +176,7 @@ export function CircularTemperatureDial({
       }
       onSetpointChange(newTemp);
     },
-    [onSetpointChange, triggerHaptic]
+    [onSetpointChange, triggerHaptic],
   );
 
   // Pan gesture for circular drag
@@ -192,7 +199,13 @@ export function CircularTemperatureDial({
   // Background arc path (full arc)
   const bgArcPath =
     radius > 0
-      ? describeArc(cx, cy, radius, ARC_START_ANGLE, ARC_START_ANGLE + ARC_SWEEP)
+      ? describeArc(
+          cx,
+          cy,
+          radius,
+          ARC_START_ANGLE,
+          ARC_START_ANGLE + ARC_SWEEP,
+        )
       : "";
 
   // Animated props for the filled arc
@@ -259,11 +272,7 @@ export function CircularTemperatureDial({
         {size > 0 && (
           <GestureDetector gesture={panGesture}>
             <Animated.View style={styles.svgContainer}>
-              <Svg
-                width={size}
-                height={size}
-                viewBox={`0 0 ${size} ${size}`}
-              >
+              <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
                 <Defs>
                   {/* Gradient for inner circle depth effect */}
                   <RadialGradient

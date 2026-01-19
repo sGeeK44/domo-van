@@ -26,7 +26,7 @@ function useObservable<T>(obs: Observable<T> | null): T | null {
   return useSyncExternalStore(
     obs?.subscribe ?? (() => () => {}),
     obs?.getValue ?? (() => null),
-    obs?.getValue ?? (() => null)
+    obs?.getValue ?? (() => null),
   );
 }
 
@@ -57,7 +57,7 @@ export default function WaterScreen() {
   useFocusEffect(
     useCallback(() => {
       void switchToModule("water", bluetooth);
-    }, [bluetooth, switchToModule])
+    }, [bluetooth, switchToModule]),
   );
 
   const isLoading = isConnecting || isSwitching;
@@ -65,7 +65,7 @@ export default function WaterScreen() {
   // Create WaterSystem when device is connected
   const waterSystem = useMemo(
     () => (device ? new WaterSystem(device) : null),
-    [device]
+    [device],
   );
 
   // Cleanup WaterSystem on unmount or device change

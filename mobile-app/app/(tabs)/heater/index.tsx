@@ -11,12 +11,12 @@ import { useHeaterDevice } from "@/hooks/useModuleDevice";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import {
-    ActivityIndicator,
-    Pressable,
-    StatusBar,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -25,7 +25,7 @@ function useObservable<T>(obs: Observable<T> | null): T | null {
   return useSyncExternalStore(
     obs?.subscribe ?? (() => () => {}),
     obs?.getValue ?? (() => null),
-    obs?.getValue ?? (() => null)
+    obs?.getValue ?? (() => null),
   );
 }
 
@@ -52,7 +52,7 @@ export default function HeaterScreen() {
   useFocusEffect(
     useCallback(() => {
       void switchToModule("heater", bluetooth);
-    }, [bluetooth, switchToModule])
+    }, [bluetooth, switchToModule]),
   );
 
   const isLoading = isConnecting || isSwitching;
@@ -60,7 +60,7 @@ export default function HeaterScreen() {
   // Create HeaterSystem when device is connected
   const heaterSystem = useMemo(
     () => (device ? new HeaterSystem(device) : null),
-    [device]
+    [device],
   );
 
   // Cleanup HeaterSystem on unmount or device change
@@ -87,7 +87,7 @@ export default function HeaterScreen() {
     (zoneIndex: number, newSetpoint: number) => {
       heaterSystem?.zones[zoneIndex]?.setSetpoint(newSetpoint);
     },
-    [heaterSystem]
+    [heaterSystem],
   );
 
   // Handlers for toggle
@@ -103,7 +103,7 @@ export default function HeaterScreen() {
         void zone.start();
       }
     },
-    [heaterSystem]
+    [heaterSystem],
   );
 
   return (

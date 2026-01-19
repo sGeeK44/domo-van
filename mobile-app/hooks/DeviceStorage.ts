@@ -18,7 +18,9 @@ function getStorageKey(moduleKey: ModuleKey): string {
  * Extracted for testability.
  */
 export const DeviceStorage = {
-  async getLastDevice(moduleKey: ModuleKey = "water"): Promise<DeviceInfo | null> {
+  async getLastDevice(
+    moduleKey: ModuleKey = "water",
+  ): Promise<DeviceInfo | null> {
     const json = await SecureStore.getItemAsync(getStorageKey(moduleKey));
     if (!json) return null;
     try {
@@ -28,8 +30,14 @@ export const DeviceStorage = {
     }
   },
 
-  async setLastDevice(device: DeviceInfo, moduleKey: ModuleKey = "water"): Promise<void> {
-    await SecureStore.setItemAsync(getStorageKey(moduleKey), JSON.stringify(device));
+  async setLastDevice(
+    device: DeviceInfo,
+    moduleKey: ModuleKey = "water",
+  ): Promise<void> {
+    await SecureStore.setItemAsync(
+      getStorageKey(moduleKey),
+      JSON.stringify(device),
+    );
   },
 
   async clearLastDevice(moduleKey: ModuleKey = "water"): Promise<void> {

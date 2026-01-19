@@ -2,7 +2,6 @@ export type Unsubscribe = () => void;
 
 export type Listener<T> = (value: T) => void;
 
-
 export type Observable<T> = {
   getValue: () => T;
   subscribe: (listener: Listener<T>) => Unsubscribe;

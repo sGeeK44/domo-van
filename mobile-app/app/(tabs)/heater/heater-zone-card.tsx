@@ -38,8 +38,8 @@ export function HeaterZoneCard({
   const tempDiff = temperatureCelsius - setpointCelsius;
   const tempColor =
     tempDiff >= 0
-      ? colors.heater?.warm ?? "#FF6B35"
-      : colors.heater?.cold ?? "#42A5F5";
+      ? (colors.heater?.warm ?? "#FF6B35")
+      : (colors.heater?.cold ?? "#42A5F5");
 
   return (
     <Card title={name} subtitle={isRunning ? "Actif" : "Arrêté"}>

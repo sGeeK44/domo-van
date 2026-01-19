@@ -59,9 +59,7 @@
       [
         "react-native-ble-plx",
         {
-          "modes": [
-            "central"
-          ],
+          "modes": ["central"],
           "bluetoothAlwaysPermission": "Autoriser domo-van à se connecter au module de gestion des eaux via Bluetooth."
         }
       ],

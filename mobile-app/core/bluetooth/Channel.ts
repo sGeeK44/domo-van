@@ -16,7 +16,11 @@ export class BlePlxChannel implements Channel {
   private readonly rxUuid: string;
   private buffer = "";
 
-  constructor(private readonly device: Device, serviceId: string, channelId: string) {
+  constructor(
+    private readonly device: Device,
+    serviceId: string,
+    channelId: string,
+  ) {
     this.serviceUuid = buildServiceUuid(serviceId);
     this.txUuid = buildTxUuid(serviceId, channelId);
     this.rxUuid = buildRxUuid(serviceId, channelId);
@@ -28,7 +32,7 @@ export class BlePlxChannel implements Channel {
     const sub = this.device.monitorCharacteristicForService(
       this.serviceUuid,
       this.txUuid,
-      this.onMessage
+      this.onMessage,
     );
     return () => {
       this.listener = null;
@@ -42,7 +46,10 @@ export class BlePlxChannel implements Channel {
     };
   }
 
-  private onMessage = (error: BleError | null, characteristic: Characteristic | null) => {
+  private onMessage = (
+    error: BleError | null,
+    characteristic: Characteristic | null,
+  ) => {
     const value = characteristic?.value;
     if (!value) return;
     let decoded: string;
@@ -77,7 +84,7 @@ export class BlePlxChannel implements Channel {
     await this.device.writeCharacteristicWithResponseForService(
       this.serviceUuid,
       this.rxUuid,
-      payload
+      payload,
     );
   }
 

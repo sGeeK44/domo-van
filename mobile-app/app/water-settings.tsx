@@ -43,7 +43,7 @@ export default function WaterSettingsScreen() {
   // Create WaterSystem when device is connected (for AdminSection)
   const waterSystem = useMemo(
     () => (device ? new WaterSystem(device) : null),
-    [device]
+    [device],
   );
 
   // Cleanup WaterSystem on unmount or device change
@@ -109,7 +109,7 @@ export default function WaterSettingsScreen() {
         setLastError(e instanceof Error ? e.message : "Connection failed");
       }
     },
-    [bluetooth, setDevice, stopScan]
+    [bluetooth, setDevice, stopScan],
   );
 
   // Disconnect

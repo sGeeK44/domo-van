@@ -1,5 +1,10 @@
 import { Channel } from "@/core/bluetooth/Channel";
-import { createObservable, Listener, Observable, Unsubscribe } from "@/core/observable";
+import {
+  createObservable,
+  Listener,
+  Observable,
+  Unsubscribe,
+} from "@/core/observable";
 
 export type ValvePosition = "open" | "closed" | "unknown";
 

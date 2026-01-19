@@ -80,7 +80,7 @@ export function AdminSection({ styles, connectedDevice }: Props) {
               await waterSystem.admin.setName(adminName.trim());
             } catch (e) {
               showToast(
-                e instanceof Error ? e.message : "Erreur lors de l'envoi."
+                e instanceof Error ? e.message : "Erreur lors de l'envoi.",
               );
             } finally {
               setSending(false);
@@ -118,7 +118,7 @@ export function AdminSection({ styles, connectedDevice }: Props) {
               await waterSystem.admin.setPin(adminPin);
             } catch (e) {
               showToast(
-                e instanceof Error ? e.message : "Erreur lors de l'envoi."
+                e instanceof Error ? e.message : "Erreur lors de l'envoi.",
               );
             } finally {
               setSending(false);

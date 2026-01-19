@@ -44,7 +44,7 @@ export default function HeaterSettingsScreen() {
   // Create HeaterSystem when device is connected
   const heaterSystem = useMemo(
     () => (device ? new HeaterSystem(device) : null),
-    [device]
+    [device],
   );
 
   // Cleanup HeaterSystem on unmount or device change
@@ -110,7 +110,7 @@ export default function HeaterSettingsScreen() {
         setLastError(e instanceof Error ? e.message : "Connection failed");
       }
     },
-    [bluetooth, setDevice, stopScan]
+    [bluetooth, setDevice, stopScan],
   );
 
   // Disconnect

@@ -28,12 +28,9 @@ export function ValveSettingsSection({ styles, connectedDevice }: Props) {
   const [autoCloseSeconds, setAutoCloseSeconds] = useState("");
   const waterSystem = useMemo(
     () => new WaterSystem(connectedDevice),
-    [connectedDevice]
+    [connectedDevice],
   );
-  const drainValve = useMemo(
-    () => waterSystem.greyDrainValve,
-    [waterSystem]
-  );
+  const drainValve = useMemo(() => waterSystem.greyDrainValve, [waterSystem]);
 
   const requestConfig = useMemo(() => {
     return async () => {
@@ -73,7 +70,11 @@ export function ValveSettingsSection({ styles, connectedDevice }: Props) {
             style={styles.refreshButton}
             hitSlop={8}
           >
-            <IconSymbol name="refresh" size={18} color="rgba(255,255,255,0.7)" />
+            <IconSymbol
+              name="refresh"
+              size={18}
+              color="rgba(255,255,255,0.7)"
+            />
           </Pressable>
         </View>
 
@@ -95,10 +96,12 @@ export function ValveSettingsSection({ styles, connectedDevice }: Props) {
             }
             showToast("Envoi configuration…");
             try {
-              await drainValve.setAutoCloseTime(Number(autoCloseSeconds.trim()));
+              await drainValve.setAutoCloseTime(
+                Number(autoCloseSeconds.trim()),
+              );
             } catch (e) {
               showToast(
-                e instanceof Error ? e.message : "Erreur lors de l'envoi."
+                e instanceof Error ? e.message : "Erreur lors de l'envoi.",
               );
             }
           }}

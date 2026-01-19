@@ -1,5 +1,9 @@
 import type { Bluetooth } from "@/core/bluetooth/Bluetooth";
-import { DeviceStorage, type DeviceInfo, type ModuleKey } from "@/hooks/DeviceStorage";
+import {
+  DeviceStorage,
+  type DeviceInfo,
+  type ModuleKey,
+} from "@/hooks/DeviceStorage";
 import React, {
   createContext,
   useCallback,
@@ -26,7 +30,9 @@ type ModuleDeviceProviderProps = PropsWithChildren<{
   defaultDeviceName: string;
 }>;
 
-const ModuleDeviceContext = createContext<ModuleDeviceContextValue | null>(null);
+const ModuleDeviceContext = createContext<ModuleDeviceContextValue | null>(
+  null,
+);
 
 /**
  * Generic provider for managing a BLE device connection for a specific module.
@@ -63,7 +69,7 @@ export function ModuleDeviceProvider({
         void DeviceStorage.setLastDevice(deviceInfo, moduleKey);
       }
     },
-    [moduleKey, defaultDeviceName]
+    [moduleKey, defaultDeviceName],
   );
 
   // Listen for disconnection
@@ -99,7 +105,7 @@ export function ModuleDeviceProvider({
         setIsConnecting(false);
       }
     },
-    [lastDevice, device, isConnecting, setDevice]
+    [lastDevice, device, isConnecting, setDevice],
   );
 
   // Disconnect without forgetting the device
@@ -154,7 +160,7 @@ export function useModuleDevice(): ModuleDeviceContextValue {
   const ctx = useContext(ModuleDeviceContext);
   if (!ctx) {
     throw new Error(
-      "useModuleDevice must be used within a ModuleDeviceProvider"
+      "useModuleDevice must be used within a ModuleDeviceProvider",
     );
   }
   return ctx;
@@ -184,7 +190,9 @@ export function HeaterDeviceProvider({ children }: PropsWithChildren) {
 
 // Create separate contexts for type-safe module-specific hooks
 const WaterDeviceContext = createContext<ModuleDeviceContextValue | null>(null);
-const HeaterDeviceContext = createContext<ModuleDeviceContextValue | null>(null);
+const HeaterDeviceContext = createContext<ModuleDeviceContextValue | null>(
+  null,
+);
 
 /** Specialized water device provider with its own context */
 export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
@@ -230,7 +238,7 @@ export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
         setIsConnecting(false);
       }
     },
-    [lastDevice, device, isConnecting, setDevice]
+    [lastDevice, device, isConnecting, setDevice],
   );
 
   // Disconnect without forgetting the device
@@ -318,7 +326,7 @@ export function HeaterDeviceProviderV2({ children }: PropsWithChildren) {
         setIsConnecting(false);
       }
     },
-    [lastDevice, device, isConnecting, setDevice]
+    [lastDevice, device, isConnecting, setDevice],
   );
 
   // Disconnect without forgetting the device
@@ -366,7 +374,9 @@ export function HeaterDeviceProviderV2({ children }: PropsWithChildren) {
 export function useWaterDevice(): ModuleDeviceContextValue {
   const ctx = useContext(WaterDeviceContext);
   if (!ctx) {
-    throw new Error("useWaterDevice must be used within a WaterDeviceProviderV2");
+    throw new Error(
+      "useWaterDevice must be used within a WaterDeviceProviderV2",
+    );
   }
   return ctx;
 }
@@ -375,7 +385,9 @@ export function useWaterDevice(): ModuleDeviceContextValue {
 export function useHeaterDevice(): ModuleDeviceContextValue {
   const ctx = useContext(HeaterDeviceContext);
   if (!ctx) {
-    throw new Error("useHeaterDevice must be used within a HeaterDeviceProviderV2");
+    throw new Error(
+      "useHeaterDevice must be used within a HeaterDeviceProviderV2",
+    );
   }
   return ctx;
 }

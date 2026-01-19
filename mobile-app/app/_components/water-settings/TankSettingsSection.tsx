@@ -29,11 +29,11 @@ export function TankSettingsSection({ styles, connectedDevice, name }: Props) {
   const [heightMm, setHeightMm] = useState("");
   const waterSystem = useMemo(
     () => new WaterSystem(connectedDevice),
-    [connectedDevice]
+    [connectedDevice],
   );
   const tankSettings = useMemo(
     () => waterSystem.getTankSettings(name),
-    [waterSystem, name]
+    [waterSystem, name],
   );
 
   const requestAllCfg = useMemo(() => {
@@ -76,7 +76,11 @@ export function TankSettingsSection({ styles, connectedDevice, name }: Props) {
             style={styles.refreshButton}
             hitSlop={8}
           >
-            <IconSymbol name="refresh" size={18} color="rgba(255,255,255,0.7)" />
+            <IconSymbol
+              name="refresh"
+              size={18}
+              color="rgba(255,255,255,0.7)"
+            />
           </Pressable>
         </View>
 
@@ -110,11 +114,11 @@ export function TankSettingsSection({ styles, connectedDevice, name }: Props) {
             try {
               await tankSettings.setConfig(
                 volumeLiters.trim(),
-                heightMm.trim()
+                heightMm.trim(),
               );
             } catch (e) {
               showToast(
-                e instanceof Error ? e.message : "Erreur lors de l'envoi."
+                e instanceof Error ? e.message : "Erreur lors de l'envoi.",
               );
             }
           }}

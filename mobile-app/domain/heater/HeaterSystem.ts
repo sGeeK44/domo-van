@@ -3,7 +3,12 @@ import { AdminModule } from "@/domain/AdminModule";
 import { HeaterZone } from "@/domain/heater/HeaterZone";
 import { Device } from "react-native-ble-plx";
 
-export type HeaterModuleChannel = "admin" | "heater_0" | "heater_1" | "heater_2" | "heater_3";
+export type HeaterModuleChannel =
+  | "admin"
+  | "heater_0"
+  | "heater_1"
+  | "heater_2"
+  | "heater_3";
 
 export class HeaterSystem {
   readonly admin: AdminModule;
@@ -21,25 +26,41 @@ export class HeaterSystem {
 
   constructor(bluetooth: Device) {
     this.admin = new AdminModule(
-      new BlePlxChannel(bluetooth, HeaterSystem.serviceId, this.channels.admin)
+      new BlePlxChannel(bluetooth, HeaterSystem.serviceId, this.channels.admin),
     );
 
     this.zones = [
       new HeaterZone(
-        new BlePlxChannel(bluetooth, HeaterSystem.serviceId, this.channels.heater_0),
-        0
+        new BlePlxChannel(
+          bluetooth,
+          HeaterSystem.serviceId,
+          this.channels.heater_0,
+        ),
+        0,
       ),
       new HeaterZone(
-        new BlePlxChannel(bluetooth, HeaterSystem.serviceId, this.channels.heater_1),
-        1
+        new BlePlxChannel(
+          bluetooth,
+          HeaterSystem.serviceId,
+          this.channels.heater_1,
+        ),
+        1,
       ),
       new HeaterZone(
-        new BlePlxChannel(bluetooth, HeaterSystem.serviceId, this.channels.heater_2),
-        2
+        new BlePlxChannel(
+          bluetooth,
+          HeaterSystem.serviceId,
+          this.channels.heater_2,
+        ),
+        2,
       ),
       new HeaterZone(
-        new BlePlxChannel(bluetooth, HeaterSystem.serviceId, this.channels.heater_3),
-        3
+        new BlePlxChannel(
+          bluetooth,
+          HeaterSystem.serviceId,
+          this.channels.heater_3,
+        ),
+        3,
       ),
     ] as const;
   }

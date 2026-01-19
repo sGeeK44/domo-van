@@ -1,18 +1,23 @@
 import { Channel } from "@/core/bluetooth/Channel";
-import { createObservable, Listener, Observable, Unsubscribe } from "@/core/observable";
+import {
+  createObservable,
+  Listener,
+  Observable,
+  Unsubscribe,
+} from "@/core/observable";
 
 export type HeaterZoneSnapshot = {
-  temperatureCelsius: number;      // Current temperature (e.g., 22.5)
-  setpointCelsius: number;         // Target temperature (e.g., 25.0)
-  isRunning: boolean;              // Regulator active
-  pidConfig: PidConfig | null;     // PID configuration
-  lastMessage: string | null;      // Last feedback message
+  temperatureCelsius: number; // Current temperature (e.g., 22.5)
+  setpointCelsius: number; // Target temperature (e.g., 25.0)
+  isRunning: boolean; // Regulator active
+  pidConfig: PidConfig | null; // PID configuration
+  lastMessage: string | null; // Last feedback message
 };
 
 export type PidConfig = {
-  kp: number;  // Proportional gain (real value, e.g., 10.0)
-  ki: number;  // Integral gain (real value, e.g., 0.1)
-  kd: number;  // Derivative gain (real value, e.g., 0.5)
+  kp: number; // Proportional gain (real value, e.g., 10.0)
+  ki: number; // Integral gain (real value, e.g., 0.1)
+  kd: number; // Derivative gain (real value, e.g., 0.5)
 };
 
 /**
@@ -94,7 +99,11 @@ export function parsePidConfigMessage(msg: string): PidConfig | null {
   const kiRaw = Number(kiMatch[1]);
   const kdRaw = Number(kdMatch[1]);
 
-  if (!Number.isFinite(kpRaw) || !Number.isFinite(kiRaw) || !Number.isFinite(kdRaw)) {
+  if (
+    !Number.isFinite(kpRaw) ||
+    !Number.isFinite(kiRaw) ||
+    !Number.isFinite(kdRaw)
+  ) {
     return null;
   }
 

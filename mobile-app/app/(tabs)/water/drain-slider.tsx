@@ -72,7 +72,7 @@ export function DrainSlider({
     .onUpdate((event) => {
       translateX.value = Math.min(
         Math.max(0, contextX.value + event.translationX),
-        maxTranslate
+        maxTranslate,
       );
     })
     .onEnd(() => {
@@ -93,7 +93,7 @@ export function DrainSlider({
       translateX.value,
       [0, maxTranslate],
       [HANDLE_SIZE, containerWidth - 8],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     return { width };
   });

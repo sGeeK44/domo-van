@@ -15,7 +15,9 @@ export type ActiveModuleContextValue = {
   switchToModule: (moduleKey: ModuleKey, bluetooth: Bluetooth) => Promise<void>;
 };
 
-const ActiveModuleContext = createContext<ActiveModuleContextValue | null>(null);
+const ActiveModuleContext = createContext<ActiveModuleContextValue | null>(
+  null,
+);
 
 /**
  * Provider that manages the active BLE module.
@@ -33,9 +35,17 @@ export function ActiveModuleProvider({ children }: PropsWithChildren) {
     async (moduleKey: ModuleKey, bluetooth: Bluetooth) => {
       // Already on the requested module, just ensure connection
       if (activeModule === moduleKey) {
-        if (moduleKey === "water" && !waterDevice.isConnected && !waterDevice.isConnecting) {
+        if (
+          moduleKey === "water" &&
+          !waterDevice.isConnected &&
+          !waterDevice.isConnecting
+        ) {
           await waterDevice.autoConnect(bluetooth);
-        } else if (moduleKey === "heater" && !heaterDevice.isConnected && !heaterDevice.isConnecting) {
+        } else if (
+          moduleKey === "heater" &&
+          !heaterDevice.isConnected &&
+          !heaterDevice.isConnecting
+        ) {
           await heaterDevice.autoConnect(bluetooth);
         }
         return;
@@ -64,7 +74,7 @@ export function ActiveModuleProvider({ children }: PropsWithChildren) {
         setIsSwitching(false);
       }
     },
-    [activeModule, waterDevice, heaterDevice]
+    [activeModule, waterDevice, heaterDevice],
   );
 
   const value: ActiveModuleContextValue = {
@@ -87,7 +97,9 @@ export function ActiveModuleProvider({ children }: PropsWithChildren) {
 export function useActiveModule(): ActiveModuleContextValue {
   const ctx = useContext(ActiveModuleContext);
   if (!ctx) {
-    throw new Error("useActiveModule must be used within an ActiveModuleProvider");
+    throw new Error(
+      "useActiveModule must be used within an ActiveModuleProvider",
+    );
   }
   return ctx;
 }

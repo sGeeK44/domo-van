@@ -4,7 +4,11 @@ import { TankLevelSensor } from "@/domain/water/TankLevelSensor";
 import { Device } from "react-native-ble-plx";
 import { AdminModule } from "../AdminModule";
 
-export type WaterModuleChannel = "admin" | "cleanTank" | "greyTank" | "greyValve";
+export type WaterModuleChannel =
+  | "admin"
+  | "cleanTank"
+  | "greyTank"
+  | "greyValve";
 
 export class WaterSystem {
   readonly admin: AdminModule;
@@ -20,10 +24,30 @@ export class WaterSystem {
   };
 
   constructor(bluetooth: Device) {
-    this.admin = new AdminModule(new BlePlxChannel(bluetooth, WaterSystem.serviceId, this.channels.admin));
-    this.cleanTank = new TankLevelSensor(new BlePlxChannel(bluetooth, WaterSystem.serviceId, this.channels.cleanTank));
-    this.greyTank = new TankLevelSensor(new BlePlxChannel(bluetooth, WaterSystem.serviceId, this.channels.greyTank));
-    this.greyDrainValve = new DrainValve(new BlePlxChannel(bluetooth, WaterSystem.serviceId, this.channels.greyValve));
+    this.admin = new AdminModule(
+      new BlePlxChannel(bluetooth, WaterSystem.serviceId, this.channels.admin),
+    );
+    this.cleanTank = new TankLevelSensor(
+      new BlePlxChannel(
+        bluetooth,
+        WaterSystem.serviceId,
+        this.channels.cleanTank,
+      ),
+    );
+    this.greyTank = new TankLevelSensor(
+      new BlePlxChannel(
+        bluetooth,
+        WaterSystem.serviceId,
+        this.channels.greyTank,
+      ),
+    );
+    this.greyDrainValve = new DrainValve(
+      new BlePlxChannel(
+        bluetooth,
+        WaterSystem.serviceId,
+        this.channels.greyValve,
+      ),
+    );
   }
 
   getTankSettings(name: string) {

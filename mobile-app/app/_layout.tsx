@@ -10,7 +10,10 @@ import "react-native-reanimated";
 
 import { BleProvider } from "@/components/BleProvider";
 import { ActiveModuleProvider } from "@/hooks/useActiveModule";
-import { HeaterDeviceProviderV2, WaterDeviceProviderV2 } from "@/hooks/useModuleDevice";
+import {
+  HeaterDeviceProviderV2,
+  WaterDeviceProviderV2,
+} from "@/hooks/useModuleDevice";
 import { useColorScheme } from "react-native";
 
 export const unstable_settings = {
@@ -28,7 +31,10 @@ export default function RootLayout() {
             <HeaterDeviceProviderV2>
               <ActiveModuleProvider>
                 <Stack>
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{ headerShown: false }}
+                  />
                   <Stack.Screen
                     name="water-settings"
                     options={{ headerShown: false }}

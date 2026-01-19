@@ -5,10 +5,10 @@
 
 // Color stops for temperature gradient
 const COLOR_STOPS = [
-  { temp: 14, color: { r: 66, g: 165, b: 245 } },   // Blue #42A5F5
-  { temp: 19, color: { r: 255, g: 152, b: 0 } },    // Orange soft #FF9800
-  { temp: 21, color: { r: 245, g: 124, b: 0 } },    // Orange dark #F57C00
-  { temp: 25, color: { r: 229, g: 57, b: 53 } },    // Red vif #E53935
+  { temp: 14, color: { r: 66, g: 165, b: 245 } }, // Blue #42A5F5
+  { temp: 19, color: { r: 255, g: 152, b: 0 } }, // Orange soft #FF9800
+  { temp: 21, color: { r: 245, g: 124, b: 0 } }, // Orange dark #F57C00
+  { temp: 25, color: { r: 229, g: 57, b: 53 } }, // Red vif #E53935
 ] as const;
 
 // Gray color for OFF state
@@ -27,7 +27,7 @@ function lerp(a: number, b: number, t: number): number {
 function lerpColor(
   c1: { r: number; g: number; b: number },
   c2: { r: number; g: number; b: number },
-  t: number
+  t: number,
 ): { r: number; g: number; b: number } {
   return {
     r: Math.round(lerp(c1.r, c2.r, t)),
@@ -54,7 +54,7 @@ function rgbToHex(color: { r: number; g: number; b: number }): string {
  */
 export function getTemperatureColor(
   setpoint: number,
-  isRunning: boolean = true
+  isRunning: boolean = true,
 ): string {
   if (!isRunning) {
     return OFF_COLOR;
@@ -89,7 +89,7 @@ export function getTemperatureColor(
  */
 export function getTemperatureColorDimmed(
   setpoint: number,
-  isRunning: boolean = true
+  isRunning: boolean = true,
 ): string {
   if (!isRunning) {
     return "#333333";

@@ -36,8 +36,7 @@ export function HeaterPidSection({ styles, heaterZone, zoneName }: Props) {
     try {
       await heaterZone.getPidConfig();
     } catch (e) {
-      const msg =
-        e instanceof Error ? e.message : "Erreur lors de la lecture.";
+      const msg = e instanceof Error ? e.message : "Erreur lors de la lecture.";
       showToast(msg);
     }
   };
@@ -98,7 +97,11 @@ export function HeaterPidSection({ styles, heaterZone, zoneName }: Props) {
             style={styles.refreshButton}
             hitSlop={8}
           >
-            <IconSymbol name="refresh" size={18} color="rgba(255,255,255,0.7)" />
+            <IconSymbol
+              name="refresh"
+              size={18}
+              color="rgba(255,255,255,0.7)"
+            />
           </Pressable>
         </View>
 
