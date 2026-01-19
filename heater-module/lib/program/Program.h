@@ -1,6 +1,8 @@
 #pragma once
 #include "BleManager.h"
+#include "Bme280Sensor.h"
 #include "DS18B20TemperatureSensor.h"
+#include "EnvironmentListner.h"
 #include "HeaterListner.h"
 #include "Logger.h"
 #include "PwmFan.h"
@@ -24,4 +26,8 @@ private:
   PwmFan *_fans[4] = {nullptr};
   TemperatureRegulator *_regulators[4] = {nullptr};
   HeaterListner *_heaterListners[4] = {nullptr};
+
+  Bme280Sensor *_bme280 = nullptr;
+  DS18B20TemperatureSensor *_exteriorSensor = nullptr;
+  EnvironmentListner *_environmentListner = nullptr;
 };

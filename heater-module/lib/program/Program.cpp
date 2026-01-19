@@ -11,7 +11,13 @@
 static constexpr uint8_t SENSOR_PINS[4] = {4, 5, 13, 15};
 static constexpr uint8_t FAN_PINS[4] = {16, 17, 18, 19};
 
-// BLE channel IDs for heater channels (admin=0001, heaters=0002-0005)
+// BME280 I2C address (0x76 or 0x77 depending on SDO pin)
+static constexpr uint8_t BME280_ADDRESS = 0x76;
+
+// Exterior temperature sensor (DS18B20) pin
+static constexpr uint8_t EXTERIOR_SENSOR_PIN = 25;
+
+// BLE channel IDs for heater channels (admin=0001, heaters=0002-0005, environment=0006)
 static const char *HEATER_NAMES[4] = {"heater_0", "heater_1", "heater_2", "heater_3"};
 static const char *HEATER_CHANNEL_IDS[4] = {"0002", "0003", "0004", "0005"};
 
@@ -33,6 +39,18 @@ void Program::setup(Stream &serial) {
   }
   _logger->info("Temperature regulators initialized with BLE channels");
 
+  // Initialize BME280 environment sensor (interior)
+  _bme280 = new Bme280Sensor(_logger, BME280_ADDRESS);
+  _bme280->begin();
+
+  // Initialize exterior temperature sensor (DS18B20)
+  _exteriorSensor = new DS18B20TemperatureSensor(EXTERIOR_SENSOR_PIN, _logger);
+  _exteriorSensor->begin();
+
+  _environmentListner = new EnvironmentListner("environment", "0006", _bme280, _exteriorSensor);
+  _bleManager->addChannel(_environmentListner);
+  _logger->info("Environment sensors initialized (BME280 + DS18B20 exterior)");
+
   _bleManager->start();
 
   _startAt = millis();
@@ -46,6 +64,10 @@ void Program::loop() {
       _regulators[i]->update();
       _heaterListners[i]->notify();
     }
+
+    // Send environment data notification
+    _environmentListner->notify();
+
     delay(110);
     return;
   }

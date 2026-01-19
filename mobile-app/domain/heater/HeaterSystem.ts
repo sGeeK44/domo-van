@@ -1,18 +1,21 @@
-import { Device } from "react-native-ble-plx";
 import { BlePlxChannel } from "@/core/bluetooth/Channel";
 import { AdminModule } from "@/domain/AdminModule";
+import { EnvironmentData } from "@/domain/heater/EnvironmentData";
 import { HeaterZone } from "@/domain/heater/HeaterZone";
+import { Device } from "react-native-ble-plx";
 
 export type HeaterModuleChannel =
   | "admin"
   | "heater_0"
   | "heater_1"
   | "heater_2"
-  | "heater_3";
+  | "heater_3"
+  | "environment";
 
 export class HeaterSystem {
   readonly admin: AdminModule;
   readonly zones: readonly [HeaterZone, HeaterZone, HeaterZone, HeaterZone];
+  readonly environment: EnvironmentData;
 
   public static readonly serviceId: string = "0002";
 
@@ -22,6 +25,7 @@ export class HeaterSystem {
     heater_1: "0003",
     heater_2: "0004",
     heater_3: "0005",
+    environment: "0006",
   };
 
   constructor(bluetooth: Device) {
@@ -63,6 +67,14 @@ export class HeaterSystem {
         3,
       ),
     ] as const;
+
+    this.environment = new EnvironmentData(
+      new BlePlxChannel(
+        bluetooth,
+        HeaterSystem.serviceId,
+        this.channels.environment,
+      ),
+    );
   }
 
   getZone(index: number): HeaterZone {
@@ -77,5 +89,6 @@ export class HeaterSystem {
     for (const zone of this.zones) {
       zone.dispose();
     }
+    this.environment.dispose();
   };
 }

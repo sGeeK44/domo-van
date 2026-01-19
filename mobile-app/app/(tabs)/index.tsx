@@ -1,5 +1,5 @@
 import { BatteryGauge } from "@/components/home/battery-gauge";
-import { EnvironmentIndicator } from "@/components/home/environment-indicator";
+import { EnvironmentCard } from "@/components/home/environment-card";
 import { StatusCard } from "@/components/home/status-card";
 import { Colors } from "@/design-system";
 import { PageHeader } from "@/design-system/molecules/page-header";
@@ -9,6 +9,8 @@ import {
   DEFAULT_BATTERY_SNAPSHOT,
   formatRemainingTime
 } from "@/domain/battery/BatteryTelemetry";
+import { EnvironmentSnapshot } from "@/domain/heater/EnvironmentData";
+import { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import {
   useBatteryDevice,
@@ -31,10 +33,12 @@ const MOCK_HEATER = {
   setpoint: 20,
 };
 
-const MOCK_ENVIRONMENT = {
-  interiorTemp: 19,
-  exteriorTemp: 12,
-  humidity: 45,
+const DEFAULT_ENVIRONMENT: EnvironmentSnapshot = {
+  temperatureCelsius: 0,
+  exteriorTemperatureCelsius: 0,
+  humidity: 0,
+  pressureHPa: 1013.25,
+  lastMessage: null,
 };
 
 /**
@@ -74,6 +78,12 @@ export default function HomeScreen() {
     [batteryDevice.device],
   );
 
+  // Create HeaterSystem when device is connected (for environment data)
+  const heaterSystem = useMemo(
+    () => (heaterDevice.device ? new HeaterSystem(heaterDevice.device) : null),
+    [heaterDevice.device],
+  );
+
   // Cleanup BatterySystem on unmount or device change
   useEffect(() => {
     return () => {
@@ -81,8 +91,18 @@ export default function HomeScreen() {
     };
   }, [batterySystem]);
 
+  // Cleanup HeaterSystem on unmount or device change
+  useEffect(() => {
+    return () => {
+      heaterSystem?.dispose();
+    };
+  }, [heaterSystem]);
+
   // Subscribe to battery data
   const battery = useObservable(batterySystem, DEFAULT_BATTERY_SNAPSHOT);
+
+  // Subscribe to environment data
+  const environment = useObservable(heaterSystem?.environment ?? null, DEFAULT_ENVIRONMENT);
 
   // Calculate remaining time based on current flow
   const remainingTime = useMemo(() => {
@@ -151,24 +171,26 @@ export default function HomeScreen() {
             />
           </View>
 
-          {/* Environment Indicators Row */}
-          <View style={styles.indicatorsRow}>
-            <EnvironmentIndicator
-              icon="home"
-              value={heaterDevice.isConnected ? `${MOCK_ENVIRONMENT.interiorTemp}°C` : "-"}
-              label="Intérieur"
-            />
-            <EnvironmentIndicator
-              icon="cloud"
-              value={heaterDevice.isConnected ? `${MOCK_ENVIRONMENT.exteriorTemp}°C` : "-"}
-              label="Extérieur"
-            />
-            <EnvironmentIndicator
-              icon="water-drop"
-              value={heaterDevice.isConnected ? `${MOCK_ENVIRONMENT.humidity}%` : "-"}
-              label="Humidité"
-            />
-          </View>
+          {/* Environment Card - Quadrant Layout */}
+          <EnvironmentCard
+            topLeft={{
+              icon: "home",
+              value: heaterDevice.isConnected ? `${environment.temperatureCelsius.toFixed(1)}°C` : "-",
+            }}
+            topRight={{
+              icon: "water-drop",
+              value: heaterDevice.isConnected ? `${environment.humidity.toFixed(0)}%` : "-",
+            }}
+            bottomLeft={{
+              icon: "park",
+              value: heaterDevice.isConnected ? `${environment.exteriorTemperatureCelsius.toFixed(1)}°C` : "-",
+            }}
+            bottomRight={{
+              icon: "speed",
+              value: heaterDevice.isConnected ? `${environment.pressureHPa.toFixed(0)} hPa` : "-",
+            }}
+            backgroundColor={colors.background.secondary}
+          />
         </View>
       </SafeAreaView>
     </View>
@@ -196,12 +218,5 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
     cardsRow: {
       flexDirection: "row",
       gap: 12,
-    },
-    indicatorsRow: {
-      flexDirection: "row",
-      justifyContent: "space-around",
-      paddingVertical: 16,
-      backgroundColor: colors.background.secondary,
-      borderRadius: 16,
     },
   });

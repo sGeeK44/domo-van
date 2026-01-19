@@ -27,6 +27,7 @@ Tous les UUIDs suivent le format commun domo-van :
 | Heater 1 (`heater_1`) | `0003` | Régulation zone 1 |
 | Heater 2 (`heater_2`) | `0004` | Régulation zone 2 |
 | Heater 3 (`heater_3`) | `0005` | Régulation zone 3 |
+| Environment (`environment`) | `0006` | Capteur environnement (T° int/ext, humidité, pression) |
 
 Chaque **Channel** est une paire de caractéristiques :
 
@@ -96,6 +97,26 @@ Erreurs possibles :
 
 Exemple : `STATUS:T=215;SP=250;RUN=1` → Température actuelle 21.5°C, consigne 25°C, régulateur actif.
 
+### Environnement (RX/TX) — `EnvironmentListner`
+
+Sur le channel **Environment** (`0006`) :
+
+#### Lecture des données environnementales
+
+- **Commande (RX)**: `ENV?`
+- **Réponse (TX)**: `ENV:T=<temp×10>;H=<humidity×10>;P=<pressure×10>;EXT=<ext×10>`
+
+| Champ | Description | Exemple |
+| :---- | :---------- | :------ |
+| `T` | Température intérieure (BME280) × 10 | `225` → 22.5°C |
+| `H` | Humidité relative × 10 | `450` → 45.0% |
+| `P` | Pression atmosphérique × 10 | `10132` → 1013.2 hPa |
+| `EXT` | Température extérieure (DS18B20) × 10 | `120` → 12.0°C |
+
+Exemple complet : `ENV:T=225;H=450;P=10132;EXT=120`
+
+> **Note :** Les données sont envoyées automatiquement par notification toutes les ~110ms lorsqu'un client BLE est connecté.
+
 ### Administration (RX) — `AdminProtocol`
 
 Commandes (RX) :
@@ -143,7 +164,9 @@ Le système est conçu pour être robuste, autonome (12V) et réparable.
 | :--------------- | :---------------------------------- | :-------------------------------------------------------------- |
 | **MCU**          | ESP32-DevKitC V4 + Terminal Adapter | Cerveau du système (Wifi/BLE).                                  |
 | **Alimentation** | MP1584EN (Buck Converter)           | Abaisseur de tension 12V → 5V (3A max).                         |
-| **Capteurs**     | DS18B20 (x4)                        | Sondes de température numériques 1-Wire (±0.5°C).               |
+| **Capteurs T°**  | DS18B20 (x4)                        | Sondes de température numériques 1-Wire pour zones (±0.5°C).    |
+| **Capteur Ext.** | DS18B20 (x1)                        | Sonde de température extérieure 1-Wire (±0.5°C).                |
+| **Capteur Env.** | BME280 (I2C)                        | Température, humidité et pression atmosphérique intérieures.    |
 | **Actionneurs**  | Ventilateurs PWM 25kHz (x4)         | Ventilateurs 4 fils avec contrôle PWM.                          |
 
 ### ⚡ Schéma de Câblage & Pinout
@@ -154,11 +177,15 @@ Le système est conçu pour être robuste, autonome (12V) et réparable.
 | **Sensor 1**          | `GPIO 5`             | Bus 1-Wire DS18B20 (résistance pull-up 4.7kΩ).                                                  |
 | **Sensor 2**          | `GPIO 6`             | Bus 1-Wire DS18B20 (résistance pull-up 4.7kΩ).                                                  |
 | **Sensor 3**          | `GPIO 7`             | Bus 1-Wire DS18B20 (résistance pull-up 4.7kΩ).                                                  |
+| **Sensor Ext.**       | `GPIO 25`            | Bus 1-Wire DS18B20 extérieur (résistance pull-up 4.7kΩ).                                        |
+| **BME280 SDA**        | `GPIO 21`            | Bus I2C Data (adresse 0x76).                                                                    |
+| **BME280 SCL**        | `GPIO 22`            | Bus I2C Clock.                                                                                  |
 | **Fan 0 PWM**         | `GPIO 16`            | Signal PWM 25kHz (LEDC Channel 0).                                                              |
 | **Fan 1 PWM**         | `GPIO 17`            | Signal PWM 25kHz (LEDC Channel 1).                                                              |
 | **Fan 2 PWM**         | `GPIO 18`            | Signal PWM 25kHz (LEDC Channel 2).                                                              |
 | **Fan 3 PWM**         | `GPIO 19`            | Signal PWM 25kHz (LEDC Channel 3).                                                              |
 | **Alimentation**      | `VIN` / `GND`        | Sortie 5V régulée du module MP1584EN.                                                           |
+| **BME280 VCC/GND**    | `3.3V` / `GND`       | Alimentation capteur environnement (⚠️ 3.3V uniquement).                                        |
 
 ---
 
@@ -174,10 +201,11 @@ heater/
 │   └── main_local.cpp      # 💻 Main pour simulation PC
 ├── 📂 lib/                 # Logique Métier (Isolée)
 │   ├── 🔥 actuators/       # Pilotage ventilateurs (PwmFan)
-│   ├── 🎮 program/         # Logique haut niveau (HeaterListner)
+│   ├── 💻 esp32/           # Drivers hardware (DS18B20, BME280)
+│   ├── 🎮 program/         # Logique haut niveau (HeaterListner, EnvironmentListner)
 │   ├── 📡 protocol/        # Protocole BLE (HeaterCfgProtocol)
 │   ├── 🎛️ regulator/       # Algorithme PID (TemperatureRegulator)
-│   ├── 🌡️ sensors/         # Drivers (DS18B20TemperatureSensor)
+│   ├── 🌡️ sensors/         # Interfaces capteurs (TemperatureSensor)
 │   └── 💾 settings/        # Persistance des préférences (HeaterSettings)
 └── 📂 test/                # Tests Unitaires
     ├── test_program/       # Tests Programme
