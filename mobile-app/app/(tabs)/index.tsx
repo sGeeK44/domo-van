@@ -126,10 +126,11 @@ export default function HomeScreen() {
           {/* Battery Gauge */}
           <View style={styles.gaugeSection}>
             <BatteryGauge
-              percentage={batteryDevice.isConnected ? battery.percentage : 0}
+              percentage={battery.percentage}
               remainingTime={remainingTime}
-              voltage={batteryDevice.isConnected ? battery.voltage : 0}
+              voltage={battery.voltage}
               consumption={consumption}
+              isConnected={batteryDevice.isConnected}
             />
           </View>
 

@@ -22,12 +22,18 @@ export type BatteryGaugeProps = {
   remainingTime: string;
   voltage: number;
   consumption: number;
+  isConnected?: boolean;
 };
+
+/** Neutral color for disconnected state */
+const DISCONNECTED_COLOR = "#6B7280";
+const DISCONNECTED_COLOR_DIMMED = "rgba(107, 114, 128, 0.2)";
 
 /**
  * Get battery color based on percentage
  */
-function getBatteryColor(percentage: number): string {
+function getBatteryColor(percentage: number, isConnected: boolean): string {
+  if (!isConnected) return DISCONNECTED_COLOR;
   if (percentage > 50) return "#22C55E"; // Green
   if (percentage > 20) return "#F97316"; // Orange
   return "#EF4444"; // Red
@@ -36,7 +42,8 @@ function getBatteryColor(percentage: number): string {
 /**
  * Get dimmed battery color for background arc
  */
-function getBatteryColorDimmed(percentage: number): string {
+function getBatteryColorDimmed(percentage: number, isConnected: boolean): string {
+  if (!isConnected) return DISCONNECTED_COLOR_DIMMED;
   if (percentage > 50) return "rgba(34, 197, 94, 0.2)";
   if (percentage > 20) return "rgba(249, 115, 22, 0.2)";
   return "rgba(239, 68, 68, 0.2)";
@@ -96,6 +103,7 @@ export function BatteryGauge({
   remainingTime,
   voltage,
   consumption,
+  isConnected = true,
 }: BatteryGaugeProps) {
   const colors = useThemeColor();
   const styles = getStyles(colors);
@@ -120,9 +128,9 @@ export function BatteryGauge({
   const cy = size / 2;
   const radius = (size - STROKE_WIDTH * 2 - 30) / 2;
 
-  // Color based on percentage
-  const arcColor = getBatteryColor(percentage);
-  const bgArcColor = getBatteryColorDimmed(percentage);
+  // Color based on percentage and connection status
+  const arcColor = getBatteryColor(percentage, isConnected);
+  const bgArcColor = getBatteryColorDimmed(percentage, isConnected);
 
   // Background arc path (full arc)
   const bgArcPath =
@@ -144,8 +152,13 @@ export function BatteryGauge({
   };
 
   // Format consumption with sign
-  const consumptionText =
-    consumption >= 0 ? `+${consumption}W` : `${consumption}W`;
+  const consumptionText = isConnected
+    ? consumption >= 0 ? `+${consumption}W` : `${consumption}W`
+    : "-";
+  
+  // Display values
+  const displayPercentage = isConnected ? `${Math.round(percentage)}%` : "-";
+  const displayVoltage = isConnected ? `${voltage.toFixed(1)}V` : "-";
 
   return (
     <View style={styles.container}>
@@ -227,7 +240,7 @@ export function BatteryGauge({
             {/* Center content */}
             <View style={styles.centerContent}>
               <Text style={[styles.percentageText, { color: arcColor }]}>
-                {Math.round(percentage)}%
+                {displayPercentage}
               </Text>
               <Text style={styles.remainingText}>{remainingTime}</Text>
             </View>
@@ -239,7 +252,7 @@ export function BatteryGauge({
       <View style={styles.indicatorsRow}>
         <View style={styles.indicator}>
           <IconSymbol name="battery-charging-full" size={18} color={colors.neutral["500"]} />
-          <Text style={styles.indicatorValue}>{voltage.toFixed(1)}V</Text>
+          <Text style={styles.indicatorValue}>{displayVoltage}</Text>
         </View>
         <View style={styles.indicator}>
           <IconSymbol name="bolt" size={18} color={colors.neutral["500"]} />
