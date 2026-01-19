@@ -4,8 +4,7 @@ Logger::Logger(Stream &stream, Level lvl) : out(&stream), level(lvl), maxLogMsgS
 
 void Logger::setLevel(Level lvl) { level = lvl; }
 
-void Logger::debug(const char *fmt, ...)
-{
+void Logger::debug(const char *fmt, ...) {
   if (level > DEBUG)
     return;
   va_list ap;
@@ -14,8 +13,7 @@ void Logger::debug(const char *fmt, ...)
   va_end(ap);
 }
 
-void Logger::info(const char *fmt, ...)
-{
+void Logger::info(const char *fmt, ...) {
   if (level > INFO)
     return;
   va_list ap;
@@ -24,8 +22,7 @@ void Logger::info(const char *fmt, ...)
   va_end(ap);
 }
 
-void Logger::warn(const char *fmt, ...)
-{
+void Logger::warn(const char *fmt, ...) {
   if (level > INFO)
     return;
   va_list ap;
@@ -36,8 +33,7 @@ void Logger::warn(const char *fmt, ...)
 
 void Logger::flush() { out->flush(); }
 
-void Logger::log(const char *tag, const char *fmt, va_list ap)
-{
+void Logger::log(const char *tag, const char *fmt, va_list ap) {
   char buf[Logger::maxLogMsgSize];
   vsnprintf(buf, sizeof(buf), fmt, ap);
   out->write((const uint8_t *)"\n[", 2);

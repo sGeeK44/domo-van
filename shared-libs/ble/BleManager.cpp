@@ -5,8 +5,7 @@
 #include "Logger.h"
 #include <Arduino.h>
 
-void BleManager::setup(std::string defaultName, std::string serviceId)
-{
+void BleManager::setup(std::string defaultName, std::string serviceId) {
   _logger->info("Setup BLE...");
   _serviceId = serviceId;
   _serviceUuid = buildServiceUuid(serviceId.c_str());
@@ -29,7 +28,8 @@ void BleManager::setup(std::string defaultName, std::string serviceId)
   // Set the fixed PIN code
   NimBLEDevice::setSecurityPasskey(adminSettings.getPinCode());
 
-  // Force the phone to ask the user to enter the code that the ESP32 "displays" (our fixed code).
+  // Force the phone to ask the user to enter the code that the ESP32 "displays"
+  // (our fixed code).
   NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);
 
   NimBLEServer *server = NimBLEDevice::createServer();
@@ -37,12 +37,12 @@ void BleManager::setup(std::string defaultName, std::string serviceId)
   server->setCallbacks(_connectionListner);
 
   _service = server->createService(_serviceUuid.c_str());
-  _adminChannel = new BleChannel(_service, _connectionListner, new AdminListener(_settings, _logger), _serviceId.c_str(), _logger);
+  _adminChannel =
+      new BleChannel(_service, _connectionListner, new AdminListener(_settings, _logger), _serviceId.c_str(), _logger);
   _logger->info("BLE setup complete, advertising as %s", deviceName.c_str());
 }
 
-void BleManager::start()
-{
+void BleManager::start() {
   _logger->info("Starting BLE service...");
   _service->start();
 
@@ -52,8 +52,7 @@ void BleManager::start()
   advertising->start();
 }
 
-BleChannel *BleManager::addChannel(BleListner *listner)
-{
+BleChannel *BleManager::addChannel(BleListner *listner) {
   return new BleChannel(_service, _connectionListner, listner, _serviceId.c_str(), _logger);
 }
 

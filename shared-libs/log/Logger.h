@@ -2,14 +2,9 @@
 #include <Arduino.h>
 #include <stdarg.h>
 
-class Logger
-{
+class Logger {
 public:
-  enum Level
-  {
-    DEBUG = 0,
-    INFO = 1
-  };
+  enum Level { DEBUG = 0, INFO = 1 };
 
   // construct with a Stream (e.g. Serial)
   Logger(Stream &stream, Level lvl = INFO);

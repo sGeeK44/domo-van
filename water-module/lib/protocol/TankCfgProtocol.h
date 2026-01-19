@@ -16,4 +16,3 @@ public:
   explicit TankCfgProtocol(TankSettings *tankSettings);
   std::string handle(std::string rx);
 };
-

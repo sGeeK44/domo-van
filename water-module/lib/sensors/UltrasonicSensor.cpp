@@ -1,6 +1,6 @@
 #include "UltrasonicSensor.h"
 
-UltrasonicSensor::UltrasonicSensor(Stream &stream, Logger *logger) : _serial(stream), _logger(logger) {};
+UltrasonicSensor::UltrasonicSensor(Stream &stream, Logger *logger) : _serial(stream), _logger(logger) {}
 
 int UltrasonicSensor::read() {
   if (_serial.available() < PACKET_SIZE) {

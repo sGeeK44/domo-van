@@ -3,8 +3,7 @@
 #include <cstdint>
 #include <string>
 
-class AdminSettings
-{
+class AdminSettings {
   Settings *_settings = nullptr;
 
 public:

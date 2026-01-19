@@ -32,8 +32,8 @@ public:
   static constexpr int DEFAULT_KD = 50;   // 0.5
 
   // Default setpoint (stored as tenths of degree)
-  static constexpr int DEFAULT_SP = 200;  // 20.0°C
+  static constexpr int DEFAULT_SP = 200; // 20.0°C
 
   // Default running state
-  static constexpr int DEFAULT_RUN = 0;   // Off
+  static constexpr int DEFAULT_RUN = 0; // Off
 };

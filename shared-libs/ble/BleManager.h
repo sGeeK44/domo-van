@@ -6,8 +6,7 @@
 #include <NimBLEDevice.h>
 #include <string>
 
-class BleManager
-{
+class BleManager {
 private:
   std::string _serviceId;
   std::string _serviceUuid;

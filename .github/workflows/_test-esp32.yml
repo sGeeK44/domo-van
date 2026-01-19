@@ -34,7 +34,7 @@ jobs:
 
       - name: Run clang-format check
         run: |
-          find src lib -name '*.cpp' -o -name '*.h' | xargs clang-format --dry-run --Werror
+          find src lib ../shared-libs \( -name '*.cpp' -o -name '*.h' \) | xargs clang-format --dry-run --Werror
 
       - name: Run tests
         run: pio test -e local

@@ -1,8 +1,7 @@
 #include "DS18B20TemperatureSensor.h"
 
 DS18B20TemperatureSensor::DS18B20TemperatureSensor(uint8_t pin, Logger *logger)
-    : _oneWire(pin), _sensors(&_oneWire), _logger(logger),
-      _lastValidReading(DEFAULT_TEMP) {}
+    : _oneWire(pin), _sensors(&_oneWire), _logger(logger), _lastValidReading(DEFAULT_TEMP) {}
 
 void DS18B20TemperatureSensor::begin() {
   _sensors.begin();
@@ -19,8 +18,7 @@ float DS18B20TemperatureSensor::read() {
     _lastValidReading = temp;
     _logger->debug("DS18B20 read: %.2f C", temp);
   } else {
-    _logger->warn("DS18B20 invalid reading (%.2f), using last valid: %.2f C",
-                  temp, _lastValidReading);
+    _logger->warn("DS18B20 invalid reading (%.2f), using last valid: %.2f C", temp, _lastValidReading);
   }
 
   return _lastValidReading;

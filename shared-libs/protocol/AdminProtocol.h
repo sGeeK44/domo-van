@@ -14,4 +14,3 @@ public:
   explicit AdminProtocol(AdminSettings *settings);
   std::string handle(std::string rx);
 };
-

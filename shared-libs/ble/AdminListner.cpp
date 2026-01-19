@@ -16,7 +16,8 @@ void AdminListener::onReceive(std::string value) {
     return;
   }
 
-  // Delete old link (mandatory) to force client to refresh/reconnect with new PIN.
+  // Delete old link (mandatory) to force client to refresh/reconnect with new
+  // PIN.
   NimBLEDevice::deleteAllBonds();
 
   // Give the BLE stack time to flush the notification before rebooting.

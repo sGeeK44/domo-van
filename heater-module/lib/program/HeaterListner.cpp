@@ -40,8 +40,7 @@ void HeaterListner::notify() {
   int tempInt = static_cast<int>(temp * 10);
   int spInt = static_cast<int>(sp * 10);
 
-  std::string message = "STATUS:T=" + std::to_string(tempInt) +
-                        ";SP=" + std::to_string(spInt) +
-                        ";RUN=" + (running ? "1" : "0");
+  std::string message =
+      "STATUS:T=" + std::to_string(tempInt) + ";SP=" + std::to_string(spInt) + ";RUN=" + (running ? "1" : "0");
   send(message);
 }

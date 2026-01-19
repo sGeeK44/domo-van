@@ -46,4 +46,3 @@ std::string AdminProtocol::handle(std::string rx) {
 
   return ERR_UNKNOWN_CMD;
 }
-
