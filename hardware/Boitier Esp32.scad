@@ -99,12 +99,12 @@ module box_base() {
         
         // Fente Avant (Arrondie visible de face)
         // On pivote le r_cube de 90° sur X pour que l'arrondi soit sur le mur
-        translate([bornier_start_x + 5, wall*3, base_height + 2])
+        translate([bornier_start_x + 5, wall*3, base_height + 4])
             rotate([90, 0, 0])
             r_cube(esp_dim_x_box - 10, 7, wall*4, 2); 
             
         // Fente Arrière (Arrondie visible de face)
-        translate([bornier_start_x + 5, total_int_y + wall*3, base_height + 2])
+        translate([bornier_start_x + 5, total_int_y + wall*3, base_height + 4])
             rotate([90, 0, 0])
             r_cube(esp_dim_x_box - 10, 7, wall*4, 2);
             
@@ -219,7 +219,7 @@ module box_lid() {
             }
             
             // Aération DC
-            translate([85, 20 + wall, 0]){         
+            translate([85, 40 + wall, 0]){         
                 for(i = [0 : 5]) {
                     translate([0, i * 4, 0])
                     cube([20, 2, 10], center=true);
