@@ -13,13 +13,8 @@ import {
  * JK BMS BLE Service and Characteristic UUIDs
  * Uses standard Nordic UART-like service
  */
-export const JK_BMS_SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
-export const JK_BMS_CHARACTERISTIC_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb";
-
-/**
- * Short service UUID for scanning (16-bit)
- */
-export const JK_BMS_SERVICE_UUID_SHORT = "FFE0";
+export const JK_BMS_SERVICE_UUID = "f000ffc0-0451-4000-b000-000000000000";
+export const JK_BMS_CHARACTERISTIC_UUID = "f000ffc1-0451-4000-b000-000000000000";
 
 /**
  * Channel for communicating with JK BMS via BLE notifications
@@ -33,7 +28,7 @@ export class JkBmsChannel {
   private buffer: number[] = [];
   private subscription: { remove: () => void } | null = null;
 
-  constructor(private readonly device: Device) {}
+  constructor(private readonly device: Device) { }
 
   /**
    * Start listening for BMS data notifications

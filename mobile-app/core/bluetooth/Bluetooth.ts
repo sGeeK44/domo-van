@@ -1,6 +1,5 @@
 import { PermissionsAndroid, Platform } from "react-native";
 import { BleManager, Device } from "react-native-ble-plx";
-import { buildServiceUuid } from "./BleUuid";
 
 export interface DiscoveredBluetoothDevice {
   id: string;
@@ -8,7 +7,7 @@ export interface DiscoveredBluetoothDevice {
 }
 
 export class Bluetooth {
-  constructor(private readonly BleManager: BleManager) {}
+  constructor(private readonly BleManager: BleManager) { }
 
   private async ensureBlePermissionsAndroid(): Promise<boolean> {
     if (Platform.OS !== "android") return true;
@@ -24,9 +23,9 @@ export class Bluetooth {
         ]);
         return (
           res[PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN] ===
-            PermissionsAndroid.RESULTS.GRANTED &&
+          PermissionsAndroid.RESULTS.GRANTED &&
           res[PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT] ===
-            PermissionsAndroid.RESULTS.GRANTED
+          PermissionsAndroid.RESULTS.GRANTED
         );
       }
 
@@ -41,7 +40,7 @@ export class Bluetooth {
   }
 
   public async startScan(
-    serviceId: string,
+    serviceUuid: string,
     onDeviceFound: (device: DiscoveredBluetoothDevice) => void,
   ): Promise<void> {
     const ok = await this.ensureBlePermissionsAndroid();
@@ -49,7 +48,6 @@ export class Bluetooth {
       throw new Error("Bluetooth permissions not granted.");
     }
 
-    const serviceUuid = buildServiceUuid(serviceId);
     this.BleManager.startDeviceScan(
       [serviceUuid],
       { allowDuplicates: false },

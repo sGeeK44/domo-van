@@ -1,15 +1,9 @@
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useBle } from "@/components/BleProvider";
 import {
-  AdminSection,
   DiscoveredDevicesList,
   SavedDeviceSection,
-  ScanSection,
+  ScanSection
 } from "@/components/module-settings";
-import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
-import { useBle } from "@/components/BleProvider";
 import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
 import { FontSize, Spacing, type ThemeColors } from "@/design-system";
 import { Button } from "@/design-system/atoms/button";
@@ -20,7 +14,12 @@ import {
   DEFAULT_BATTERY_SNAPSHOT,
 } from "@/domain/battery/BatteryTelemetry";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
 import { useBatteryDevice } from "@/hooks/useModuleDevice";
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 function useObservable<T>(
   observable: { getValue: () => T; subscribe: (fn: (v: T) => void) => () => void } | null,
@@ -83,7 +82,7 @@ export default function BatterySettingsScreen() {
     setLastError(null);
     setIsScanning(true);
     try {
-      await bluetooth.startScan(BatterySystem.serviceId, (foundDevice) => {
+      await bluetooth.startScan(BatterySystem.serviceUuid, (foundDevice) => {
         setDiscoveredDevices((prev) => {
           if (prev.some((d) => d.id === foundDevice.id)) return prev;
           return [...prev, foundDevice];

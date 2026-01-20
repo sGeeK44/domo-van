@@ -1,7 +1,4 @@
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useBle } from "@/components/BleProvider";
 import {
   AdminSection,
   DiscoveredDevicesList,
@@ -10,15 +7,19 @@ import {
 } from "@/components/module-settings";
 import { TankSettingsSection } from "@/components/water-settings/TankSettingsSection";
 import { ValveSettingsSection } from "@/components/water-settings/ValveSettingsSection";
-import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
-import { useBle } from "@/components/BleProvider";
+import { buildServiceUuid } from "@/core/bluetooth/BleUuid";
 import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
 import { Spacing, type ThemeColors } from "@/design-system";
 import { Button } from "@/design-system/atoms/button";
 import { SettingsHeader } from "@/design-system/molecules/settings-header";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
 import { useWaterDevice } from "@/hooks/useModuleDevice";
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function WaterSettingsScreen() {
   const colors = useThemeColor();
@@ -60,7 +61,8 @@ export default function WaterSettingsScreen() {
     setLastError(null);
     setIsScanning(true);
     try {
-      await bluetooth.startScan(WaterSystem.serviceId, (foundDevice) => {
+      const serviceUuid = buildServiceUuid(WaterSystem.serviceId);
+      await bluetooth.startScan(serviceUuid, (foundDevice) => {
         setDiscoveredDevices((prev) => {
           if (prev.some((d) => d.id === foundDevice.id)) return prev;
           return [...prev, foundDevice];

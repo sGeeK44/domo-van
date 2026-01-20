@@ -1,7 +1,6 @@
-import { Device } from "react-native-ble-plx";
 import {
+  JK_BMS_SERVICE_UUID,
   JkBmsChannel,
-  JK_BMS_SERVICE_UUID_SHORT,
 } from "@/core/bluetooth/JkBmsChannel";
 import { JkBmsData } from "@/core/bluetooth/JkBmsProtocol";
 import {
@@ -10,6 +9,7 @@ import {
   Observable,
   Unsubscribe,
 } from "@/core/observable";
+import { Device } from "react-native-ble-plx";
 import {
   BatterySnapshot,
   DEFAULT_BATTERY_SNAPSHOT,
@@ -26,7 +26,7 @@ export class BatterySystem implements Observable<BatterySnapshot> {
   /**
    * Service UUID for scanning (short 16-bit format)
    */
-  public static readonly serviceId: string = JK_BMS_SERVICE_UUID_SHORT;
+  public static readonly serviceUuid: string = JK_BMS_SERVICE_UUID;
 
   private readonly channel: JkBmsChannel;
   private readonly state: ReturnType<typeof createObservable<BatterySnapshot>>;
