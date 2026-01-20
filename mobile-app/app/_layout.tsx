@@ -48,10 +48,6 @@ function AppContent() {
                     name="battery-settings"
                     options={{ headerShown: false }}
                   />
-                  <Stack.Screen
-                    name="modal"
-                    options={{ presentation: "modal", title: "Modal" }}
-                  />
                 </Stack>
               </MultiModuleConnectionProvider>
             </BatteryDeviceProviderV2>

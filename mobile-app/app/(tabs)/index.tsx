@@ -136,7 +136,7 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <PageHeader
           title="Home"
-          onSettingsPress={() => router.push("/modal")}
+          onSettingsPress={() => router.push("/battery-settings")}
           onBluetoothPress={handleBluetoothPress}
           bluetoothStatus={bluetoothStatus}
         />
