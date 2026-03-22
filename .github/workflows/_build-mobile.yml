@@ -12,9 +12,16 @@ on:
         required: false
         type: string
         default: ''
+      enable_submit:
+        description: 'Submit to Play Store after build'
+        required: false
+        type: boolean
+        default: false
     secrets:
       EXPO_TOKEN:
         required: true
+      GOOGLE_SERVICE_ACCOUNT_KEY_JSON:
+        required: false
 
 jobs:
   build:
@@ -45,3 +52,13 @@ jobs:
 
       - name: Build Android
         run: eas build --profile ${{ inputs.profile }} --platform android --non-interactive ${{ inputs.message && format('--message "{0}"', inputs.message) || '' }}
+
+      - name: Submit to Play Store
+        if: inputs.enable_submit
+        env:
+          GOOGLE_SERVICE_ACCOUNT_KEY_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY_JSON }}
+        run: |
+          echo "$GOOGLE_SERVICE_ACCOUNT_KEY_JSON" > /tmp/google-service-account.json
+          eas submit --profile production --platform android --non-interactive --latest \
+            --android-service-account-key-path /tmp/google-service-account.json
+          rm /tmp/google-service-account.json

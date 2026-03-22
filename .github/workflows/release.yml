@@ -48,8 +48,10 @@ jobs:
     with:
       profile: production
       message: Release ${{ needs.version.outputs.version }}
+      enable_submit: true
     secrets:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      GOOGLE_SERVICE_ACCOUNT_KEY_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY_JSON }}
 
   build-water:
     needs: [test-water, version]
