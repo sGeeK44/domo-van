@@ -14,8 +14,13 @@ import Svg, {
   RadialGradient,
   Stop,
 } from "react-native-svg";
-import { Colors, FontSize, FontWeight, IconSymbol } from "@/design-system";
-import { useThemeColor } from "@/hooks/use-theme-color";
+import {
+  Colors,
+  FontSize,
+  FontWeight,
+  IconSymbol,
+  useThemeColor,
+} from "@/design-system";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 

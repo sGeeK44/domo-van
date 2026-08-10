@@ -7,8 +7,8 @@ import {
   FontWeight,
   IconSymbol,
   type ThemeColors,
+  useThemeColor,
 } from "@/design-system";
-import { useThemeColor } from "@/hooks/use-theme-color";
 
 export type EnvironmentItemData = {
   icon: ComponentProps<typeof MaterialIcons>["name"];

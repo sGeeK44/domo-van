@@ -23,9 +23,13 @@ import Svg, {
   RadialGradient,
   Stop,
 } from "react-native-svg";
-import { FontSize, FontWeight, type ThemeColors } from "@/design-system";
+import {
+  FontSize,
+  FontWeight,
+  type ThemeColors,
+  useThemeColor,
+} from "@/design-system";
 import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import {
   getTemperatureColor,
   getTemperatureColorDimmed,

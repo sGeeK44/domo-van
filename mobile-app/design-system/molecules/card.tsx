@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { FontSize, FontWeight, type ThemeColors } from "@/design-system/theme";
-import { useThemeColor } from "@/hooks/use-theme-color";
+import { useThemeColor } from "@/design-system/theme/use-theme-color";
+import { FontSize, FontWeight, type ThemeColors } from "@/design-system/tokens";
 
 export const Card = ({
   title,

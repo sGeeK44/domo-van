@@ -9,7 +9,12 @@ import {
   ScanSection,
 } from "@/components/module-settings";
 import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
-import { FontSize, Spacing, type ThemeColors } from "@/design-system";
+import {
+  FontSize,
+  Spacing,
+  type ThemeColors,
+  useThemeColor,
+} from "@/design-system";
 import { Button } from "@/design-system/atoms/button";
 import { SettingsHeader } from "@/design-system/molecules/settings-header";
 import { BatterySystem } from "@/domain/battery/BatterySystem";
@@ -17,7 +22,6 @@ import {
   BatterySnapshot,
   DEFAULT_BATTERY_SNAPSHOT,
 } from "@/domain/battery/BatteryTelemetry";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
 import { useBatteryDevice } from "@/hooks/useModuleDevice";
 

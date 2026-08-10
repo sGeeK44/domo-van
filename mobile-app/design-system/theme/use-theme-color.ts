@@ -3,8 +3,8 @@
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { Colors } from "@/design-system/theme";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/design-system/theme/ThemeContext";
+import { Colors } from "@/design-system/tokens";
 
 export function useThemeColor(): typeof Colors.light | typeof Colors.dark {
   const { colorScheme } = useTheme();

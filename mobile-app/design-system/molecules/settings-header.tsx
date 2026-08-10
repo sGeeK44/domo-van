@@ -1,12 +1,12 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
+import { useThemeColor } from "@/design-system/theme/use-theme-color";
 import {
   FontSize,
   FontWeight,
   Spacing,
   type ThemeColors,
-} from "@/design-system/theme";
-import { useThemeColor } from "@/hooks/use-theme-color";
+} from "@/design-system/tokens";
 
 export type SettingsHeaderProps = {
   title: string;

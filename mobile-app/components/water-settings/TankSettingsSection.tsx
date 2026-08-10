@@ -15,10 +15,10 @@ import {
   Opacity,
   Spacing,
   type ThemeColors,
+  useThemeColor,
 } from "@/design-system";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { WaterSystem } from "@/domain/water/WaterSystem";
-import { useThemeColor } from "@/hooks/use-theme-color";
 
 function validatePositiveInt(label: string, value: string): string | null {
   const trimmed = value.trim();

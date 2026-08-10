@@ -5,11 +5,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { DrainSlider } from "@/components/water/drain-slider";
 import { WaterTank } from "@/components/water/water-tank";
 import { Observable } from "@/core/observable";
-import { Colors } from "@/design-system";
+import { Colors, useThemeColor } from "@/design-system";
 import { PageHeader } from "@/design-system/molecules/page-header";
 import { ValveState } from "@/domain/water/DrainValve";
 import { WaterSystem } from "@/domain/water/WaterSystem";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { useWaterDevice } from "@/hooks/useModuleDevice";
 import { useMultiModuleConnection } from "@/hooks/useMultiModuleConnection";
 

@@ -18,8 +18,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { IconSymbol, type ThemeColors } from "@/design-system";
-import { useThemeColor } from "@/hooks/use-theme-color";
+import { IconSymbol, type ThemeColors, useThemeColor } from "@/design-system";
 
 const HANDLE_SIZE = 54;
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);

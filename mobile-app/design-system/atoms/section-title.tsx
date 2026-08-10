@@ -1,11 +1,11 @@
 import { StyleSheet, Text, type TextProps } from "react-native";
+import { useThemeColor } from "@/design-system/theme/use-theme-color";
 import {
   FontSize,
   FontWeight,
   Opacity,
   type ThemeColors,
-} from "@/design-system/theme";
-import { useThemeColor } from "@/hooks/use-theme-color";
+} from "@/design-system/tokens";
 
 export type SectionTitleProps = {
   children: string;
