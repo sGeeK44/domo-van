@@ -20,6 +20,7 @@ npm test             # Run Vitest tests
 npm run test:watch   # Run tests in watch mode
 npm run check        # Run Biome linter
 npm run typecheck    # TypeScript type checking
+npm run arch         # Enforce the layer dependency direction (dependency-cruiser)
 ```
 
 ### ESP32 Modules (water-module/ or heater-module/)
@@ -45,22 +46,34 @@ Payloads are ASCII strings, not binary. Commands end with `\n`.
 
 ### Mobile App Structure
 
+The app is layered, one-way only: `core → domain → infrastructure → app`.
+`npm run arch` enforces it and CI blocks the merge on a violation.
+**Read `mobile-app/docs/architecture.md` before moving code between these
+directories** — it holds the permission matrix and the rules of the road.
+
 ```
 mobile-app/
-├── app/              # Expo Router pages (file-based routing)
-│   ├── (tabs)/       # Tab navigator screens
-│   └── *-settings.tsx  # Module settings screens
+├── app/              # Expo Router routes ONLY (a route re-exports a screen)
+│   └── (tabs)/       # Tab navigator routes
+├── screens/          # Page components
 ├── components/       # UI components organized by feature
-├── core/bluetooth/   # BLE abstraction (Channel, Bluetooth, BleUuid)
-├── design-system/    # Theme tokens (Colors, Spacing, FontSize)
-├── domain/           # Business logic per module (WaterSystem, HeaterSystem, etc.)
-└── hooks/            # React hooks (useModuleDevice, useMultiModuleConnection)
+├── design-system/    # Tokens, atoms, molecules, theme
+├── composition/      # Composition root (createContainer, providers)
+├── infrastructure/   # Port implementations (ble/, storage/)
+├── domain/           # Business logic, ports/ and modules/ — zero framework import
+└── core/             # Pure primitives (observable, core/react/)
 ```
 
 Key patterns:
-- `domain/*System.ts` classes compose BLE channels into module APIs
-- `hooks/useModuleDevice.tsx` provides per-module device context (Water, Heater, Battery)
-- `core/bluetooth/Channel.ts` handles BLE read/write with base64 encoding and newline-based message framing
+- `domain/*System.ts` classes compose channels into module APIs. They take a
+  `ModuleTransport` (or a `BinaryTransport`) and never build one.
+- `composition/createContainer.ts` is the only place that constructs an
+  adapter; `composition/ModuleSystemsProvider.tsx` owns the systems' lifetime
+  and exposes `useWaterSystem()` / `useHeaterSystem()` / `useBatterySystem()`.
+- `infrastructure/ble/BlePlxChannel.ts` handles BLE read/write with base64
+  encoding and newline-based message framing.
+- `domain/modules/ModuleDescriptor.ts` is the module catalogue: keys, display
+  names and the service UUID each module advertises.
 
 ### ESP32 Module Structure
 
@@ -87,12 +100,15 @@ Contains common C++ code: BLE management, protocol parsing, ESP32 utilities, NVS
 
 ## Testing
 
-- **Mobile**: Vitest + Testing Library (`npm test`)
+- **Mobile**: Vitest + Testing Library (`npm test`). Four gates must stay
+  green on every commit: `npm run check && npm run typecheck && npm test &&
+  npm run arch`.
 - **ESP32**: GoogleTest on native platform (`pio test -e local`)
 
 ## CI/CD
 
-- Push to `main` triggers CI: tests all modules, validates builds
+- Pull requests and pushes to `main` trigger CI: tests all modules, validates
+  builds. `main` is protected and requires `test-mobile / Test Mobile App`.
 - Tag push (`v1.2.3`) triggers release: builds firmware binaries, uploads to GitHub Release
 - Mobile builds use EAS Build (Expo Application Services)
 
