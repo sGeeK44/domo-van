@@ -7,8 +7,8 @@ import {
   FontSize,
   FontWeight,
   IconSymbol,
+  useThemeColor,
 } from "@/design-system";
-import { useThemeColor } from "@/hooks/use-theme-color";
 
 export type StatusCardProps = {
   icon: ComponentProps<typeof MaterialIcons>["name"];

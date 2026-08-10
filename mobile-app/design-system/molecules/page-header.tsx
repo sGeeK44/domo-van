@@ -5,8 +5,8 @@ import {
   StatusBadge,
   type StatusBadgeProps,
 } from "@/design-system/atoms/status-badge";
-import { Spacing } from "@/design-system/theme";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/design-system/theme/ThemeContext";
+import { Spacing } from "@/design-system/tokens";
 
 export type PageHeaderProps = {
   title: string;

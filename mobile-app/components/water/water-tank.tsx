@@ -13,8 +13,13 @@ import Svg, {
   Path,
   Stop,
 } from "react-native-svg";
-import { Card, Colors, FontSize, FontWeight } from "@/design-system";
-import { useThemeColor } from "@/hooks/use-theme-color";
+import {
+  Card,
+  Colors,
+  FontSize,
+  FontWeight,
+  useThemeColor,
+} from "@/design-system";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);

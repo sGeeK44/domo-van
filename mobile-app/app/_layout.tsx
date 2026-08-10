@@ -9,7 +9,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
 import { BleProvider } from "@/components/BleProvider";
-import { ThemeProvider, useTheme } from "@/hooks/ThemeContext";
+import { ThemeProvider, useTheme } from "@/design-system";
 import {
   BatteryDeviceProviderV2,
   HeaterDeviceProviderV2,

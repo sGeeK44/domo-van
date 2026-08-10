@@ -1,7 +1,6 @@
 import { Tabs } from "expo-router";
 
-import { IconSymbol } from "@/design-system";
-import { useThemeColor } from "@/hooks/use-theme-color";
+import { IconSymbol, useThemeColor } from "@/design-system";
 
 export default function TabLayout() {
   const themeColor = useThemeColor();

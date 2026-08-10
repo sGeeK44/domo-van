@@ -5,13 +5,13 @@ import {
   StyleSheet,
   Text,
 } from "react-native";
+import { useThemeColor } from "@/design-system/theme/use-theme-color";
 import {
   BorderRadius,
   FontWeight,
   Opacity,
   Spacing,
-} from "@/design-system/theme";
-import { useThemeColor } from "@/hooks/use-theme-color";
+} from "@/design-system/tokens";
 
 export type ButtonVariant = "primary" | "secondary";
 

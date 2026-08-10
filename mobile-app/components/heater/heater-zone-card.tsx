@@ -1,8 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Card, FontSize, FontWeight, type ThemeColors } from "@/design-system";
+import {
+  Card,
+  FontSize,
+  FontWeight,
+  type ThemeColors,
+  useThemeColor,
+} from "@/design-system";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
-import { useThemeColor } from "@/hooks/use-theme-color";
 
 export type HeaterZoneCardProps = {
   name: string;

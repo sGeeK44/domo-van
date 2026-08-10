@@ -14,10 +14,10 @@ import {
   Opacity,
   Spacing,
   type ThemeColors,
+  useThemeColor,
 } from "@/design-system";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import type { HeaterZone, PidConfig } from "@/domain/heater/HeaterZone";
-import { useThemeColor } from "@/hooks/use-theme-color";
 
 const showToast = (message: string) => {
   ToastAndroid.show(message, ToastAndroid.SHORT);

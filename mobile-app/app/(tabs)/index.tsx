@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BatteryGauge } from "@/components/home/battery-gauge";
 import { EnvironmentCard } from "@/components/home/environment-card";
 import { StatusCard } from "@/components/home/status-card";
-import { Colors } from "@/design-system";
+import { Colors, useThemeColor } from "@/design-system";
 import { PageHeader } from "@/design-system/molecules/page-header";
 import { BatterySystem } from "@/domain/battery/BatterySystem";
 import {
@@ -15,7 +15,6 @@ import {
 } from "@/domain/battery/BatteryTelemetry";
 import { EnvironmentSnapshot } from "@/domain/heater/EnvironmentData";
 import { HeaterSystem } from "@/domain/heater/HeaterSystem";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import {
   useBatteryDevice,
   useHeaterDevice,

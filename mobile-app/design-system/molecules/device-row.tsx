@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
+import { useThemeColor } from "@/design-system/theme/use-theme-color";
 import {
   BorderRadius,
   FontSize,
@@ -14,8 +15,7 @@ import {
   Opacity,
   Spacing,
   type ThemeColors,
-} from "@/design-system/theme";
-import { useThemeColor } from "@/hooks/use-theme-color";
+} from "@/design-system/tokens";
 
 export type DeviceRowProps = {
   icon?: ComponentProps<typeof IconSymbol>["name"];

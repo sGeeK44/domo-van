@@ -4,11 +4,10 @@ import { StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CircularTemperatureDial } from "@/components/heater/circular-temperature-dial";
 import { Observable } from "@/core/observable";
-import { Colors } from "@/design-system";
+import { Colors, useThemeColor } from "@/design-system";
 import { PageHeader } from "@/design-system/molecules/page-header";
 import { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { useHeaterDevice } from "@/hooks/useModuleDevice";
 import { useMultiModuleConnection } from "@/hooks/useMultiModuleConnection";
 

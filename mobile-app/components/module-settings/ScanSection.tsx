@@ -1,6 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
-import { FontSize, Spacing, type ThemeColors } from "@/design-system";
-import { useThemeColor } from "@/hooks/use-theme-color";
+import {
+  FontSize,
+  Spacing,
+  type ThemeColors,
+  useThemeColor,
+} from "@/design-system";
 
 type Props = {
   isScanning: boolean;

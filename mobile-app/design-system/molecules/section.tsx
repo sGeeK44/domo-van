@@ -1,12 +1,12 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { SectionTitle } from "@/design-system/atoms/section-title";
+import { useThemeColor } from "@/design-system/theme/use-theme-color";
 import {
   BorderRadius,
   Opacity,
   Spacing,
   type ThemeColors,
-} from "@/design-system/theme";
-import { useThemeColor } from "@/hooks/use-theme-color";
+} from "@/design-system/tokens";
 
 export type SectionProps = {
   title: string;
