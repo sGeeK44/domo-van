@@ -1,0 +1,175 @@
+{
+  "forbidden": [
+    {
+      "name": "no-circular",
+      "comment": "A cycle between modules makes them one indivisible unit: neither can be understood, tested or moved without the other.",
+      "severity": "warn",
+      "from": {},
+      "to": { "circular": true }
+    },
+    {
+      "name": "not-to-unresolvable",
+      "comment": "An import that does not resolve is either a typo or a module that was moved without updating its importers.",
+      "severity": "warn",
+      "from": {},
+      "to": { "couldNotResolve": true }
+    },
+    {
+      "name": "no-test-in-prod",
+      "comment": "Production code must not depend on test code.",
+      "severity": "warn",
+      "from": { "pathNot": "(^|/)__tests__/" },
+      "to": { "path": "(^|/)__tests__/" }
+    },
+    {
+      "name": "not-to-dev-dep",
+      "comment": "Production code must not depend on a devDependency: it is absent from the shipped bundle.",
+      "severity": "warn",
+      "from": {
+        "path": "^(core|domain|infrastructure|composition|design-system|components|screens|app)/",
+        "pathNot": "(^|/)__tests__/"
+      },
+      "to": { "dependencyTypes": ["npm-dev"] }
+    },
+    {
+      "name": "core-is-self-contained",
+      "comment": "core/ holds technical primitives with no business meaning: it sits at the far left of the chain and imports no other layer.",
+      "severity": "warn",
+      "from": { "path": "^core/", "pathNot": "(^|/)__tests__/" },
+      "to": {
+        "path": "^(domain|infrastructure|composition|design-system|components|screens|app)/"
+      }
+    },
+    {
+      "name": "core-has-no-packages",
+      "comment": "core/ is framework-agnostic. The single carve-out is core/react/, covered by core-react-only-react.",
+      "severity": "warn",
+      "from": {
+        "path": "^core/",
+        "pathNot": "^core/react/|(^|/)__tests__/"
+      },
+      "to": {
+        "dependencyTypes": [
+          "npm",
+          "npm-dev",
+          "npm-optional",
+          "npm-peer",
+          "npm-no-pkg",
+          "npm-unknown",
+          "core"
+        ]
+      }
+    },
+    {
+      "name": "core-react-only-react",
+      "comment": "core/react/ adapts core primitives to React (useObservable). react is the only package it may know about — not react-native, not expo.",
+      "severity": "warn",
+      "from": { "path": "^core/react/", "pathNot": "(^|/)__tests__/" },
+      "to": {
+        "dependencyTypes": [
+          "npm",
+          "npm-dev",
+          "npm-optional",
+          "npm-peer",
+          "npm-no-pkg",
+          "npm-unknown",
+          "core"
+        ],
+        "pathNot": "^node_modules/(@types/)?react/"
+      }
+    },
+    {
+      "name": "domain-only-to-core",
+      "comment": "domain/ holds business logic and the ports it needs. It may only import core/.",
+      "severity": "warn",
+      "from": { "path": "^domain/", "pathNot": "(^|/)__tests__/" },
+      "to": {
+        "path": "^(infrastructure|composition|design-system|components|screens|app)/"
+      }
+    },
+    {
+      "name": "domain-has-no-framework",
+      "comment": "domain/ must not import any package at all — react, expo and react-native-ble-plx included.",
+      "severity": "warn",
+      "from": { "path": "^domain/", "pathNot": "(^|/)__tests__/" },
+      "to": {
+        "dependencyTypes": [
+          "npm",
+          "npm-dev",
+          "npm-optional",
+          "npm-peer",
+          "npm-no-pkg",
+          "npm-unknown",
+          "core"
+        ]
+      }
+    },
+    {
+      "name": "infrastructure-not-upward",
+      "comment": "infrastructure/ implements domain ports. It may import core/ and domain/, nothing to their right.",
+      "severity": "warn",
+      "from": { "path": "^infrastructure/", "pathNot": "(^|/)__tests__/" },
+      "to": { "path": "^(composition|design-system|components|screens|app)/" }
+    },
+    {
+      "name": "composition-not-upward",
+      "comment": "composition/ is the single place binding concrete implementations to domain ports. It knows nothing of the UI.",
+      "severity": "warn",
+      "from": { "path": "^composition/", "pathNot": "(^|/)__tests__/" },
+      "to": { "path": "^(design-system|components|screens|app)/" }
+    },
+    {
+      "name": "design-system-is-independent",
+      "comment": "design-system/ knows tokens and generic components. It must stay ignorant of the business.",
+      "severity": "warn",
+      "from": { "path": "^design-system/", "pathNot": "(^|/)__tests__/" },
+      "to": {
+        "path": "^(domain|infrastructure|composition|components|screens|app)/"
+      }
+    },
+    {
+      "name": "components-not-upward",
+      "comment": "components/ renders domain objects with design-system primitives. It never reaches a screen, a route or an implementation.",
+      "severity": "warn",
+      "from": { "path": "^components/", "pathNot": "(^|/)__tests__/" },
+      "to": { "path": "^(infrastructure|composition|screens|app)/" }
+    },
+    {
+      "name": "screens-not-to-infrastructure",
+      "comment": "screens/ obtains its dependencies from the composition root, never from a concrete implementation.",
+      "severity": "warn",
+      "from": { "path": "^screens/", "pathNot": "(^|/)__tests__/" },
+      "to": { "path": "^(infrastructure|app)/" }
+    },
+    {
+      "name": "app-is-routes-only",
+      "comment": "app/ holds expo-router routes: a route re-exports a screen and wires providers, it contains no logic.",
+      "severity": "warn",
+      "from": { "path": "^app/", "pathNot": "(^|/)__tests__/" },
+      "to": { "path": "^(core|domain|infrastructure|components)/" }
+    },
+    {
+      "name": "ble-plx-only-in-infrastructure",
+      "comment": "react-native-ble-plx is a transport detail. It survives in infrastructure/ble/ and in composition/connection/ (temporary tenant) only.",
+      "severity": "warn",
+      "from": { "pathNot": "^(infrastructure/ble|composition/connection)/" },
+      "to": { "path": "^node_modules/react-native-ble-plx/" }
+    },
+    {
+      "name": "no-deep-design-system-import",
+      "comment": "Outside design-system/, import the barrel. Inside it, always import concrete files — the barrel would close a cycle.",
+      "severity": "warn",
+      "from": { "pathNot": "^design-system/" },
+      "to": {
+        "path": "^design-system/",
+        "pathNot": "^design-system/index\\.ts$"
+      }
+    }
+  ],
+  "options": {
+    "tsPreCompilationDeps": true,
+    "tsConfig": { "fileName": "tsconfig.json" },
+    "doNotFollow": { "path": "node_modules" },
+    "exclude": { "path": "^(\\.expo|android|ios|dist|assets)/" }
+  }
+}
