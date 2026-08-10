@@ -1,7 +1,7 @@
 #include "Logger.h"
+#include "../ArduinoMacroGuard.h"
 #include "../MockStream.h"
 #include "UltrasonicSensor.h"
-#include <Arduino.h>
 #include <gtest/gtest.h>
 
 class LoggerTest : public ::testing::Test {

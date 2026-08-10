@@ -1,7 +1,7 @@
 #include "UltrasonicSensor.h"
+#include "../ArduinoMacroGuard.h"
 #include "../MockStream.h"
 #include "Logger.h"
-#include <Arduino.h>
 #include <gtest/gtest.h>
 
 class UltrasonicSensorTest : public ::testing::Test {
