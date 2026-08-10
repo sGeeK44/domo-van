@@ -20,10 +20,14 @@ vi.mock("expo-secure-store", () => {
 });
 
 import * as SecureStore from "expo-secure-store";
-import { type DeviceInfo, DeviceStorage } from "@/hooks/DeviceStorage";
+import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
+import { SecureStoreDeviceRepository } from "@/infrastructure/storage/SecureStoreDeviceRepository";
 
-describe("DeviceStorage", () => {
+describe("SecureStoreDeviceRepository", () => {
+  let repository: SecureStoreDeviceRepository;
+
   beforeEach(() => {
+    repository = new SecureStoreDeviceRepository();
     vi.clearAllMocks();
     // Clear the mock store
     (
@@ -37,7 +41,7 @@ describe("DeviceStorage", () => {
 
   describe("getLastDevice", () => {
     it("returns null when no device is stored", async () => {
-      const result = await DeviceStorage.getLastDevice();
+      const result = await repository.getLastDevice("water");
       expect(result).toBeNull();
       expect(SecureStore.getItemAsync).toHaveBeenCalledWith(
         "water_module_last_device",
@@ -54,7 +58,7 @@ describe("DeviceStorage", () => {
         JSON.stringify(deviceInfo),
       );
 
-      const result = await DeviceStorage.getLastDevice();
+      const result = await repository.getLastDevice("water");
       expect(result).toEqual(deviceInfo);
     });
 
@@ -64,7 +68,7 @@ describe("DeviceStorage", () => {
         "invalid-json",
       );
 
-      const result = await DeviceStorage.getLastDevice();
+      const result = await repository.getLastDevice("water");
       expect(result).toBeNull();
     });
   });
@@ -75,7 +79,7 @@ describe("DeviceStorage", () => {
         id: "11:22:33:44:55:66",
         name: "My Module",
       };
-      await DeviceStorage.setLastDevice(deviceInfo);
+      await repository.setLastDevice(deviceInfo, "water");
 
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
         "water_module_last_device",
@@ -83,18 +87,21 @@ describe("DeviceStorage", () => {
       );
 
       // Verify it was actually stored
-      const stored = await DeviceStorage.getLastDevice();
+      const stored = await repository.getLastDevice("water");
       expect(stored).toEqual(deviceInfo);
     });
 
     it("overwrites existing device info", async () => {
-      await DeviceStorage.setLastDevice({ id: "first-device", name: "First" });
-      await DeviceStorage.setLastDevice({
-        id: "second-device",
-        name: "Second",
-      });
+      await repository.setLastDevice(
+        { id: "first-device", name: "First" },
+        "water",
+      );
+      await repository.setLastDevice(
+        { id: "second-device", name: "Second" },
+        "water",
+      );
 
-      const stored = await DeviceStorage.getLastDevice();
+      const stored = await repository.getLastDevice("water");
       expect(stored).toEqual({ id: "second-device", name: "Second" });
     });
   });
@@ -105,15 +112,15 @@ describe("DeviceStorage", () => {
         id: "device-to-remove",
         name: "Remove Me",
       };
-      await DeviceStorage.setLastDevice(deviceInfo);
-      expect(await DeviceStorage.getLastDevice()).toEqual(deviceInfo);
+      await repository.setLastDevice(deviceInfo, "water");
+      expect(await repository.getLastDevice("water")).toEqual(deviceInfo);
 
-      await DeviceStorage.clearLastDevice();
+      await repository.clearLastDevice("water");
       expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
         "water_module_last_device",
       );
 
-      const result = await DeviceStorage.getLastDevice();
+      const result = await repository.getLastDevice("water");
       expect(result).toBeNull();
     });
   });

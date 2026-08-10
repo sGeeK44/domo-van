@@ -7,7 +7,7 @@ import {
   Spacing,
   useThemeColor,
 } from "@/design-system";
-import type { DeviceInfo } from "@/hooks/DeviceStorage";
+import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
 
 type Props = {
   device: DeviceInfo;

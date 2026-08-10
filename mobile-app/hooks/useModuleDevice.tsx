@@ -8,7 +8,11 @@ import React, {
 } from "react";
 import { Device } from "react-native-ble-plx";
 import type { Bluetooth } from "@/core/bluetooth/Bluetooth";
-import { type DeviceInfo, DeviceStorage } from "@/hooks/DeviceStorage";
+import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
+import { SecureStoreDeviceRepository } from "@/infrastructure/storage/SecureStoreDeviceRepository";
+
+// Temporary binding: the composition root owns this instance from step 8 on.
+const deviceRepository = new SecureStoreDeviceRepository();
 
 /** Connection timeout in milliseconds */
 const CONNECTION_TIMEOUT_MS = 15_000;
@@ -61,7 +65,7 @@ export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
   const [isConnecting, setIsConnecting] = useState(false);
 
   useEffect(() => {
-    DeviceStorage.getLastDevice("water").then((storedDevice) => {
+    deviceRepository.getLastDevice("water").then((storedDevice) => {
       if (storedDevice) setLastDevice(storedDevice);
     });
   }, []);
@@ -74,7 +78,7 @@ export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
         name: newDevice.name ?? "Water Module",
       };
       setLastDevice(deviceInfo);
-      void DeviceStorage.setLastDevice(deviceInfo, "water");
+      void deviceRepository.setLastDevice(deviceInfo, "water");
     }
   }, []);
 
@@ -128,7 +132,7 @@ export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
       setDeviceState(null);
     }
     setLastDevice(null);
-    await DeviceStorage.clearLastDevice("water");
+    await deviceRepository.clearLastDevice("water");
   }, [device]);
 
   const value: ModuleDeviceContextValue = {
@@ -156,7 +160,7 @@ export function HeaterDeviceProviderV2({ children }: PropsWithChildren) {
   const [isConnecting, setIsConnecting] = useState(false);
 
   useEffect(() => {
-    DeviceStorage.getLastDevice("heater").then((storedDevice) => {
+    deviceRepository.getLastDevice("heater").then((storedDevice) => {
       if (storedDevice) setLastDevice(storedDevice);
     });
   }, []);
@@ -169,7 +173,7 @@ export function HeaterDeviceProviderV2({ children }: PropsWithChildren) {
         name: newDevice.name ?? "Heater Module",
       };
       setLastDevice(deviceInfo);
-      void DeviceStorage.setLastDevice(deviceInfo, "heater");
+      void deviceRepository.setLastDevice(deviceInfo, "heater");
     }
   }, []);
 
@@ -223,7 +227,7 @@ export function HeaterDeviceProviderV2({ children }: PropsWithChildren) {
       setDeviceState(null);
     }
     setLastDevice(null);
-    await DeviceStorage.clearLastDevice("heater");
+    await deviceRepository.clearLastDevice("heater");
   }, [device]);
 
   const value: ModuleDeviceContextValue = {
@@ -273,7 +277,7 @@ export function BatteryDeviceProviderV2({ children }: PropsWithChildren) {
   const [isConnecting, setIsConnecting] = useState(false);
 
   useEffect(() => {
-    DeviceStorage.getLastDevice("battery").then((storedDevice) => {
+    deviceRepository.getLastDevice("battery").then((storedDevice) => {
       if (storedDevice) setLastDevice(storedDevice);
     });
   }, []);
@@ -286,7 +290,7 @@ export function BatteryDeviceProviderV2({ children }: PropsWithChildren) {
         name: newDevice.name ?? "JK BMS",
       };
       setLastDevice(deviceInfo);
-      void DeviceStorage.setLastDevice(deviceInfo, "battery");
+      void deviceRepository.setLastDevice(deviceInfo, "battery");
     }
   }, []);
 
@@ -340,7 +344,7 @@ export function BatteryDeviceProviderV2({ children }: PropsWithChildren) {
       setDeviceState(null);
     }
     setLastDevice(null);
-    await DeviceStorage.clearLastDevice("battery");
+    await deviceRepository.clearLastDevice("battery");
   }, [device]);
 
   const value: ModuleDeviceContextValue = {
