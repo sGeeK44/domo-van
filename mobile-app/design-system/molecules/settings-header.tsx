@@ -1,7 +1,12 @@
-import { IconSymbol } from "@/design-system/atoms/icon-symbol";
-import { FontSize, FontWeight, Spacing, type ThemeColors } from "@/design-system/theme";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { IconSymbol } from "@/design-system/atoms/icon-symbol";
+import {
+  FontSize,
+  FontWeight,
+  Spacing,
+  type ThemeColors,
+} from "@/design-system/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 export type SettingsHeaderProps = {
   title: string;

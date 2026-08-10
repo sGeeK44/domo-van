@@ -1,5 +1,5 @@
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 export type StatusBadgeProps = {
   status: "connected" | "partial" | "disconnected" | "loading";

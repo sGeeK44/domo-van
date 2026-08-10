@@ -1,7 +1,10 @@
 import { StyleSheet, View } from "react-native";
-import { PageTitle } from "@/design-system/atoms/page-title";
 import { IconCircleButton } from "@/design-system/atoms/icon-circle-button";
-import { StatusBadge, type StatusBadgeProps } from "@/design-system/atoms/status-badge";
+import { PageTitle } from "@/design-system/atoms/page-title";
+import {
+  StatusBadge,
+  type StatusBadgeProps,
+} from "@/design-system/atoms/status-badge";
 import { Spacing } from "@/design-system/theme";
 import { useTheme } from "@/hooks/ThemeContext";
 

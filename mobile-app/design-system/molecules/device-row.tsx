@@ -1,8 +1,21 @@
-import { Pressable, StyleSheet, Text, View, type PressableProps } from "react-native";
-import { IconSymbol } from "@/design-system/atoms/icon-symbol";
-import { BorderRadius, FontSize, FontWeight, Opacity, Spacing, type ThemeColors } from "@/design-system/theme";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import type { ComponentProps } from "react";
+import {
+  Pressable,
+  type PressableProps,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { IconSymbol } from "@/design-system/atoms/icon-symbol";
+import {
+  BorderRadius,
+  FontSize,
+  FontWeight,
+  Opacity,
+  Spacing,
+  type ThemeColors,
+} from "@/design-system/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 export type DeviceRowProps = {
   icon?: ComponentProps<typeof IconSymbol>["name"];
@@ -12,16 +25,20 @@ export type DeviceRowProps = {
   onPress?: PressableProps["onPress"];
 };
 
-export function DeviceRow({ icon, name, subtitle, children, onPress }: DeviceRowProps) {
+export function DeviceRow({
+  icon,
+  name,
+  subtitle,
+  children,
+  onPress,
+}: DeviceRowProps) {
   const colors = useThemeColor();
   const styles = getStyles(colors);
   const Container = onPress ? Pressable : View;
 
   return (
     <Container style={styles.row} onPress={onPress}>
-      {icon && (
-        <IconSymbol name={icon} size={20} color={colors.text.primary} />
-      )}
+      {icon && <IconSymbol name={icon} size={20} color={colors.text.primary} />}
       <View style={styles.textContainer}>
         <Text style={styles.name}>{name}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}

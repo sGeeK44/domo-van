@@ -130,7 +130,11 @@ export function DrainSlider({
               />
               <GestureDetector gesture={panGesture}>
                 <Animated.View style={[styles.handle, animatedHandleStyle]}>
-                  <IconSymbol name="delete" size={28} color={colors.text.inverse} />
+                  <IconSymbol
+                    name="delete"
+                    size={28}
+                    color={colors.text.inverse}
+                  />
                 </Animated.View>
               </GestureDetector>
             </View>

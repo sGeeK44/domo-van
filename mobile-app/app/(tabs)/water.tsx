@@ -1,3 +1,7 @@
+import { useRouter } from "expo-router";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { StatusBar, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { DrainSlider } from "@/components/water/drain-slider";
 import { WaterTank } from "@/components/water/water-tank";
 import { Observable } from "@/core/observable";
@@ -6,12 +10,8 @@ import { PageHeader } from "@/design-system/molecules/page-header";
 import { ValveState } from "@/domain/water/DrainValve";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { useMultiModuleConnection } from "@/hooks/useMultiModuleConnection";
 import { useWaterDevice } from "@/hooks/useModuleDevice";
-import { useRouter } from "expo-router";
-import { useEffect, useMemo, useSyncExternalStore } from "react";
-import { StatusBar, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useMultiModuleConnection } from "@/hooks/useMultiModuleConnection";
 
 /** React adapter for Observable<T> */
 function useObservable<T>(obs: Observable<T> | null): T | null {
@@ -42,7 +42,8 @@ export default function WaterScreen() {
   const router = useRouter();
 
   const { device, isConnected } = useWaterDevice();
-  const { globalStatus, connectAll, disconnectAll } = useMultiModuleConnection();
+  const { globalStatus, connectAll, disconnectAll } =
+    useMultiModuleConnection();
 
   const handleBluetoothPress = () => {
     if (globalStatus === "connected" || globalStatus === "partial") {
@@ -52,7 +53,8 @@ export default function WaterScreen() {
     }
   };
 
-  const bluetoothStatus = globalStatus === "connecting" ? "loading" : globalStatus;
+  const bluetoothStatus =
+    globalStatus === "connecting" ? "loading" : globalStatus;
 
   // Create WaterSystem when device is connected
   const waterSystem = useMemo(

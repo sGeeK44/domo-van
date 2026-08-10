@@ -1,3 +1,7 @@
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import { StatusBar, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { CircularTemperatureDial } from "@/components/heater/circular-temperature-dial";
 import { Observable } from "@/core/observable";
 import { Colors } from "@/design-system";
@@ -5,12 +9,8 @@ import { PageHeader } from "@/design-system/molecules/page-header";
 import { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { useMultiModuleConnection } from "@/hooks/useMultiModuleConnection";
 import { useHeaterDevice } from "@/hooks/useModuleDevice";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
-import { StatusBar, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useMultiModuleConnection } from "@/hooks/useMultiModuleConnection";
 
 /** React adapter for Observable<T> */
 function useObservable<T>(obs: Observable<T> | null): T | null {
@@ -37,7 +37,8 @@ export default function HeaterScreen() {
   const router = useRouter();
 
   const { device, isConnected } = useHeaterDevice();
-  const { globalStatus, connectAll, disconnectAll } = useMultiModuleConnection();
+  const { globalStatus, connectAll, disconnectAll } =
+    useMultiModuleConnection();
 
   const handleBluetoothPress = () => {
     if (globalStatus === "connected" || globalStatus === "partial") {
@@ -47,7 +48,8 @@ export default function HeaterScreen() {
     }
   };
 
-  const bluetoothStatus = globalStatus === "connecting" ? "loading" : globalStatus;
+  const bluetoothStatus =
+    globalStatus === "connecting" ? "loading" : globalStatus;
 
   // Create HeaterSystem when device is connected
   const heaterSystem = useMemo(

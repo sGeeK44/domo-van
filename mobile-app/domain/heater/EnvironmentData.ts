@@ -31,7 +31,8 @@ export function parseEnvironmentMessage(msg: string): {
   const pMatch = /P=(\d+)/.exec(trimmed);
   const extMatch = /EXT=(-?\d+)/.exec(trimmed);
 
-  if (!tMatch?.[1] || !hMatch?.[1] || !pMatch?.[1] || !extMatch?.[1]) return null;
+  if (!tMatch?.[1] || !hMatch?.[1] || !pMatch?.[1] || !extMatch?.[1])
+    return null;
 
   const tempTenths = Number(tMatch[1]);
   const humidityTenths = Number(hMatch[1]);

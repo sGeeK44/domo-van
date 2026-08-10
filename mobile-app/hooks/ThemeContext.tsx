@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useState,
+} from "react";
 import { useColorScheme } from "react-native";
 
 type ColorScheme = "light" | "dark";
@@ -16,7 +22,8 @@ type ThemeProviderProps = {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const systemColorScheme = useColorScheme() ?? "dark";
-  const [colorScheme, setColorScheme] = useState<ColorScheme>(systemColorScheme);
+  const [colorScheme, setColorScheme] =
+    useState<ColorScheme>(systemColorScheme);
 
   const toggleTheme = useCallback(() => {
     setColorScheme((prev) => (prev === "dark" ? "light" : "dark"));

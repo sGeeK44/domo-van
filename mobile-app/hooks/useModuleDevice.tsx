@@ -1,9 +1,3 @@
-import type { Bluetooth } from "@/core/bluetooth/Bluetooth";
-import {
-  type DeviceInfo,
-  DeviceStorage,
-  type ModuleKey,
-} from "@/hooks/DeviceStorage";
 import React, {
   createContext,
   type PropsWithChildren,
@@ -13,6 +7,12 @@ import React, {
   useState,
 } from "react";
 import { Device, Subscription } from "react-native-ble-plx";
+import type { Bluetooth } from "@/core/bluetooth/Bluetooth";
+import {
+  type DeviceInfo,
+  DeviceStorage,
+  type ModuleKey,
+} from "@/hooks/DeviceStorage";
 
 /** Connection timeout in milliseconds */
 const CONNECTION_TIMEOUT_MS = 15_000;
@@ -125,7 +125,10 @@ export function ModuleDeviceProvider({
           await connectedDevice.discoverAllServicesAndCharacteristics();
           return connectedDevice;
         })();
-        const connectedDevice = await withTimeout(connectionPromise, CONNECTION_TIMEOUT_MS);
+        const connectedDevice = await withTimeout(
+          connectionPromise,
+          CONNECTION_TIMEOUT_MS,
+        );
         setDevice(connectedDevice);
       } catch {
         // Silently fail - user can manually connect via settings
@@ -265,7 +268,10 @@ export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
           await connectedDevice.discoverAllServicesAndCharacteristics();
           return connectedDevice;
         })();
-        const connectedDevice = await withTimeout(connectionPromise, CONNECTION_TIMEOUT_MS);
+        const connectedDevice = await withTimeout(
+          connectionPromise,
+          CONNECTION_TIMEOUT_MS,
+        );
         setDevice(connectedDevice);
       } catch {
         // Silently fail
@@ -357,7 +363,10 @@ export function HeaterDeviceProviderV2({ children }: PropsWithChildren) {
           await connectedDevice.discoverAllServicesAndCharacteristics();
           return connectedDevice;
         })();
-        const connectedDevice = await withTimeout(connectionPromise, CONNECTION_TIMEOUT_MS);
+        const connectedDevice = await withTimeout(
+          connectionPromise,
+          CONNECTION_TIMEOUT_MS,
+        );
         setDevice(connectedDevice);
       } catch {
         // Silently fail
@@ -471,7 +480,10 @@ export function BatteryDeviceProviderV2({ children }: PropsWithChildren) {
           await connectedDevice.discoverAllServicesAndCharacteristics();
           return connectedDevice;
         })();
-        const connectedDevice = await withTimeout(connectionPromise, CONNECTION_TIMEOUT_MS);
+        const connectedDevice = await withTimeout(
+          connectionPromise,
+          CONNECTION_TIMEOUT_MS,
+        );
         setDevice(connectedDevice);
       } catch {
         // Silently fail

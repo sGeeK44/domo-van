@@ -211,8 +211,7 @@ export function parseResponse(data: Uint8Array): JkBmsData | null {
 
       case FIELD_TOTAL_VOLTAGE: {
         // Total voltage (2 bytes, in 10mV units)
-        const voltageRaw =
-          (dataSection[offset] << 8) | dataSection[offset + 1];
+        const voltageRaw = (dataSection[offset] << 8) | dataSection[offset + 1];
         result.totalVoltage = voltageRaw / 100; // Convert to V
         offset += 2;
         break;
@@ -258,16 +257,14 @@ export function parseResponse(data: Uint8Array): JkBmsData | null {
 
       case FIELD_CELL_COUNT: {
         // Cell count (2 bytes)
-        result.cellCount =
-          (dataSection[offset] << 8) | dataSection[offset + 1];
+        result.cellCount = (dataSection[offset] << 8) | dataSection[offset + 1];
         offset += 2;
         break;
       }
 
       case FIELD_BALANCE_CURRENT: {
         // Balance current (2 bytes, in mA)
-        const balanceRaw =
-          (dataSection[offset] << 8) | dataSection[offset + 1];
+        const balanceRaw = (dataSection[offset] << 8) | dataSection[offset + 1];
         result.balanceCurrent = balanceRaw / 1000; // Convert to A
         offset += 2;
         break;

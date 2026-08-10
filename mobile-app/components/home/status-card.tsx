@@ -1,8 +1,14 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { BorderRadius, Colors, FontSize, FontWeight, IconSymbol } from "@/design-system";
-import { useThemeColor } from "@/hooks/use-theme-color";
-import type { ComponentProps } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import type { ComponentProps } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  BorderRadius,
+  Colors,
+  FontSize,
+  FontWeight,
+  IconSymbol,
+} from "@/design-system";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 export type StatusCardProps = {
   icon: ComponentProps<typeof MaterialIcons>["name"];

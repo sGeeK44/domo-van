@@ -7,7 +7,7 @@ export interface DiscoveredBluetoothDevice {
 }
 
 export class Bluetooth {
-  constructor(private readonly BleManager: BleManager) { }
+  constructor(private readonly BleManager: BleManager) {}
 
   private async ensureBlePermissionsAndroid(): Promise<boolean> {
     if (Platform.OS !== "android") return true;
@@ -23,9 +23,9 @@ export class Bluetooth {
         ]);
         return (
           res[PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN] ===
-          PermissionsAndroid.RESULTS.GRANTED &&
+            PermissionsAndroid.RESULTS.GRANTED &&
           res[PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT] ===
-          PermissionsAndroid.RESULTS.GRANTED
+            PermissionsAndroid.RESULTS.GRANTED
         );
       }
 

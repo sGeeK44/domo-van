@@ -6,7 +6,14 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import Svg, { Circle, Defs, G, Path, RadialGradient, Stop } from "react-native-svg";
+import Svg, {
+  Circle,
+  Defs,
+  G,
+  Path,
+  RadialGradient,
+  Stop,
+} from "react-native-svg";
 import { Colors, FontSize, FontWeight, IconSymbol } from "@/design-system";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
@@ -42,7 +49,10 @@ function getBatteryColor(percentage: number, isConnected: boolean): string {
 /**
  * Get dimmed battery color for background arc
  */
-function getBatteryColorDimmed(percentage: number, isConnected: boolean): string {
+function getBatteryColorDimmed(
+  percentage: number,
+  isConnected: boolean,
+): string {
   if (!isConnected) return DISCONNECTED_COLOR_DIMMED;
   if (percentage > 50) return "rgba(34, 197, 94, 0.2)";
   if (percentage > 20) return "rgba(249, 115, 22, 0.2)";
@@ -135,7 +145,13 @@ export function BatteryGauge({
   // Background arc path (full arc)
   const bgArcPath =
     radius > 0
-      ? describeArc(cx, cy, radius, ARC_START_ANGLE, ARC_START_ANGLE + ARC_SWEEP)
+      ? describeArc(
+          cx,
+          cy,
+          radius,
+          ARC_START_ANGLE,
+          ARC_START_ANGLE + ARC_SWEEP,
+        )
       : "";
 
   // Animated props for the filled arc
@@ -153,9 +169,11 @@ export function BatteryGauge({
 
   // Format consumption with sign
   const consumptionText = isConnected
-    ? consumption >= 0 ? `+${consumption}W` : `${consumption}W`
+    ? consumption >= 0
+      ? `+${consumption}W`
+      : `${consumption}W`
     : "-";
-  
+
   // Display values
   const displayPercentage = isConnected ? `${Math.round(percentage)}%` : "-";
   const displayVoltage = isConnected ? `${voltage.toFixed(1)}V` : "-";
@@ -251,7 +269,11 @@ export function BatteryGauge({
       {/* Bottom indicators */}
       <View style={styles.indicatorsRow}>
         <View style={styles.indicator}>
-          <IconSymbol name="battery-charging-full" size={18} color={colors.neutral["500"]} />
+          <IconSymbol
+            name="battery-charging-full"
+            size={18}
+            color={colors.neutral["500"]}
+          />
           <Text style={styles.indicatorValue}>{displayVoltage}</Text>
         </View>
         <View style={styles.indicator}>
