@@ -7,15 +7,11 @@ import {
   Spacing,
   useThemeColor,
 } from "@/design-system";
-
-type BleDevice = {
-  id: string;
-  name?: string | null;
-};
+import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 
 type Props = {
   isScanning: boolean;
-  discoveredDevices: BleDevice[];
+  discoveredDevices: DiscoveredBluetoothDevice[];
   onConnect: (deviceId: string) => Promise<void>;
 };
 

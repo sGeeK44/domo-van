@@ -1,7 +1,11 @@
 import { decode as base64Decode, encode as base64Encode } from "base-64";
 import { BleError, Characteristic, Device } from "react-native-ble-plx";
+import {
+  buildRxUuid,
+  buildServiceUuid,
+  buildTxUuid,
+} from "@/domain/modules/BleUuid";
 import { Listener, Unsubscribe } from "../observable";
-import { buildRxUuid, buildServiceUuid, buildTxUuid } from "./BleUuid";
 
 export interface Channel {
   listen(listener: Listener<string>): Unsubscribe;

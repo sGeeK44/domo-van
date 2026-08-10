@@ -10,8 +10,6 @@ import {
   SavedDeviceSection,
   ScanSection,
 } from "@/components/module-settings";
-import { buildServiceUuid } from "@/core/bluetooth/BleUuid";
-import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
 import {
   Button,
   SettingsHeader,
@@ -20,6 +18,8 @@ import {
   useThemeColor,
 } from "@/design-system";
 import { HeaterSystem } from "@/domain/heater/HeaterSystem";
+import { buildServiceUuid } from "@/domain/modules/BleUuid";
+import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
 import { useHeaterDevice } from "@/hooks/useModuleDevice";
 

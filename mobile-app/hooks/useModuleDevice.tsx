@@ -7,8 +7,8 @@ import React, {
   useState,
 } from "react";
 import { Device } from "react-native-ble-plx";
-import type { Bluetooth } from "@/core/bluetooth/Bluetooth";
 import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
+import type { Bluetooth } from "@/infrastructure/ble/Bluetooth";
 import { SecureStoreDeviceRepository } from "@/infrastructure/storage/SecureStoreDeviceRepository";
 
 // Temporary binding: the composition root owns this instance from step 8 on.

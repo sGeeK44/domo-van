@@ -1,12 +1,11 @@
 import { PermissionsAndroid, Platform } from "react-native";
 import { BleManager, Device } from "react-native-ble-plx";
+import type {
+  BluetoothScanner,
+  DiscoveredBluetoothDevice,
+} from "@/domain/ports/BluetoothScanner";
 
-export interface DiscoveredBluetoothDevice {
-  id: string;
-  name: string;
-}
-
-export class Bluetooth {
+export class Bluetooth implements BluetoothScanner {
   constructor(private readonly BleManager: BleManager) {}
 
   private async ensureBlePermissionsAndroid(): Promise<boolean> {
