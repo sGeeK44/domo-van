@@ -11,8 +11,8 @@
 static constexpr uint8_t SENSOR_PINS[4] = {4, 5, 13, 15};
 static constexpr uint8_t FAN_PINS[4] = {16, 17, 18, 19};
 
-// BME280 I2C address (0x76 or 0x77 depending on SDO pin)
-static constexpr uint8_t BME280_ADDRESS = 0x76;
+// The board ties the BME280 SDO pin low, which selects the alternate I2C address.
+static constexpr uint8_t BME280_I2C_ADDRESS = BME280_ADDRESS_ALTERNATE;
 
 // Exterior temperature sensor (DS18B20) pin
 static constexpr uint8_t EXTERIOR_SENSOR_PIN = 25;
@@ -40,7 +40,7 @@ void Program::setup(Stream &serial) {
   _logger->info("Temperature regulators initialized with BLE channels");
 
   // Initialize BME280 environment sensor (interior)
-  _bme280 = new Bme280Sensor(_logger, BME280_ADDRESS);
+  _bme280 = new Bme280Sensor(_logger, BME280_I2C_ADDRESS);
   _bme280->begin();
 
   // Initialize exterior temperature sensor (DS18B20)
