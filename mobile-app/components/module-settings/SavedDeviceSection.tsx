@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { ActivityIndicator, View } from "react-native";
-import { Spacing, useThemeColor } from "@/design-system";
-import { Button } from "@/design-system/atoms/button";
-import { DeviceRow } from "@/design-system/molecules/device-row";
-import { Section } from "@/design-system/molecules/section";
+import {
+  Button,
+  DeviceRow,
+  Section,
+  Spacing,
+  useThemeColor,
+} from "@/design-system";
 import type { DeviceInfo } from "@/hooks/DeviceStorage";
 
 type Props = {

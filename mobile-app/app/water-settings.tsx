@@ -13,9 +13,13 @@ import { TankSettingsSection } from "@/components/water-settings/TankSettingsSec
 import { ValveSettingsSection } from "@/components/water-settings/ValveSettingsSection";
 import { buildServiceUuid } from "@/core/bluetooth/BleUuid";
 import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
-import { Spacing, type ThemeColors, useThemeColor } from "@/design-system";
-import { Button } from "@/design-system/atoms/button";
-import { SettingsHeader } from "@/design-system/molecules/settings-header";
+import {
+  Button,
+  SettingsHeader,
+  Spacing,
+  type ThemeColors,
+  useThemeColor,
+} from "@/design-system";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
 import { useWaterDevice } from "@/hooks/useModuleDevice";

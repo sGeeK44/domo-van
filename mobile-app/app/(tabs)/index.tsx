@@ -5,8 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BatteryGauge } from "@/components/home/battery-gauge";
 import { EnvironmentCard } from "@/components/home/environment-card";
 import { StatusCard } from "@/components/home/status-card";
-import { Colors, useThemeColor } from "@/design-system";
-import { PageHeader } from "@/design-system/molecules/page-header";
+import { Colors, PageHeader, useThemeColor } from "@/design-system";
 import { BatterySystem } from "@/domain/battery/BatterySystem";
 import {
   calculateRemainingTime,

@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet } from "react-native";
-import { Spacing, useThemeColor } from "@/design-system";
-import { IconSymbol } from "@/design-system/atoms/icon-symbol";
-import { DeviceRow } from "@/design-system/molecules/device-row";
-import { Section } from "@/design-system/molecules/section";
+import {
+  DeviceRow,
+  IconSymbol,
+  Section,
+  Spacing,
+  useThemeColor,
+} from "@/design-system";
 
 type BleDevice = {
   id: string;

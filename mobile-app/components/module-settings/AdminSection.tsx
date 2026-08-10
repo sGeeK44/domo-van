@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { StyleSheet, ToastAndroid, View } from "react-native";
-import { Spacing } from "@/design-system";
-import { FormField } from "@/design-system/molecules/form-field";
+import { FormField, Spacing } from "@/design-system";
 import type { AdminModule } from "@/domain/AdminModule";
 
 const showToast = (message: string) => {

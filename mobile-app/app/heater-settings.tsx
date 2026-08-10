@@ -12,9 +12,13 @@ import {
 } from "@/components/module-settings";
 import { buildServiceUuid } from "@/core/bluetooth/BleUuid";
 import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
-import { Spacing, type ThemeColors, useThemeColor } from "@/design-system";
-import { Button } from "@/design-system/atoms/button";
-import { SettingsHeader } from "@/design-system/molecules/settings-header";
+import {
+  Button,
+  SettingsHeader,
+  Spacing,
+  type ThemeColors,
+  useThemeColor,
+} from "@/design-system";
 import { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
 import { useHeaterDevice } from "@/hooks/useModuleDevice";
