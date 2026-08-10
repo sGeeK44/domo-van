@@ -2,9 +2,8 @@
 #include <Wire.h>
 
 Bme280Sensor::Bme280Sensor(Logger *logger, uint8_t address)
-    : _logger(logger), _address(address), _available(false),
-      _lastTemperature(DEFAULT_TEMP), _lastHumidity(DEFAULT_HUMIDITY),
-      _lastPressure(DEFAULT_PRESSURE) {}
+    : _logger(logger), _address(address), _available(false), _lastTemperature(DEFAULT_TEMP),
+      _lastHumidity(DEFAULT_HUMIDITY), _lastPressure(DEFAULT_PRESSURE) {}
 
 bool Bme280Sensor::begin() {
   Wire.begin();
@@ -20,8 +19,7 @@ bool Bme280Sensor::begin() {
                    Adafruit_BME280::SAMPLING_X2,  // temperature
                    Adafruit_BME280::SAMPLING_X16, // pressure
                    Adafruit_BME280::SAMPLING_X1,  // humidity
-                   Adafruit_BME280::FILTER_X16,
-                   Adafruit_BME280::STANDBY_MS_500);
+                   Adafruit_BME280::FILTER_X16, Adafruit_BME280::STANDBY_MS_500);
 
   _available = true;
   _logger->info("BME280 sensor initialized at address 0x%02X", _address);

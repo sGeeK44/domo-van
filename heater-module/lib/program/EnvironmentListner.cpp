@@ -34,7 +34,7 @@ void EnvironmentListner::notify() {
   int pressureInt = static_cast<int>(pressure * 10);
   int exteriorTempInt = static_cast<int>(exteriorTemp * 10);
 
-  std::string message = "ENV:T=" + std::to_string(interiorTempInt) + ";H=" + std::to_string(humidityInt) + ";P=" +
-                        std::to_string(pressureInt) + ";EXT=" + std::to_string(exteriorTempInt);
+  std::string message = "ENV:T=" + std::to_string(interiorTempInt) + ";H=" + std::to_string(humidityInt) +
+                        ";P=" + std::to_string(pressureInt) + ";EXT=" + std::to_string(exteriorTempInt);
   send(message);
 }
