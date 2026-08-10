@@ -1,10 +1,10 @@
-import { Channel } from "@/core/bluetooth/Channel";
 import {
   createObservable,
   Listener,
   Observable,
   Unsubscribe,
 } from "@/core/observable";
+import { Channel } from "@/domain/ports/Channel";
 
 export type EnvironmentSnapshot = {
   temperatureCelsius: number; // Interior temperature (e.g., 22.5)

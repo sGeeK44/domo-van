@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { Channel } from "@/core/bluetooth/Channel";
 import { Listener, Unsubscribe } from "@/core/observable";
+import { Channel } from "@/domain/ports/Channel";
 import { DrainValve } from "@/domain/water/DrainValve";
 import { TankLevelSensor } from "@/domain/water/TankLevelSensor";
 
@@ -17,10 +17,6 @@ class FakeChannel implements Channel {
   send(command: string): Promise<void> {
     this.commands.push(command);
     return Promise.resolve();
-  }
-
-  disconnect(): Promise<void> {
-    throw new Error("Method not implemented.");
   }
 
   /** Simulate receiving a message on a channel */
@@ -103,7 +99,6 @@ describe("DrainValve", () => {
       send: async () => {
         throw new Error("not connected");
       },
-      disconnect: async () => {},
     };
 
     const valve = new DrainValve(failingBle);

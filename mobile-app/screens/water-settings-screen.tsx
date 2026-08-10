@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useBle } from "@/components/BleProvider";
 import {
   AdminSection,
   DiscoveredDevicesList,
@@ -11,6 +10,9 @@ import {
 } from "@/components/module-settings";
 import { TankSettingsSection } from "@/components/water-settings/TankSettingsSection";
 import { ValveSettingsSection } from "@/components/water-settings/ValveSettingsSection";
+import { useContainer } from "@/composition/ContainerProvider";
+import { useWaterDevice } from "@/composition/connection/useModuleDevice";
+import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
 import {
   Button,
   SettingsHeader,
@@ -18,10 +20,8 @@ import {
   type ThemeColors,
   useThemeColor,
 } from "@/design-system";
-import { buildServiceUuid } from "@/domain/modules/BleUuid";
+import { WATER_MODULE } from "@/domain/modules/ModuleDescriptor";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
-import { WaterSystem } from "@/domain/water/WaterSystem";
-import { useWaterDevice } from "@/hooks/useModuleDevice";
 import { useAutoScanWithTimeout } from "@/screens/hooks/useAutoScanWithTimeout";
 
 export default function WaterSettingsScreen() {
@@ -30,7 +30,7 @@ export default function WaterSettingsScreen() {
   const router = useRouter();
 
   // Bluetooth for scanning and connecting
-  const { bluetooth } = useBle();
+  const { bluetooth } = useContainer();
 
   // Connection state from hook (state-only)
   const { device, setDevice, isConnected, lastDevice, forgetDevice } =
@@ -45,18 +45,7 @@ export default function WaterSettingsScreen() {
 
   const isModuleConnected = isConnected && device != null;
 
-  // Create WaterSystem when device is connected (for AdminSection)
-  const waterSystem = useMemo(
-    () => (device ? new WaterSystem(device) : null),
-    [device],
-  );
-
-  // Cleanup WaterSystem on unmount or device change
-  useEffect(() => {
-    return () => {
-      waterSystem?.dispose();
-    };
-  }, [waterSystem]);
+  const waterSystem = useWaterSystem();
 
   // Scanning functions
   const startScan = useCallback(async () => {
@@ -64,8 +53,7 @@ export default function WaterSettingsScreen() {
     setLastError(null);
     setIsScanning(true);
     try {
-      const serviceUuid = buildServiceUuid(WaterSystem.serviceId);
-      await bluetooth.startScan(serviceUuid, (foundDevice) => {
+      await bluetooth.startScan(WATER_MODULE.scanServiceUuid, (foundDevice) => {
         setDiscoveredDevices((prev) => {
           if (prev.some((d) => d.id === foundDevice.id)) return prev;
           return [...prev, foundDevice];
@@ -145,9 +133,15 @@ export default function WaterSettingsScreen() {
                 adminModule={waterSystem.admin}
                 deviceName={device.name}
               />
-              <TankSettingsSection connectedDevice={device} name="clean" />
-              <TankSettingsSection connectedDevice={device} name="grey" />
-              <ValveSettingsSection connectedDevice={device} />
+              <TankSettingsSection
+                tank={waterSystem.cleanTank}
+                label="Eau Propre"
+              />
+              <TankSettingsSection
+                tank={waterSystem.greyTank}
+                label="Eau Grise"
+              />
+              <ValveSettingsSection valve={waterSystem.greyDrainValve} />
             </>
           )}
         </ScrollView>

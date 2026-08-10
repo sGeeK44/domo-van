@@ -1,16 +1,15 @@
 import { useRouter } from "expo-router";
-import { useEffect, useMemo } from "react";
 import { StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DrainSlider } from "@/components/water/drain-slider";
 import { WaterTank } from "@/components/water/water-tank";
+import { useWaterDevice } from "@/composition/connection/useModuleDevice";
+import { useMultiModuleConnection } from "@/composition/connection/useMultiModuleConnection";
+import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import { Colors, PageHeader, useThemeColor } from "@/design-system";
 import { ValveState } from "@/domain/water/DrainValve";
 import { TankLevelSnapshot } from "@/domain/water/TankLevelSensor";
-import { WaterSystem } from "@/domain/water/WaterSystem";
-import { useWaterDevice } from "@/hooks/useModuleDevice";
-import { useMultiModuleConnection } from "@/hooks/useMultiModuleConnection";
 
 const DEFAULT_TANK_STATE: TankLevelSnapshot = {
   capacityLiters: 0,
@@ -32,7 +31,8 @@ export default function WaterScreen() {
   const styles = getStyles(colors);
   const router = useRouter();
 
-  const { device, isConnected } = useWaterDevice();
+  const { isConnected } = useWaterDevice();
+  const waterSystem = useWaterSystem();
   const { globalStatus, connectAll, disconnectAll } =
     useMultiModuleConnection();
 
@@ -46,19 +46,6 @@ export default function WaterScreen() {
 
   const bluetoothStatus =
     globalStatus === "connecting" ? "loading" : globalStatus;
-
-  // Create WaterSystem when device is connected
-  const waterSystem = useMemo(
-    () => (device ? new WaterSystem(device) : null),
-    [device],
-  );
-
-  // Cleanup WaterSystem on unmount or device change
-  useEffect(() => {
-    return () => {
-      waterSystem?.dispose();
-    };
-  }, [waterSystem]);
 
   const clean = useObservable(
     waterSystem?.cleanTank ?? null,

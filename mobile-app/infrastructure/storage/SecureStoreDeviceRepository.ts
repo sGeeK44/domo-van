@@ -1,8 +1,8 @@
 import * as SecureStore from "expo-secure-store";
+import type { ModuleKey } from "@/domain/modules/ModuleDescriptor";
 import type {
   DeviceInfo,
   DeviceRepository,
-  ModuleKey,
 } from "@/domain/ports/DeviceRepository";
 
 function getStorageKey(moduleKey: ModuleKey): string {

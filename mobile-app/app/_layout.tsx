@@ -8,14 +8,8 @@ import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
-import { BleProvider } from "@/components/BleProvider";
+import { AppProviders } from "@/composition/AppProviders";
 import { ThemeProvider, useTheme } from "@/design-system";
-import {
-  BatteryDeviceProviderV2,
-  HeaterDeviceProviderV2,
-  WaterDeviceProviderV2,
-} from "@/hooks/useModuleDevice";
-import { MultiModuleConnectionProvider } from "@/hooks/useMultiModuleConnection";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -28,34 +22,23 @@ function AppContent() {
     <NavigationThemeProvider
       value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
     >
-      <BleProvider>
-        <WaterDeviceProviderV2>
-          <HeaterDeviceProviderV2>
-            <BatteryDeviceProviderV2>
-              <MultiModuleConnectionProvider>
-                <Stack>
-                  <Stack.Screen
-                    name="(tabs)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="water-settings"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="heater-settings"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="battery-settings"
-                    options={{ headerShown: false }}
-                  />
-                </Stack>
-              </MultiModuleConnectionProvider>
-            </BatteryDeviceProviderV2>
-          </HeaterDeviceProviderV2>
-        </WaterDeviceProviderV2>
-      </BleProvider>
+      <AppProviders>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="water-settings"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="heater-settings"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="battery-settings"
+            options={{ headerShown: false }}
+          />
+        </Stack>
+      </AppProviders>
       <StatusBar style="auto" />
     </NavigationThemeProvider>
   );

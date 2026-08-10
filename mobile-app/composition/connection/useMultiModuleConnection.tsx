@@ -6,12 +6,12 @@ import React, {
   useEffect,
   useRef,
 } from "react";
-import { useBle } from "@/components/BleProvider";
+import { useContainer } from "@/composition/ContainerProvider";
 import {
   useBatteryDevice,
   useHeaterDevice,
   useWaterDevice,
-} from "@/hooks/useModuleDevice";
+} from "@/composition/connection/useModuleDevice";
 
 export type GlobalConnectionStatus =
   | "connected"
@@ -36,10 +36,10 @@ const MultiModuleConnectionContext =
 /**
  * Provider that manages connections to ALL BLE modules simultaneously.
  * Auto-connects to all saved modules on mount (app startup).
- * Must be placed inside BleProvider, WaterDeviceProviderV2, and HeaterDeviceProviderV2.
+ * Must be placed inside ContainerProvider and the three device providers.
  */
 export function MultiModuleConnectionProvider({ children }: PropsWithChildren) {
-  const { bluetooth } = useBle();
+  const { bluetooth } = useContainer();
   const waterDevice = useWaterDevice();
   const heaterDevice = useHeaterDevice();
   const batteryDevice = useBatteryDevice();

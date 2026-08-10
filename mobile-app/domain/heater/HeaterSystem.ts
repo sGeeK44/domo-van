@@ -1,8 +1,7 @@
-import { Device } from "react-native-ble-plx";
-import { BlePlxChannel } from "@/core/bluetooth/Channel";
 import { AdminModule } from "@/domain/AdminModule";
 import { EnvironmentData } from "@/domain/heater/EnvironmentData";
 import { HeaterZone } from "@/domain/heater/HeaterZone";
+import type { ModuleTransport } from "@/domain/ports/ModuleTransport";
 
 export type HeaterModuleChannel =
   | "admin"
@@ -12,68 +11,32 @@ export type HeaterModuleChannel =
   | "heater_3"
   | "environment";
 
+const CHANNELS: Record<HeaterModuleChannel, string> = {
+  admin: "0001",
+  heater_0: "0002",
+  heater_1: "0003",
+  heater_2: "0004",
+  heater_3: "0005",
+  environment: "0006",
+};
+
 export class HeaterSystem {
   readonly admin: AdminModule;
   readonly zones: readonly [HeaterZone, HeaterZone, HeaterZone, HeaterZone];
   readonly environment: EnvironmentData;
 
-  public static readonly serviceId: string = "0002";
-
-  private readonly channels: Record<HeaterModuleChannel, string> = {
-    admin: "0001",
-    heater_0: "0002",
-    heater_1: "0003",
-    heater_2: "0004",
-    heater_3: "0005",
-    environment: "0006",
-  };
-
-  constructor(bluetooth: Device) {
-    this.admin = new AdminModule(
-      new BlePlxChannel(bluetooth, HeaterSystem.serviceId, this.channels.admin),
-    );
+  constructor(transport: ModuleTransport) {
+    this.admin = new AdminModule(transport.openChannel(CHANNELS.admin));
 
     this.zones = [
-      new HeaterZone(
-        new BlePlxChannel(
-          bluetooth,
-          HeaterSystem.serviceId,
-          this.channels.heater_0,
-        ),
-        0,
-      ),
-      new HeaterZone(
-        new BlePlxChannel(
-          bluetooth,
-          HeaterSystem.serviceId,
-          this.channels.heater_1,
-        ),
-        1,
-      ),
-      new HeaterZone(
-        new BlePlxChannel(
-          bluetooth,
-          HeaterSystem.serviceId,
-          this.channels.heater_2,
-        ),
-        2,
-      ),
-      new HeaterZone(
-        new BlePlxChannel(
-          bluetooth,
-          HeaterSystem.serviceId,
-          this.channels.heater_3,
-        ),
-        3,
-      ),
+      new HeaterZone(transport.openChannel(CHANNELS.heater_0), 0),
+      new HeaterZone(transport.openChannel(CHANNELS.heater_1), 1),
+      new HeaterZone(transport.openChannel(CHANNELS.heater_2), 2),
+      new HeaterZone(transport.openChannel(CHANNELS.heater_3), 3),
     ] as const;
 
     this.environment = new EnvironmentData(
-      new BlePlxChannel(
-        bluetooth,
-        HeaterSystem.serviceId,
-        this.channels.environment,
-      ),
+      transport.openChannel(CHANNELS.environment),
     );
   }
 

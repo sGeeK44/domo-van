@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useBle } from "@/components/BleProvider";
 import { HeaterPidSection } from "@/components/heater-settings";
 import {
   AdminSection,
@@ -10,6 +9,9 @@ import {
   SavedDeviceSection,
   ScanSection,
 } from "@/components/module-settings";
+import { useContainer } from "@/composition/ContainerProvider";
+import { useHeaterDevice } from "@/composition/connection/useModuleDevice";
+import { useHeaterSystem } from "@/composition/ModuleSystemsProvider";
 import {
   Button,
   SettingsHeader,
@@ -17,10 +19,8 @@ import {
   type ThemeColors,
   useThemeColor,
 } from "@/design-system";
-import { HeaterSystem } from "@/domain/heater/HeaterSystem";
-import { buildServiceUuid } from "@/domain/modules/BleUuid";
+import { HEATER_MODULE } from "@/domain/modules/ModuleDescriptor";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
-import { useHeaterDevice } from "@/hooks/useModuleDevice";
 import { useAutoScanWithTimeout } from "@/screens/hooks/useAutoScanWithTimeout";
 
 const ZONE_NAMES = ["Cabine", "Cellule", "Soute", "Garage"];
@@ -31,7 +31,7 @@ export default function HeaterSettingsScreen() {
   const router = useRouter();
 
   // Bluetooth for scanning and connecting
-  const { bluetooth } = useBle();
+  const { bluetooth } = useContainer();
 
   // Connection state from heater device hook
   const { device, setDevice, isConnected, lastDevice, forgetDevice } =
@@ -46,18 +46,7 @@ export default function HeaterSettingsScreen() {
 
   const isModuleConnected = isConnected && device != null;
 
-  // Create HeaterSystem when device is connected
-  const heaterSystem = useMemo(
-    () => (device ? new HeaterSystem(device) : null),
-    [device],
-  );
-
-  // Cleanup HeaterSystem on unmount or device change
-  useEffect(() => {
-    return () => {
-      heaterSystem?.dispose();
-    };
-  }, [heaterSystem]);
+  const heaterSystem = useHeaterSystem();
 
   // Scanning functions
   const startScan = useCallback(async () => {
@@ -65,13 +54,15 @@ export default function HeaterSettingsScreen() {
     setLastError(null);
     setIsScanning(true);
     try {
-      const serviceUuid = buildServiceUuid(HeaterSystem.serviceId);
-      await bluetooth.startScan(serviceUuid, (foundDevice) => {
-        setDiscoveredDevices((prev) => {
-          if (prev.some((d) => d.id === foundDevice.id)) return prev;
-          return [...prev, foundDevice];
-        });
-      });
+      await bluetooth.startScan(
+        HEATER_MODULE.scanServiceUuid,
+        (foundDevice) => {
+          setDiscoveredDevices((prev) => {
+            if (prev.some((d) => d.id === foundDevice.id)) return prev;
+            return [...prev, foundDevice];
+          });
+        },
+      );
     } catch (e) {
       setLastError(e instanceof Error ? e.message : "Scan failed");
       setIsScanning(false);

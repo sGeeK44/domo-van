@@ -1,5 +1,4 @@
-/** Module keys for different BLE modules */
-export type ModuleKey = "water" | "heater" | "battery";
+import type { ModuleKey } from "@/domain/modules/ModuleDescriptor";
 
 export type DeviceInfo = {
   id: string;

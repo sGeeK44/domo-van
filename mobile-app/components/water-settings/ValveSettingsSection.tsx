@@ -7,7 +7,6 @@ import {
   ToastAndroid,
   View,
 } from "react-native";
-import { Device } from "react-native-ble-plx";
 import {
   BorderRadius,
   FontSize,
@@ -18,7 +17,7 @@ import {
   type ThemeColors,
   useThemeColor,
 } from "@/design-system";
-import { WaterSystem } from "@/domain/water/WaterSystem";
+import type { DrainValve } from "@/domain/water/DrainValve";
 
 function validatePositiveInt(label: string, value: string): string | null {
   const trimmed = value.trim();
@@ -31,38 +30,32 @@ function validatePositiveInt(label: string, value: string): string | null {
 }
 
 type Props = {
-  connectedDevice: Device;
+  valve: DrainValve;
 };
 
 const showToast = (message: string) => {
   ToastAndroid.show(message, ToastAndroid.SHORT);
 };
 
-export function ValveSettingsSection({ connectedDevice }: Props) {
+export function ValveSettingsSection({ valve }: Props) {
   const colors = useThemeColor();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [autoCloseSeconds, setAutoCloseSeconds] = useState("");
-  const waterSystem = useMemo(
-    () => new WaterSystem(connectedDevice),
-    [connectedDevice],
-  );
-  const drainValve = useMemo(() => waterSystem.greyDrainValve, [waterSystem]);
-
   const requestConfig = useMemo(() => {
     return async () => {
       try {
-        await drainValve.getConfig();
+        await valve.getConfig();
       } catch (e) {
         const msg =
           e instanceof Error ? e.message : "Erreur lors de la lecture.";
         showToast(msg);
       }
     };
-  }, [drainValve]);
+  }, [valve]);
 
   useEffect(() => {
-    const sub = drainValve.subscribe((snapshot) => {
+    const sub = valve.subscribe((snapshot) => {
       setAutoCloseSeconds(String(snapshot.autoCloseSeconds));
       if (snapshot.lastMessage) {
         showToast(snapshot.lastMessage);
@@ -73,9 +66,8 @@ export function ValveSettingsSection({ connectedDevice }: Props) {
 
     return () => {
       sub();
-      waterSystem.dispose();
     };
-  }, [drainValve, requestConfig, waterSystem]);
+  }, [valve, requestConfig]);
 
   return (
     <View style={styles.adminSection}>
@@ -113,9 +105,7 @@ export function ValveSettingsSection({ connectedDevice }: Props) {
             }
             showToast("Envoi configuration…");
             try {
-              await drainValve.setAutoCloseTime(
-                Number(autoCloseSeconds.trim()),
-              );
+              await valve.setAutoCloseTime(Number(autoCloseSeconds.trim()));
             } catch (e) {
               showToast(
                 e instanceof Error ? e.message : "Erreur lors de l'envoi.",
