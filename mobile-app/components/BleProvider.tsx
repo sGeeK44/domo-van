@@ -6,7 +6,7 @@ import {
 } from "react";
 import { BleManager } from "react-native-ble-plx";
 
-import { Bluetooth } from "@/core/bluetooth/Bluetooth";
+import { Bluetooth } from "@/infrastructure/ble/Bluetooth";
 
 type BleContextValue = {
   bluetooth: Bluetooth;

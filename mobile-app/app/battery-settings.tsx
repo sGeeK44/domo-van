@@ -8,7 +8,6 @@ import {
   SavedDeviceSection,
   ScanSection,
 } from "@/components/module-settings";
-import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
 import {
   Button,
   FontSize,
@@ -22,6 +21,7 @@ import {
   BatterySnapshot,
   DEFAULT_BATTERY_SNAPSHOT,
 } from "@/domain/battery/BatteryTelemetry";
+import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
 import { useBatteryDevice } from "@/hooks/useModuleDevice";
 

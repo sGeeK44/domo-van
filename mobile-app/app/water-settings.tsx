@@ -11,8 +11,6 @@ import {
 } from "@/components/module-settings";
 import { TankSettingsSection } from "@/components/water-settings/TankSettingsSection";
 import { ValveSettingsSection } from "@/components/water-settings/ValveSettingsSection";
-import { buildServiceUuid } from "@/core/bluetooth/BleUuid";
-import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
 import {
   Button,
   SettingsHeader,
@@ -20,6 +18,8 @@ import {
   type ThemeColors,
   useThemeColor,
 } from "@/design-system";
+import { buildServiceUuid } from "@/domain/modules/BleUuid";
+import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
 import { useWaterDevice } from "@/hooks/useModuleDevice";
