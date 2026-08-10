@@ -77,3 +77,8 @@ export class Bluetooth implements BluetoothScanner {
     return device;
   }
 }
+
+/** Builds the BLE stack. The `BleManager` must exist exactly once per app. */
+export function createBluetooth(): Bluetooth {
+  return new Bluetooth(new BleManager());
+}

@@ -7,7 +7,6 @@ import {
   ToastAndroid,
   View,
 } from "react-native";
-import { Device } from "react-native-ble-plx";
 import {
   BorderRadius,
   FontSize,
@@ -18,7 +17,7 @@ import {
   type ThemeColors,
   useThemeColor,
 } from "@/design-system";
-import { WaterSystem } from "@/domain/water/WaterSystem";
+import type { TankLevelSensor } from "@/domain/water/TankLevelSensor";
 
 function validatePositiveInt(label: string, value: string): string | null {
   const trimmed = value.trim();
@@ -30,43 +29,34 @@ function validatePositiveInt(label: string, value: string): string | null {
 }
 
 type Props = {
-  connectedDevice: Device;
-  name: string;
+  tank: TankLevelSensor;
+  label: string;
 };
 
 const showToast = (message: string) => {
   ToastAndroid.show(message, ToastAndroid.SHORT);
 };
 
-export function TankSettingsSection({ connectedDevice, name }: Props) {
+export function TankSettingsSection({ tank, label }: Props) {
   const colors = useThemeColor();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [volumeLiters, setVolumeLiters] = useState("");
   const [heightMm, setHeightMm] = useState("");
-  const waterSystem = useMemo(
-    () => new WaterSystem(connectedDevice),
-    [connectedDevice],
-  );
-  const tankSettings = useMemo(
-    () => waterSystem.getTankSettings(name),
-    [waterSystem, name],
-  );
-
   const requestAllCfg = useMemo(() => {
     return async () => {
       try {
-        await tankSettings.getConfig();
+        await tank.getConfig();
       } catch (e) {
         const msg =
           e instanceof Error ? e.message : "Erreur lors de la lecture.";
         showToast(msg);
       }
     };
-  }, [tankSettings]);
+  }, [tank]);
 
   useEffect(() => {
-    const sub = tankSettings.subscribe((snapshot) => {
+    const sub = tank.subscribe((snapshot) => {
       setVolumeLiters(String(snapshot.capacityLiters));
       setHeightMm(String(snapshot.heightMm));
       if (snapshot.lastMessage) {
@@ -79,15 +69,13 @@ export function TankSettingsSection({ connectedDevice, name }: Props) {
     return () => {
       sub();
     };
-  }, [tankSettings, requestAllCfg]);
+  }, [tank, requestAllCfg]);
 
   return (
     <View style={styles.adminSection}>
       <View style={styles.field}>
         <View style={styles.fieldHeader}>
-          <Text style={styles.label}>
-            Réservoir ({name === "clean" ? "Eau Propre" : "Eau Grise"})
-          </Text>
+          <Text style={styles.label}>Réservoir ({label})</Text>
           <Pressable
             onPress={() => void requestAllCfg()}
             style={styles.refreshButton}
@@ -129,10 +117,7 @@ export function TankSettingsSection({ connectedDevice, name }: Props) {
             }
             showToast("Envoi configuration…");
             try {
-              await tankSettings.setConfig(
-                volumeLiters.trim(),
-                heightMm.trim(),
-              );
+              await tank.setConfig(volumeLiters.trim(), heightMm.trim());
             } catch (e) {
               showToast(
                 e instanceof Error ? e.message : "Erreur lors de l'envoi.",

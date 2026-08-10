@@ -1,5 +1,4 @@
-import { Device } from "react-native-ble-plx";
-import { BlePlxChannel } from "@/core/bluetooth/Channel";
+import type { ModuleTransport } from "@/domain/ports/ModuleTransport";
 import { DrainValve } from "@/domain/water/DrainValve";
 import { TankLevelSensor } from "@/domain/water/TankLevelSensor";
 import { AdminModule } from "../AdminModule";
@@ -10,55 +9,30 @@ export type WaterModuleChannel =
   | "greyTank"
   | "greyValve";
 
+const CHANNELS: Record<WaterModuleChannel, string> = {
+  admin: "0001",
+  cleanTank: "0002",
+  greyTank: "0003",
+  greyValve: "0004",
+};
+
 export class WaterSystem {
   readonly admin: AdminModule;
   readonly cleanTank: TankLevelSensor;
   readonly greyTank: TankLevelSensor;
   readonly greyDrainValve: DrainValve;
-  public static readonly serviceId: string = "0001";
-  private readonly channels: Record<WaterModuleChannel, string> = {
-    admin: "0001",
-    cleanTank: "0002",
-    greyTank: "0003",
-    greyValve: "0004",
-  };
 
-  constructor(bluetooth: Device) {
-    this.admin = new AdminModule(
-      new BlePlxChannel(bluetooth, WaterSystem.serviceId, this.channels.admin),
-    );
+  constructor(transport: ModuleTransport) {
+    this.admin = new AdminModule(transport.openChannel(CHANNELS.admin));
     this.cleanTank = new TankLevelSensor(
-      new BlePlxChannel(
-        bluetooth,
-        WaterSystem.serviceId,
-        this.channels.cleanTank,
-      ),
+      transport.openChannel(CHANNELS.cleanTank),
     );
     this.greyTank = new TankLevelSensor(
-      new BlePlxChannel(
-        bluetooth,
-        WaterSystem.serviceId,
-        this.channels.greyTank,
-      ),
+      transport.openChannel(CHANNELS.greyTank),
     );
     this.greyDrainValve = new DrainValve(
-      new BlePlxChannel(
-        bluetooth,
-        WaterSystem.serviceId,
-        this.channels.greyValve,
-      ),
+      transport.openChannel(CHANNELS.greyValve),
     );
-  }
-
-  getTankSettings(name: string) {
-    switch (name) {
-      case "clean":
-        return this.cleanTank;
-      case "grey":
-        return this.greyTank;
-      default:
-        throw new Error(`Unknown tank: ${name}`);
-    }
   }
 
   dispose = () => {

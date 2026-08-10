@@ -2,12 +2,14 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useBle } from "@/components/BleProvider";
 import {
   DiscoveredDevicesList,
   SavedDeviceSection,
   ScanSection,
 } from "@/components/module-settings";
+import { useContainer } from "@/composition/ContainerProvider";
+import { useBatteryDevice } from "@/composition/connection/useModuleDevice";
+import { useBatterySystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import {
   Button,
@@ -17,13 +19,12 @@ import {
   type ThemeColors,
   useThemeColor,
 } from "@/design-system";
-import { BatterySystem } from "@/domain/battery/BatterySystem";
 import {
   BatterySnapshot,
   DEFAULT_BATTERY_SNAPSHOT,
 } from "@/domain/battery/BatteryTelemetry";
+import { BATTERY_MODULE } from "@/domain/modules/ModuleDescriptor";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
-import { useBatteryDevice } from "@/hooks/useModuleDevice";
 import { useAutoScanWithTimeout } from "@/screens/hooks/useAutoScanWithTimeout";
 
 export default function BatterySettingsScreen() {
@@ -32,7 +33,7 @@ export default function BatterySettingsScreen() {
   const router = useRouter();
 
   // Bluetooth for scanning and connecting
-  const { bluetooth } = useBle();
+  const { bluetooth } = useContainer();
 
   // Connection state from battery device hook
   const { device, setDevice, isConnected, lastDevice, forgetDevice } =
@@ -47,18 +48,7 @@ export default function BatterySettingsScreen() {
 
   const isModuleConnected = isConnected && device != null;
 
-  // Create BatterySystem when device is connected
-  const batterySystem = useMemo(
-    () => (device ? new BatterySystem(device) : null),
-    [device],
-  );
-
-  // Cleanup BatterySystem on unmount or device change
-  useEffect(() => {
-    return () => {
-      batterySystem?.dispose();
-    };
-  }, [batterySystem]);
+  const batterySystem = useBatterySystem();
 
   // Subscribe to battery data
   const battery = useObservable(batterySystem, DEFAULT_BATTERY_SNAPSHOT);
@@ -69,12 +59,15 @@ export default function BatterySettingsScreen() {
     setLastError(null);
     setIsScanning(true);
     try {
-      await bluetooth.startScan(BatterySystem.serviceUuid, (foundDevice) => {
-        setDiscoveredDevices((prev) => {
-          if (prev.some((d) => d.id === foundDevice.id)) return prev;
-          return [...prev, foundDevice];
-        });
-      });
+      await bluetooth.startScan(
+        BATTERY_MODULE.scanServiceUuid,
+        (foundDevice) => {
+          setDiscoveredDevices((prev) => {
+            if (prev.some((d) => d.id === foundDevice.id)) return prev;
+            return [...prev, foundDevice];
+          });
+        },
+      );
     } catch (e) {
       setLastError(e instanceof Error ? e.message : "Scan failed");
       setIsScanning(false);

@@ -1,17 +1,12 @@
 import { decode as base64Decode, encode as base64Encode } from "base-64";
-import { BleError, Characteristic, Device } from "react-native-ble-plx";
+import type { BleError, Characteristic, Device } from "react-native-ble-plx";
+import type { Listener, Unsubscribe } from "@/core/observable";
 import {
   buildRxUuid,
   buildServiceUuid,
   buildTxUuid,
 } from "@/domain/modules/BleUuid";
-import { Listener, Unsubscribe } from "../observable";
-
-export interface Channel {
-  listen(listener: Listener<string>): Unsubscribe;
-  send(command: string): Promise<void>;
-  disconnect(): Promise<void>;
-}
+import type { Channel } from "@/domain/ports/Channel";
 
 export class BlePlxChannel implements Channel {
   private listener: Listener<string> | null = null;
@@ -90,9 +85,5 @@ export class BlePlxChannel implements Channel {
       this.rxUuid,
       payload,
     );
-  }
-
-  public async disconnect(): Promise<void> {
-    await this.device.cancelConnection();
   }
 }

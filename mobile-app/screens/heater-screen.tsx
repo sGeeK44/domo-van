@@ -1,14 +1,14 @@
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback } from "react";
 import { StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CircularTemperatureDial } from "@/components/heater/circular-temperature-dial";
+import { useHeaterDevice } from "@/composition/connection/useModuleDevice";
+import { useMultiModuleConnection } from "@/composition/connection/useMultiModuleConnection";
+import { useHeaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import { Colors, PageHeader, useThemeColor } from "@/design-system";
-import { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
-import { useHeaterDevice } from "@/hooks/useModuleDevice";
-import { useMultiModuleConnection } from "@/hooks/useMultiModuleConnection";
 
 const DEFAULT_ZONE_STATE: HeaterZoneSnapshot = {
   temperatureCelsius: 0,
@@ -25,7 +25,8 @@ export default function HeaterScreen() {
   const styles = getStyles(colors);
   const router = useRouter();
 
-  const { device, isConnected } = useHeaterDevice();
+  const { isConnected } = useHeaterDevice();
+  const heaterSystem = useHeaterSystem();
   const { globalStatus, connectAll, disconnectAll } =
     useMultiModuleConnection();
 
@@ -39,19 +40,6 @@ export default function HeaterScreen() {
 
   const bluetoothStatus =
     globalStatus === "connecting" ? "loading" : globalStatus;
-
-  // Create HeaterSystem when device is connected
-  const heaterSystem = useMemo(
-    () => (device ? new HeaterSystem(device) : null),
-    [device],
-  );
-
-  // Cleanup HeaterSystem on unmount or device change
-  useEffect(() => {
-    return () => {
-      heaterSystem?.dispose();
-    };
-  }, [heaterSystem]);
 
   // Subscribe to all 4 zones
   const zone0 = useObservable(

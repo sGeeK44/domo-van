@@ -1,26 +1,28 @@
 import { useRouter } from "expo-router";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BatteryGauge } from "@/components/home/battery-gauge";
 import { EnvironmentCard } from "@/components/home/environment-card";
 import { StatusCard } from "@/components/home/status-card";
+import {
+  useBatteryDevice,
+  useHeaterDevice,
+  useWaterDevice,
+} from "@/composition/connection/useModuleDevice";
+import { useMultiModuleConnection } from "@/composition/connection/useMultiModuleConnection";
+import {
+  useBatterySystem,
+  useHeaterSystem,
+} from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import { Colors, PageHeader, useThemeColor } from "@/design-system";
-import { BatterySystem } from "@/domain/battery/BatterySystem";
 import {
   calculateRemainingTime,
   DEFAULT_BATTERY_SNAPSHOT,
   formatRemainingTime,
 } from "@/domain/battery/BatteryTelemetry";
 import { EnvironmentSnapshot } from "@/domain/heater/EnvironmentData";
-import { HeaterSystem } from "@/domain/heater/HeaterSystem";
-import {
-  useBatteryDevice,
-  useHeaterDevice,
-  useWaterDevice,
-} from "@/hooks/useModuleDevice";
-import { useMultiModuleConnection } from "@/hooks/useMultiModuleConnection";
 
 // Mocked data for modules not yet connected to real data
 const MOCK_WATER = {
@@ -50,33 +52,8 @@ export default function HomeScreen() {
   const waterDevice = useWaterDevice();
   const heaterDevice = useHeaterDevice();
   const batteryDevice = useBatteryDevice();
-
-  // Create BatterySystem when device is connected
-  const batterySystem = useMemo(
-    () =>
-      batteryDevice.device ? new BatterySystem(batteryDevice.device) : null,
-    [batteryDevice.device],
-  );
-
-  // Create HeaterSystem when device is connected (for environment data)
-  const heaterSystem = useMemo(
-    () => (heaterDevice.device ? new HeaterSystem(heaterDevice.device) : null),
-    [heaterDevice.device],
-  );
-
-  // Cleanup BatterySystem on unmount or device change
-  useEffect(() => {
-    return () => {
-      batterySystem?.dispose();
-    };
-  }, [batterySystem]);
-
-  // Cleanup HeaterSystem on unmount or device change
-  useEffect(() => {
-    return () => {
-      heaterSystem?.dispose();
-    };
-  }, [heaterSystem]);
+  const batterySystem = useBatterySystem();
+  const heaterSystem = useHeaterSystem();
 
   // Subscribe to battery data
   const battery = useObservable(batterySystem, DEFAULT_BATTERY_SNAPSHOT);

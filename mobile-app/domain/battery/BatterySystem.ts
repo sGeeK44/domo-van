@@ -1,15 +1,12 @@
-import { Device } from "react-native-ble-plx";
-import {
-  JK_BMS_SERVICE_UUID,
-  JkBmsChannel,
-} from "@/core/bluetooth/JkBmsChannel";
-import { JkBmsData } from "@/core/bluetooth/JkBmsProtocol";
 import {
   createObservable,
   Listener,
   Observable,
   Unsubscribe,
 } from "@/core/observable";
+import { JkBmsFrameReader } from "@/domain/battery/JkBmsFrameReader";
+import { buildReadAllCommand, JkBmsData } from "@/domain/battery/JkBmsProtocol";
+import type { BinaryTransport } from "@/domain/ports/BinaryTransport";
 import {
   BatterySnapshot,
   DEFAULT_BATTERY_SNAPSHOT,
@@ -23,22 +20,27 @@ import {
  * Implements Observable pattern to integrate with React components.
  */
 export class BatterySystem implements Observable<BatterySnapshot> {
-  /**
-   * Service UUID for scanning (short 16-bit format)
-   */
-  public static readonly serviceUuid: string = JK_BMS_SERVICE_UUID;
-
-  private readonly channel: JkBmsChannel;
+  private readonly frameReader = new JkBmsFrameReader();
   private readonly state: ReturnType<typeof createObservable<BatterySnapshot>>;
-  private channelUnsub: Unsubscribe | null = null;
+  private transportUnsub: Unsubscribe | null = null;
 
-  constructor(bluetooth: Device) {
-    this.channel = new JkBmsChannel(bluetooth);
+  constructor(private readonly transport: BinaryTransport) {
     this.state = createObservable<BatterySnapshot>(DEFAULT_BATTERY_SNAPSHOT);
 
-    // Start listening for BMS data
-    this.channelUnsub = this.channel.listen(this.onBmsData);
+    this.transportUnsub = this.transport.listen(this.onBytes);
+    void this.refresh().catch((err) => {
+      console.warn("Failed to send initial read command:", err);
+    });
   }
+
+  /**
+   * Turns a chunk of notification bytes into whatever frames it completed.
+   */
+  private onBytes = (bytes: Uint8Array): void => {
+    for (const frame of this.frameReader.read(bytes)) {
+      this.onBmsData(frame);
+    }
+  };
 
   /**
    * Get current battery state
@@ -56,7 +58,7 @@ export class BatterySystem implements Observable<BatterySnapshot> {
    * Request a fresh data update from the BMS
    */
   async refresh(): Promise<void> {
-    await this.channel.sendReadCommand();
+    await this.transport.send(buildReadAllCommand());
   }
 
   /**
@@ -116,8 +118,9 @@ export class BatterySystem implements Observable<BatterySnapshot> {
    * Clean up resources
    */
   dispose = (): void => {
-    this.channelUnsub?.();
-    this.channelUnsub = null;
+    this.transportUnsub?.();
+    this.transportUnsub = null;
+    this.frameReader.reset();
     this.state.destroy();
   };
 }
