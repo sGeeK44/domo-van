@@ -1,5 +1,10 @@
 import { StyleSheet, Text, type TextProps } from "react-native";
-import { FontSize, FontWeight, Opacity, type ThemeColors } from "@/design-system/theme";
+import {
+  FontSize,
+  FontWeight,
+  Opacity,
+  type ThemeColors,
+} from "@/design-system/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 export type SectionTitleProps = {

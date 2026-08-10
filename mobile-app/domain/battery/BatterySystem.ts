@@ -1,3 +1,4 @@
+import { Device } from "react-native-ble-plx";
 import {
   JK_BMS_SERVICE_UUID,
   JkBmsChannel,
@@ -9,7 +10,6 @@ import {
   Observable,
   Unsubscribe,
 } from "@/core/observable";
-import { Device } from "react-native-ble-plx";
 import {
   BatterySnapshot,
   DEFAULT_BATTERY_SNAPSHOT,

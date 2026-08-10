@@ -9,13 +9,13 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
 import { BleProvider } from "@/components/BleProvider";
-import { MultiModuleConnectionProvider } from "@/hooks/useMultiModuleConnection";
+import { ThemeProvider, useTheme } from "@/hooks/ThemeContext";
 import {
   BatteryDeviceProviderV2,
   HeaterDeviceProviderV2,
   WaterDeviceProviderV2,
 } from "@/hooks/useModuleDevice";
-import { ThemeProvider, useTheme } from "@/hooks/ThemeContext";
+import { MultiModuleConnectionProvider } from "@/hooks/useMultiModuleConnection";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -25,7 +25,9 @@ function AppContent() {
   const { colorScheme } = useTheme();
 
   return (
-    <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <NavigationThemeProvider
+      value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+    >
       <BleProvider>
         <WaterDeviceProviderV2>
           <HeaterDeviceProviderV2>

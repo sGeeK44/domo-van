@@ -1,8 +1,14 @@
-import { StyleSheet, Text, View } from "react-native";
-import { BorderRadius, FontSize, FontWeight, IconSymbol, type ThemeColors } from "@/design-system";
-import { useThemeColor } from "@/hooks/use-theme-color";
-import type { ComponentProps } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import type { ComponentProps } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import {
+  BorderRadius,
+  FontSize,
+  FontWeight,
+  IconSymbol,
+  type ThemeColors,
+} from "@/design-system";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 export type EnvironmentItemData = {
   icon: ComponentProps<typeof MaterialIcons>["name"];

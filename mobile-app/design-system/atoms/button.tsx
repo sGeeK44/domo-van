@@ -1,6 +1,17 @@
-import { BorderRadius, FontWeight, Opacity, Spacing } from "@/design-system/theme";
+import {
+  ActivityIndicator,
+  Pressable,
+  type PressableProps,
+  StyleSheet,
+  Text,
+} from "react-native";
+import {
+  BorderRadius,
+  FontWeight,
+  Opacity,
+  Spacing,
+} from "@/design-system/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { ActivityIndicator, Pressable, StyleSheet, Text, type PressableProps } from "react-native";
 
 export type ButtonVariant = "primary" | "secondary";
 
@@ -10,7 +21,13 @@ export type ButtonProps = {
   variant?: ButtonVariant;
 } & Omit<PressableProps, "style">;
 
-export function Button({ children, loading, disabled, variant = "primary", ...props }: ButtonProps) {
+export function Button({
+  children,
+  loading,
+  disabled,
+  variant = "primary",
+  ...props
+}: ButtonProps) {
   const colors = useThemeColor();
   const isPrimary = variant === "primary";
 
@@ -23,7 +40,12 @@ export function Button({ children, loading, disabled, variant = "primary", ...pr
         styles.button,
         isPrimary
           ? { backgroundColor: colors.primary["500"] }
-          : { borderColor: `${borderColor}${Math.round(Opacity.ghost * 255).toString(16).padStart(2, '0')}`, borderWidth: 1 },
+          : {
+              borderColor: `${borderColor}${Math.round(Opacity.ghost * 255)
+                .toString(16)
+                .padStart(2, "0")}`,
+              borderWidth: 1,
+            },
         (disabled || loading) && { opacity: Opacity.subtle },
       ]}
       disabled={disabled || loading}
@@ -32,7 +54,17 @@ export function Button({ children, loading, disabled, variant = "primary", ...pr
       {loading ? (
         <ActivityIndicator size="small" color={textColor} />
       ) : (
-        <Text style={[styles.text, { color: textColor, fontWeight: isPrimary ? `${FontWeight.extraBold}` : `${FontWeight.bold}` }]}>
+        <Text
+          style={[
+            styles.text,
+            {
+              color: textColor,
+              fontWeight: isPrimary
+                ? `${FontWeight.extraBold}`
+                : `${FontWeight.bold}`,
+            },
+          ]}
+        >
           {children}
         </Text>
       )}

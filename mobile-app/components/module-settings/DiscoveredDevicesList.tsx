@@ -52,7 +52,11 @@ export function DiscoveredDevicesList({
                 {isConnecting ? (
                   <ActivityIndicator size="small" color={colors.text.primary} />
                 ) : (
-                  <IconSymbol name="chevron-right" size={22} color={colors.text.primary} />
+                  <IconSymbol
+                    name="chevron-right"
+                    size={22}
+                    color={colors.text.primary}
+                  />
                 )}
               </DeviceRow>
             );

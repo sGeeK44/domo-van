@@ -70,9 +70,7 @@ export function AdminSection({ adminModule, deviceName }: Props) {
     try {
       await adminModule.setName(adminName.trim());
     } catch (e) {
-      showToast(
-        e instanceof Error ? e.message : "Erreur lors de l'envoi.",
-      );
+      showToast(e instanceof Error ? e.message : "Erreur lors de l'envoi.");
     } finally {
       setSendingName(false);
     }
@@ -89,9 +87,7 @@ export function AdminSection({ adminModule, deviceName }: Props) {
     try {
       await adminModule.setPin(adminPin);
     } catch (e) {
-      showToast(
-        e instanceof Error ? e.message : "Erreur lors de l'envoi.",
-      );
+      showToast(e instanceof Error ? e.message : "Erreur lors de l'envoi.");
     } finally {
       setSendingPin(false);
     }

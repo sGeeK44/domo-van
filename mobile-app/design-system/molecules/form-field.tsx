@@ -1,6 +1,19 @@
-import { StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  type TextInputProps,
+  View,
+} from "react-native";
 import { Button } from "@/design-system/atoms/button";
-import { BorderRadius, FontSize, FontWeight, Opacity, Spacing, type ThemeColors } from "@/design-system/theme";
+import {
+  BorderRadius,
+  FontSize,
+  FontWeight,
+  Opacity,
+  Spacing,
+  type ThemeColors,
+} from "@/design-system/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 export type FormFieldProps = {
@@ -11,7 +24,10 @@ export type FormFieldProps = {
   buttonLabel: string;
   onButtonPress: () => void;
   loading?: boolean;
-  inputProps?: Omit<TextInputProps, "value" | "onChangeText" | "placeholder" | "style">;
+  inputProps?: Omit<
+    TextInputProps,
+    "value" | "onChangeText" | "placeholder" | "style"
+  >;
 };
 
 export function FormField({

@@ -1,3 +1,7 @@
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useBle } from "@/components/BleProvider";
 import { HeaterPidSection } from "@/components/heater-settings";
 import {
@@ -15,10 +19,6 @@ import { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
 import { useHeaterDevice } from "@/hooks/useModuleDevice";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const ZONE_NAMES = ["Cabine", "Cellule", "Soute", "Garage"];
 
@@ -126,7 +126,10 @@ export default function HeaterSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <SettingsHeader title="Chauffage - Bluetooth" onBackPress={() => router.back()} />
+      <SettingsHeader
+        title="Chauffage - Bluetooth"
+        onBackPress={() => router.back()}
+      />
 
       {lastDevice ? (
         <ScrollView>
@@ -155,10 +158,7 @@ export default function HeaterSettingsScreen() {
         </ScrollView>
       ) : (
         <View style={{ flex: 1 }}>
-          <ScanSection
-            isScanning={isScanning}
-            lastError={lastError}
-          />
+          <ScanSection isScanning={isScanning} lastError={lastError} />
 
           <DiscoveredDevicesList
             isScanning={isScanning}

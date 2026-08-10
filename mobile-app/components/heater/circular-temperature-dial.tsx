@@ -282,9 +282,21 @@ export function CircularTemperatureDial({
                     rx="50%"
                     ry="50%"
                   >
-                    <Stop offset="0%" stopColor={colors.background.secondary} stopOpacity="1" />
-                    <Stop offset="85%" stopColor={colors.background.primary} stopOpacity="1" />
-                    <Stop offset="100%" stopColor={colors.background.primary} stopOpacity="1" />
+                    <Stop
+                      offset="0%"
+                      stopColor={colors.background.secondary}
+                      stopOpacity="1"
+                    />
+                    <Stop
+                      offset="85%"
+                      stopColor={colors.background.primary}
+                      stopOpacity="1"
+                    />
+                    <Stop
+                      offset="100%"
+                      stopColor={colors.background.primary}
+                      stopOpacity="1"
+                    />
                   </RadialGradient>
                 </Defs>
 
@@ -376,7 +388,11 @@ export function CircularTemperatureDial({
                 <Text
                   style={[
                     styles.currentTemp,
-                    { color: isRunning ? colors.text.primary : colors.text.secondary },
+                    {
+                      color: isRunning
+                        ? colors.text.primary
+                        : colors.text.secondary,
+                    },
                   ]}
                 >
                   {temperatureCelsius.toFixed(1)}

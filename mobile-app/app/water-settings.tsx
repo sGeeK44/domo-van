@@ -1,3 +1,7 @@
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useBle } from "@/components/BleProvider";
 import {
   AdminSection,
@@ -16,10 +20,6 @@ import { WaterSystem } from "@/domain/water/WaterSystem";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
 import { useWaterDevice } from "@/hooks/useModuleDevice";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function WaterSettingsScreen() {
   const colors = useThemeColor();
@@ -142,24 +142,15 @@ export default function WaterSettingsScreen() {
                 adminModule={waterSystem.admin}
                 deviceName={device.name}
               />
-              <TankSettingsSection
-                connectedDevice={device}
-                name="clean"
-              />
-              <TankSettingsSection
-                connectedDevice={device}
-                name="grey"
-              />
+              <TankSettingsSection connectedDevice={device} name="clean" />
+              <TankSettingsSection connectedDevice={device} name="grey" />
               <ValveSettingsSection connectedDevice={device} />
             </>
           )}
         </ScrollView>
       ) : (
         <View style={{ flex: 1 }}>
-          <ScanSection
-            isScanning={isScanning}
-            lastError={lastError}
-          />
+          <ScanSection isScanning={isScanning} lastError={lastError} />
 
           <DiscoveredDevicesList
             isScanning={isScanning}
