@@ -1,8 +1,12 @@
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useBle } from "@/components/BleProvider";
 import {
   DiscoveredDevicesList,
   SavedDeviceSection,
-  ScanSection
+  ScanSection,
 } from "@/components/module-settings";
 import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
 import { FontSize, Spacing, type ThemeColors } from "@/design-system";
@@ -16,13 +20,12 @@ import {
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAutoScanWithTimeout } from "@/hooks/useAutoScanWithTimeout";
 import { useBatteryDevice } from "@/hooks/useModuleDevice";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 function useObservable<T>(
-  observable: { getValue: () => T; subscribe: (fn: (v: T) => void) => () => void } | null,
+  observable: {
+    getValue: () => T;
+    subscribe: (fn: (v: T) => void) => () => void;
+  } | null,
   defaultValue: T,
 ): T {
   const [value, setValue] = useState<T>(observable?.getValue() ?? defaultValue);
@@ -248,7 +251,9 @@ function BatteryInfoSection({ battery, colors }: BatteryInfoSectionProps) {
 
       <View style={styles.row}>
         <Text style={styles.label}>Delta cellules</Text>
-        <Text style={styles.value}>{(battery.cellDelta * 1000).toFixed(0)} mV</Text>
+        <Text style={styles.value}>
+          {(battery.cellDelta * 1000).toFixed(0)} mV
+        </Text>
       </View>
 
       <View style={styles.row}>
@@ -268,12 +273,16 @@ function BatteryInfoSection({ battery, colors }: BatteryInfoSectionProps) {
 
       <View style={styles.row}>
         <Text style={styles.label}>En décharge</Text>
-        <Text style={styles.value}>{battery.isDischarging ? "Oui" : "Non"}</Text>
+        <Text style={styles.value}>
+          {battery.isDischarging ? "Oui" : "Non"}
+        </Text>
       </View>
 
       <View style={styles.row}>
         <Text style={styles.label}>Équilibrage</Text>
-        <Text style={styles.value}>{battery.balancing ? "Actif" : "Inactif"}</Text>
+        <Text style={styles.value}>
+          {battery.balancing ? "Actif" : "Inactif"}
+        </Text>
       </View>
 
       {battery.hasAlarm && (
@@ -302,17 +311,17 @@ const createStyles = (colors: ThemeColors) =>
 const createInfoStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     section: {
-      padding: Spacing.lg,
+      padding: Spacing.l,
       backgroundColor: colors.background.secondary,
-      marginHorizontal: Spacing.lg,
-      marginTop: Spacing.lg,
+      marginHorizontal: Spacing.l,
+      marginTop: Spacing.l,
       borderRadius: 12,
     },
     sectionTitle: {
-      fontSize: FontSize.lg,
+      fontSize: FontSize.l,
       fontWeight: "600",
       color: colors.text.primary,
-      marginBottom: Spacing.md,
+      marginBottom: Spacing.m,
     },
     row: {
       flexDirection: "row",
@@ -332,8 +341,8 @@ const createInfoStyles = (colors: ThemeColors) =>
       flexDirection: "row",
       justifyContent: "space-between",
       paddingVertical: Spacing.xs,
-      marginTop: Spacing.sm,
-      paddingTop: Spacing.sm,
+      marginTop: Spacing.s,
+      paddingTop: Spacing.s,
       borderTopWidth: 1,
       borderTopColor: colors.danger["500"],
     },
