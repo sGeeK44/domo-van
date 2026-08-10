@@ -63,7 +63,9 @@
           "bluetoothAlwaysPermission": "Autoriser domo-van à se connecter au module de gestion des eaux via Bluetooth."
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
