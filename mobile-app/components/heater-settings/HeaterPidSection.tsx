@@ -11,12 +11,12 @@ import {
   BorderRadius,
   FontSize,
   FontWeight,
+  IconSymbol,
   Opacity,
   Spacing,
   type ThemeColors,
   useThemeColor,
 } from "@/design-system";
-import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import type { HeaterZone, PidConfig } from "@/domain/heater/HeaterZone";
 
 const showToast = (message: string) => {

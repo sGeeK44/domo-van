@@ -3,10 +3,10 @@ import {
   Card,
   FontSize,
   FontWeight,
+  IconSymbol,
   type ThemeColors,
   useThemeColor,
 } from "@/design-system";
-import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
 
 export type HeaterZoneCardProps = {

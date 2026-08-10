@@ -12,12 +12,12 @@ import {
   BorderRadius,
   FontSize,
   FontWeight,
+  IconSymbol,
   Opacity,
   Spacing,
   type ThemeColors,
   useThemeColor,
 } from "@/design-system";
-import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 
 function validatePositiveInt(label: string, value: string): string | null {

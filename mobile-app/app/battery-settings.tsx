@@ -10,13 +10,13 @@ import {
 } from "@/components/module-settings";
 import { DiscoveredBluetoothDevice } from "@/core/bluetooth/Bluetooth";
 import {
+  Button,
   FontSize,
+  SettingsHeader,
   Spacing,
   type ThemeColors,
   useThemeColor,
 } from "@/design-system";
-import { Button } from "@/design-system/atoms/button";
-import { SettingsHeader } from "@/design-system/molecules/settings-header";
 import { BatterySystem } from "@/domain/battery/BatterySystem";
 import {
   BatterySnapshot,
