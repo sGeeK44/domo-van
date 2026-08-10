@@ -1,4 +1,5 @@
 #include "TemperatureRegulator.h"
+#include "../ArduinoMacroGuard.h"
 #include "../FakeSettings.h"
 #include "../MockStream.h"
 #include <ArduinoFake.h>
