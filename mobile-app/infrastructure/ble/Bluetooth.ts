@@ -82,7 +82,6 @@ export class Bluetooth implements BluetoothScanner, DeviceConnector {
     }
     device = await device.discoverAllServicesAndCharacteristics();
 
-    device.onDisconnected(() => this.connections.remove(device.id));
     return this.connections.add(device);
   }
 
@@ -93,7 +92,7 @@ export class Bluetooth implements BluetoothScanner, DeviceConnector {
     try {
       await device.cancelConnection();
     } finally {
-      this.connections.remove(handle.id);
+      this.connections.remove(device);
     }
   }
 
