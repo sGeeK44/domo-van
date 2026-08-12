@@ -237,6 +237,7 @@ function readCellVoltages(cursor: ByteCursor): number[] | null {
     const milliVolts = cursor.u16();
     if (cellIndex === null || milliVolts === null) return null;
     if (cellIndex < 1 || cellIndex > cellCount) return null;
+    if (voltages[cellIndex - 1] !== undefined) return null;
     voltages[cellIndex - 1] = milliVolts / 1000;
   }
   return voltages;
@@ -277,6 +278,9 @@ function parseDataSection(dataSection: Uint8Array): JkBmsData | null {
       case FIELD_CELL_VOLTAGES: {
         const voltages = readCellVoltages(cursor);
         if (voltages === null) return null;
+        if (result.cellCount && result.cellCount !== voltages.length) {
+          return null;
+        }
         result.cellVoltages = voltages;
         result.cellCount = voltages.length;
         break;

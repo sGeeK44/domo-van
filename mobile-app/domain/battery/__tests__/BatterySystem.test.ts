@@ -3,8 +3,11 @@ import { Listener, Unsubscribe } from "@/core/observable";
 import { BatterySystem } from "@/domain/battery/BatterySystem";
 import type { BinaryTransport } from "@/domain/ports/BinaryTransport";
 import {
+  CHARGE_MOSFET_ON,
+  DISCHARGE_MOSFET_ON,
   FRAME,
   frame,
+  NO_CURRENT,
   PAYLOAD,
   withBogusLength,
   withBrokenChecksum,
@@ -79,6 +82,30 @@ describe("BatterySystem", () => {
     expect(snapshot.percentage).toBe(50);
     expect(snapshot.voltage).toBeCloseTo(13.2, 2);
     expect(snapshot.cellVoltages).toHaveLength(4);
+    system.dispose();
+  });
+
+  it("keeps the charge MOSFET state when a later frame omits it", () => {
+    const transport = new FakeBinaryTransport();
+    const system = new BatterySystem(transport);
+    transport.emit(frame([...NO_CURRENT, ...CHARGE_MOSFET_ON]));
+    expect(system.getValue().isCharging).toBe(true);
+
+    transport.emit(frame([0x85, 0x32]));
+
+    expect(system.getValue().isCharging).toBe(true);
+    system.dispose();
+  });
+
+  it("keeps the discharge MOSFET state when a later frame omits it", () => {
+    const transport = new FakeBinaryTransport();
+    const system = new BatterySystem(transport);
+    transport.emit(frame([...NO_CURRENT, ...DISCHARGE_MOSFET_ON]));
+    expect(system.getValue().isDischarging).toBe(true);
+
+    transport.emit(frame([0x85, 0x32]));
+
+    expect(system.getValue().isDischarging).toBe(true);
     system.dispose();
   });
 

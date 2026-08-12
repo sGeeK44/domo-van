@@ -30,7 +30,7 @@ describe("parseResponse", () => {
   it("reads a payload that contains the frame end marker", () => {
     const data = parseResponse(new Uint8Array(FRAME));
 
-    expect(FRAME).toContain(0x68);
+    expect(PAYLOAD).toContain(0x68);
     expect(data?.tempMos).toBe(4);
     expect(data?.soc).toBe(98);
   });
@@ -55,6 +55,25 @@ describe("parseResponse", () => {
     const data = parseResponse(
       new Uint8Array(frame([...CELL_VOLTAGES, ...threeCells])),
     );
+
+    expect(data).toBeNull();
+  });
+
+  it("rejects a cell count field that disagrees with a later cell voltage block", () => {
+    const threeCells = [0x8a, 0x00, 0x03];
+
+    const data = parseResponse(
+      new Uint8Array(frame([...threeCells, ...CELL_VOLTAGES])),
+    );
+
+    expect(data).toBeNull();
+  });
+
+  it("rejects a cell voltage block that reports the same cell twice", () => {
+    const duplicated = [...CELL_VOLTAGES];
+    duplicated[8] = 0x01;
+
+    const data = parseResponse(new Uint8Array(frame(duplicated)));
 
     expect(data).toBeNull();
   });

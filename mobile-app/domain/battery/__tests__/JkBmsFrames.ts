@@ -15,6 +15,12 @@ export const CURRENT = [0x84, 0x01, 0xf4];
 export const STATE_OF_CHARGE = [0x85, 0x62];
 // Field 0x8a: cell count, 4.
 export const CELL_COUNT = [0x8a, 0x00, 0x04];
+// Field 0x84: current, 0 × 10 mA, the pack neither charging nor discharging.
+export const NO_CURRENT = [0x84, 0x00, 0x00];
+// Field 0x8f: charge MOSFET closed.
+export const CHARGE_MOSFET_ON = [0x8f, 0x01];
+// Field 0x90: discharge MOSFET closed.
+export const DISCHARGE_MOSFET_ON = [0x90, 0x01];
 
 /** A "Read All Data" response from a 4-cell pack, as the BMS puts it on the wire. */
 export const PAYLOAD = [
