@@ -150,7 +150,7 @@ describe("BatterySystem", () => {
     system.dispose();
   });
 
-  it("never reports charging and discharging at once whatever the current does", () => {
+  it("never reports charging and discharging at once when frames carry only the current", () => {
     const transport = new FakeBinaryTransport();
     const system = new BatterySystem(transport);
     const sequence = [
