@@ -27,10 +27,13 @@ jobs:
       - name: Install PlatformIO
         run: |
           python -m pip install --upgrade pip
-          pip install platformio
+          pip install platformio==6.1.19
 
+      # From PyPI rather than apt, so the version follows this file instead of
+      # whatever the runner image happens to ship. Formatting rules change
+      # between releases, and a silent bump fails the gate on untouched code.
       - name: Install clang-format
-        run: sudo apt-get install -y clang-format
+        run: pip install clang-format==18.1.8
 
       - name: Run clang-format check
         run: |
