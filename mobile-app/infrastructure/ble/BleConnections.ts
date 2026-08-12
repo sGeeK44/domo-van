@@ -13,13 +13,15 @@ type Connection = {
   disconnection: Subscription;
 };
 
-/** Resolves a `DeviceHandle` back to the ble-plx `Device` it stands for. */
+/** Resolves a `DeviceHandle` to its `Device`, whose disconnect it watches. */
 export class BleConnections {
   private readonly connections = new Map<string, Connection>();
 
   add(device: Device): DeviceHandle {
     this.evict(device.id);
-    const disconnection = device.onDisconnected(() => this.remove(device));
+    const disconnection = device.onDisconnected(() => {
+      void this.removeIfDropped(device);
+    });
     this.connections.set(device.id, { device, disconnection });
     return { id: device.id, name: device.name ?? "" };
   }
@@ -36,15 +38,36 @@ export class BleConnections {
 
   /** Identity-keyed: a late drop must not evict a newer device. */
   remove(device: Device): void {
-    if (this.connections.get(device.id)?.device !== device) return;
+    if (!this.isRegistered(device)) return;
     this.evict(device.id);
+  }
+
+  /** ble-plx reports a disconnection by id, never by link: ask the radio. */
+  private async removeIfDropped(device: Device): Promise<void> {
+    if (!this.isRegistered(device)) return;
+    if (await this.isStillConnected(device)) return;
+
+    this.remove(device);
+  }
+
+  /** A liveness question the radio cannot answer counts as a drop. */
+  private async isStillConnected(device: Device): Promise<boolean> {
+    try {
+      return await device.isConnected();
+    } catch {
+      return false;
+    }
+  }
+
+  private isRegistered(device: Device): boolean {
+    return this.connections.get(device.id)?.device === device;
   }
 
   private evict(deviceId: string): void {
     const connection = this.connections.get(deviceId);
     if (!connection) return;
 
-    connection.disconnection.remove();
     this.connections.delete(deviceId);
+    connection.disconnection.remove();
   }
 }
