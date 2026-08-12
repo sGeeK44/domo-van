@@ -1,25 +1,105 @@
-import type { BleManager } from "react-native-ble-plx";
+import type { BleManager, Subscription } from "react-native-ble-plx";
 import { describe, expect, it } from "vitest";
 import type { DeviceHandle } from "@/domain/ports/DeviceHandle";
 import { BleConnections } from "@/infrastructure/ble/BleConnections";
 import { Bluetooth } from "@/infrastructure/ble/Bluetooth";
 
+type DisconnectionRegistration = {
+  deviceId: string;
+  deliver: (disconnectedId: string) => void;
+};
+
+/** Models ble-plx: one manager-wide emitter, every listener filtered by id. */
+class FakeRadio {
+  private readonly registrations = new Set<DisconnectionRegistration>();
+  private readonly connectedIds = new Set<string>();
+  private readonly reachable = new Map<string, FakeDevice[]>();
+
+  /** ble-plx builds a fresh `Device` per connection, never reusing one. */
+  willConnect(deviceId: string, name: string | null): FakeDevice {
+    const device = new FakeDevice(this, deviceId, name);
+    const queue = this.reachable.get(deviceId) ?? [];
+    queue.push(device);
+    this.reachable.set(deviceId, queue);
+    return device;
+  }
+
+  async connectToDevice(deviceId: string): Promise<FakeDevice> {
+    const device = this.reachable.get(deviceId)?.shift();
+    if (!device) throw new Error(`No such device: ${deviceId}`);
+
+    this.connectedIds.add(deviceId);
+    return device;
+  }
+
+  async isDeviceConnected(deviceId: string): Promise<boolean> {
+    return this.connectedIds.has(deviceId);
+  }
+
+  onDeviceDisconnected(deviceId: string, listener: () => void): Subscription {
+    const registration = {
+      deviceId,
+      deliver: (disconnectedId: string) => {
+        if (disconnectedId !== deviceId) return;
+        listener();
+      },
+    };
+    this.registrations.add(registration);
+    return this.removableOnce(registration);
+  }
+
+  disconnectionListenersFor(deviceId: string): number {
+    return [...this.registrations].filter((r) => r.deviceId === deviceId)
+      .length;
+  }
+
+  cancelDeviceConnection(deviceId: string): void {
+    this.dropConnection(deviceId);
+  }
+
+  /** The link is gone and the id with it. */
+  dropConnection(deviceId: string): void {
+    this.connectedIds.delete(deviceId);
+    this.emitDisconnection(deviceId);
+  }
+
+  /** A replaced link tearing down: the id is connected through the new one. */
+  staleTeardownEvent(deviceId: string): void {
+    this.emitDisconnection(deviceId);
+  }
+
+  private emitDisconnection(deviceId: string): void {
+    for (const registration of [...this.registrations]) {
+      registration.deliver(deviceId);
+    }
+  }
+
+  /** ble-plx wraps the subscription so a second `remove()` is a no-op. */
+  private removableOnce(registration: DisconnectionRegistration): Subscription {
+    let active = true;
+    return {
+      remove: () => {
+        if (!active) return;
+
+        active = false;
+        this.registrations.delete(registration);
+      },
+    };
+  }
+}
+
 class FakeDevice {
   mtu: number | null = null;
   isDiscovered = false;
   isCancelled = false;
-  private listeners: (() => void)[] = [];
-  private cancellationSettlers: (() => void)[] = [];
+  private readonly cancellationSettlers: (() => void)[] = [];
   private holdsCancellation = false;
 
   constructor(
+    private readonly radio: FakeRadio,
     readonly id: string,
     readonly name: string | null,
   ) {}
-
-  get disconnectListenerCount() {
-    return this.listeners.length;
-  }
 
   async requestMTU(mtu: number) {
     this.mtu = mtu;
@@ -32,17 +112,16 @@ class FakeDevice {
   }
 
   onDisconnected(listener: () => void) {
-    this.listeners.push(listener);
-    return {
-      remove: () => {
-        this.listeners = this.listeners.filter((l) => l !== listener);
-      },
-    };
+    return this.radio.onDeviceDisconnected(this.id, listener);
+  }
+
+  isConnected() {
+    return this.radio.isDeviceConnected(this.id);
   }
 
   async cancelConnection() {
     this.isCancelled = true;
-    this.dropConnection();
+    this.radio.cancelDeviceConnection(this.id);
     if (this.holdsCancellation) {
       await new Promise<void>((resolve) => {
         this.cancellationSettlers.push(resolve);
@@ -58,54 +137,37 @@ class FakeDevice {
   settleCancellation() {
     for (const settle of this.cancellationSettlers.splice(0)) settle();
   }
-
-  dropConnection() {
-    this.emitDisconnection()();
-  }
-
-  // The radio emits now, the callbacks land one bridge batch later.
-  emitDisconnection(): () => void {
-    const notified = [...this.listeners];
-    return () => {
-      for (const listener of notified) listener();
-    };
-  }
 }
 
-function bluetoothConnectingWith(
-  connectToDevice: (id: string) => Promise<FakeDevice>,
-) {
+function bluetoothOn(radio: FakeRadio) {
   const connections = new BleConnections();
-  const bluetooth = new Bluetooth(
-    { connectToDevice } as unknown as BleManager,
-    connections,
-  );
-  return { bluetooth, connections };
+  const bluetooth = new Bluetooth(radio as unknown as BleManager, connections);
+  return { bluetooth, connections, radio };
 }
 
-function bluetoothWith(...devices: FakeDevice[]) {
-  return bluetoothConnectingWith(async (id: string) => {
-    const device = devices.find((d) => d.id === id);
-    if (!device) throw new Error(`No such device: ${id}`);
-    return device;
-  });
+function bluetoothReaching(deviceId: string, name: string | null) {
+  const radio = new FakeRadio();
+  const device = radio.willConnect(deviceId, name);
+  return { ...bluetoothOn(radio), device };
 }
 
-function bluetoothHandingOut(...devices: FakeDevice[]) {
-  const queue = [...devices];
-  return bluetoothConnectingWith(async () => {
-    const device = queue.shift();
-    if (!device) throw new Error("No device left to hand out.");
-    return device;
-  });
+function bluetoothReconnecting(deviceId: string, name: string | null) {
+  const radio = new FakeRadio();
+  const dropped = radio.willConnect(deviceId, name);
+  const reconnected = radio.willConnect(deviceId, name);
+  return { ...bluetoothOn(radio), dropped, reconnected };
+}
+
+/** Disconnections settle over the radio, so let the microtasks drain. */
+function flushRadioEvents(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 const UNKNOWN_HANDLE: DeviceHandle = { id: "never-connected", name: "Ghost" };
 
 describe("Bluetooth.connect", () => {
   it("returns a handle carrying the id and name of the device", async () => {
-    const device = new FakeDevice("water-id", "Water Module");
-    const { bluetooth } = bluetoothWith(device);
+    const { bluetooth } = bluetoothReaching("water-id", "Water Module");
 
     const handle = await bluetooth.connect("water-id");
 
@@ -113,8 +175,7 @@ describe("Bluetooth.connect", () => {
   });
 
   it("names a handle with an empty string when the device advertises none", async () => {
-    const device = new FakeDevice("water-id", null);
-    const { bluetooth } = bluetoothWith(device);
+    const { bluetooth } = bluetoothReaching("water-id", null);
 
     const handle = await bluetooth.connect("water-id");
 
@@ -122,8 +183,7 @@ describe("Bluetooth.connect", () => {
   });
 
   it("negotiates the MTU and discovers the services before handing out the handle", async () => {
-    const device = new FakeDevice("water-id", "Water Module");
-    const { bluetooth } = bluetoothWith(device);
+    const { bluetooth, device } = bluetoothReaching("water-id", "Water Module");
 
     await bluetooth.connect("water-id");
 
@@ -132,8 +192,10 @@ describe("Bluetooth.connect", () => {
   });
 
   it("registers the connection so a transport can resolve the handle", async () => {
-    const device = new FakeDevice("water-id", "Water Module");
-    const { bluetooth, connections } = bluetoothWith(device);
+    const { bluetooth, connections, device } = bluetoothReaching(
+      "water-id",
+      "Water Module",
+    );
 
     const handle = await bluetooth.connect("water-id");
 
@@ -141,11 +203,14 @@ describe("Bluetooth.connect", () => {
   });
 
   it("forgets the connection once the radio drops it", async () => {
-    const device = new FakeDevice("water-id", "Water Module");
-    const { bluetooth, connections } = bluetoothWith(device);
+    const { bluetooth, connections, radio } = bluetoothReaching(
+      "water-id",
+      "Water Module",
+    );
     const handle = await bluetooth.connect("water-id");
 
-    device.dropConnection();
+    radio.dropConnection("water-id");
+    await flushRadioEvents();
 
     expect(connections.find(handle)).toBeUndefined();
   });
@@ -153,8 +218,7 @@ describe("Bluetooth.connect", () => {
 
 describe("Bluetooth.disconnect", () => {
   it("closes the connection behind the handle", async () => {
-    const device = new FakeDevice("water-id", "Water Module");
-    const { bluetooth } = bluetoothWith(device);
+    const { bluetooth, device } = bluetoothReaching("water-id", "Water Module");
     const handle = await bluetooth.connect("water-id");
 
     await bluetooth.disconnect(handle);
@@ -163,8 +227,10 @@ describe("Bluetooth.disconnect", () => {
   });
 
   it("forgets the connection", async () => {
-    const device = new FakeDevice("water-id", "Water Module");
-    const { bluetooth, connections } = bluetoothWith(device);
+    const { bluetooth, connections } = bluetoothReaching(
+      "water-id",
+      "Water Module",
+    );
     const handle = await bluetooth.connect("water-id");
 
     await bluetooth.disconnect(handle);
@@ -173,7 +239,7 @@ describe("Bluetooth.disconnect", () => {
   });
 
   it("does nothing for a handle it never issued", async () => {
-    const { bluetooth } = bluetoothWith();
+    const { bluetooth } = bluetoothOn(new FakeRadio());
 
     await expect(bluetooth.disconnect(UNKNOWN_HANDLE)).resolves.toBeUndefined();
   });
@@ -181,12 +247,8 @@ describe("Bluetooth.disconnect", () => {
 
 describe("Bluetooth reconnection", () => {
   it("keeps the new connection when the disconnect of the previous one resolves afterwards", async () => {
-    const dropped = new FakeDevice("water-id", "Water Module");
-    const reconnected = new FakeDevice("water-id", "Water Module");
-    const { bluetooth, connections } = bluetoothHandingOut(
-      dropped,
-      reconnected,
-    );
+    const { bluetooth, connections, dropped, reconnected } =
+      bluetoothReconnecting("water-id", "Water Module");
     const staleHandle = await bluetooth.connect("water-id");
     dropped.holdCancellation();
     const pendingDisconnect = bluetooth.disconnect(staleHandle);
@@ -194,56 +256,54 @@ describe("Bluetooth reconnection", () => {
     const handle = await bluetooth.connect("water-id");
     dropped.settleCancellation();
     await pendingDisconnect;
+    await flushRadioEvents();
 
     expect(connections.find(handle)).toBe(reconnected);
   });
 
+  // Android reconnects by cancelling the live link first, so its teardown
+  // event can land after the new connection is already registered.
   it("keeps the new connection when a disconnect event of the previous one lands late", async () => {
-    const dropped = new FakeDevice("water-id", "Water Module");
-    const reconnected = new FakeDevice("water-id", "Water Module");
-    const { bluetooth, connections } = bluetoothHandingOut(
-      dropped,
-      reconnected,
-    );
+    const { bluetooth, connections, radio, reconnected } =
+      bluetoothReconnecting("water-id", "Water Module");
     await bluetooth.connect("water-id");
-    const deliverStaleEvent = dropped.emitDisconnection();
 
     const handle = await bluetooth.connect("water-id");
-    deliverStaleEvent();
+    radio.staleTeardownEvent("water-id");
+    await flushRadioEvents();
 
     expect(connections.find(handle)).toBe(reconnected);
   });
 
   it("unsubscribes the previous device when the same id connects again", async () => {
-    const dropped = new FakeDevice("water-id", "Water Module");
-    const reconnected = new FakeDevice("water-id", "Water Module");
-    const { bluetooth } = bluetoothHandingOut(dropped, reconnected);
+    const { bluetooth, radio } = bluetoothReconnecting(
+      "water-id",
+      "Water Module",
+    );
     await bluetooth.connect("water-id");
 
     await bluetooth.connect("water-id");
 
-    expect(dropped.disconnectListenerCount).toBe(0);
+    expect(radio.disconnectionListenersFor("water-id")).toBe(1);
   });
 });
 
 describe("Bluetooth.onDisconnected", () => {
   it("calls the listener when the device goes away", async () => {
-    const device = new FakeDevice("water-id", "Water Module");
-    const { bluetooth } = bluetoothWith(device);
+    const { bluetooth, radio } = bluetoothReaching("water-id", "Water Module");
     const handle = await bluetooth.connect("water-id");
     let notified = false;
 
     bluetooth.onDisconnected(handle, () => {
       notified = true;
     });
-    device.dropConnection();
+    radio.dropConnection("water-id");
 
     expect(notified).toBe(true);
   });
 
   it("stops notifying once unsubscribed", async () => {
-    const device = new FakeDevice("water-id", "Water Module");
-    const { bluetooth } = bluetoothWith(device);
+    const { bluetooth, radio } = bluetoothReaching("water-id", "Water Module");
     const handle = await bluetooth.connect("water-id");
     let notified = false;
 
@@ -251,13 +311,13 @@ describe("Bluetooth.onDisconnected", () => {
       notified = true;
     });
     unsubscribe();
-    device.dropConnection();
+    radio.dropConnection("water-id");
 
     expect(notified).toBe(false);
   });
 
   it("hands back a no-op unsubscribe for a handle it never issued", () => {
-    const { bluetooth } = bluetoothWith();
+    const { bluetooth } = bluetoothOn(new FakeRadio());
 
     const unsubscribe = bluetooth.onDisconnected(UNKNOWN_HANDLE, () => {});
 
