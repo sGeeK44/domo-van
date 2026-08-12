@@ -128,9 +128,11 @@ function applyFrame(
 
     // Status
     isCharging:
-      (data.isCharging ?? false) || current > CHARGE_CURRENT_THRESHOLD,
+      (data.isCharging ?? previous.isCharging) ||
+      current > CHARGE_CURRENT_THRESHOLD,
     isDischarging:
-      (data.isDischarging ?? false) || current < -CHARGE_CURRENT_THRESHOLD,
+      (data.isDischarging ?? previous.isDischarging) ||
+      current < -CHARGE_CURRENT_THRESHOLD,
     balancing:
       data.balanceState === undefined
         ? previous.balancing
