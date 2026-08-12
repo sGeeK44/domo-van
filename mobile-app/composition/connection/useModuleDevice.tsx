@@ -9,10 +9,10 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { Device } from "react-native-ble-plx";
 import { useContainer } from "@/composition/ContainerProvider";
+import type { DeviceConnector } from "@/domain/ports/DeviceConnector";
+import type { DeviceHandle } from "@/domain/ports/DeviceHandle";
 import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
-import type { Bluetooth } from "@/infrastructure/ble/Bluetooth";
 
 /** Connection timeout in milliseconds */
 const CONNECTION_TIMEOUT_MS = 15_000;
@@ -39,12 +39,12 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 export type ModuleDeviceContextValue = {
-  device: Device | null;
+  device: DeviceHandle | null;
   isConnected: boolean;
   isConnecting: boolean;
   lastDevice: DeviceInfo | null;
-  setDevice: (device: Device | null) => void;
-  autoConnect: (bluetooth: Bluetooth) => Promise<void>;
+  setDevice: (device: DeviceHandle | null) => void;
+  autoConnect: (bluetooth: DeviceConnector) => Promise<void>;
   disconnect: () => Promise<void>;
   forgetDevice: () => Promise<void>;
 };
@@ -60,8 +60,8 @@ const BatteryDeviceContext = createContext<ModuleDeviceContextValue | null>(
 
 /** Specialized water device provider with its own context */
 export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
-  const { deviceRepository } = useContainer();
-  const [device, setDeviceState] = useState<Device | null>(null);
+  const { bluetooth, deviceRepository } = useContainer();
+  const [device, setDeviceState] = useState<DeviceHandle | null>(null);
   const [lastDevice, setLastDevice] = useState<DeviceInfo | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -72,12 +72,12 @@ export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
   }, [deviceRepository]);
 
   const setDevice = useCallback(
-    (newDevice: Device | null) => {
+    (newDevice: DeviceHandle | null) => {
       setDeviceState(newDevice);
       if (newDevice) {
         const deviceInfo: DeviceInfo = {
           id: newDevice.id,
-          name: newDevice.name ?? "Water Module",
+          name: newDevice.name || "Water Module",
         };
         setLastDevice(deviceInfo);
         void deviceRepository.setLastDevice(deviceInfo, "water");
@@ -88,22 +88,16 @@ export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!device) return;
-    const subscription = device.onDisconnected(() => setDeviceState(null));
-    return () => subscription?.remove();
-  }, [device]);
+    return bluetooth.onDisconnected(device, () => setDeviceState(null));
+  }, [bluetooth, device]);
 
   const autoConnect = useCallback(
-    async (bluetooth: Bluetooth) => {
+    async (connector: DeviceConnector) => {
       if (!lastDevice || device !== null || isConnecting) return;
       setIsConnecting(true);
       try {
-        const connectionPromise = (async () => {
-          const connectedDevice = await bluetooth.connect(lastDevice.id);
-          await connectedDevice.discoverAllServicesAndCharacteristics();
-          return connectedDevice;
-        })();
         const connectedDevice = await withTimeout(
-          connectionPromise,
+          connector.connect(lastDevice.id),
           CONNECTION_TIMEOUT_MS,
         );
         setDevice(connectedDevice);
@@ -120,24 +114,24 @@ export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
   const disconnect = useCallback(async () => {
     if (device) {
       try {
-        await device.cancelConnection();
+        await bluetooth.disconnect(device);
       } catch {
         // Ignore disconnection errors
       }
       setDeviceState(null);
     }
-  }, [device]);
+  }, [bluetooth, device]);
 
   const forgetDevice = useCallback(async () => {
     if (device) {
       try {
-        await device.cancelConnection();
+        await bluetooth.disconnect(device);
       } catch {}
       setDeviceState(null);
     }
     setLastDevice(null);
     await deviceRepository.clearLastDevice("water");
-  }, [device, deviceRepository]);
+  }, [bluetooth, device, deviceRepository]);
 
   const value: ModuleDeviceContextValue = {
     device,
@@ -159,8 +153,8 @@ export function WaterDeviceProviderV2({ children }: PropsWithChildren) {
 
 /** Specialized heater device provider with its own context */
 export function HeaterDeviceProviderV2({ children }: PropsWithChildren) {
-  const { deviceRepository } = useContainer();
-  const [device, setDeviceState] = useState<Device | null>(null);
+  const { bluetooth, deviceRepository } = useContainer();
+  const [device, setDeviceState] = useState<DeviceHandle | null>(null);
   const [lastDevice, setLastDevice] = useState<DeviceInfo | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -171,12 +165,12 @@ export function HeaterDeviceProviderV2({ children }: PropsWithChildren) {
   }, [deviceRepository]);
 
   const setDevice = useCallback(
-    (newDevice: Device | null) => {
+    (newDevice: DeviceHandle | null) => {
       setDeviceState(newDevice);
       if (newDevice) {
         const deviceInfo: DeviceInfo = {
           id: newDevice.id,
-          name: newDevice.name ?? "Heater Module",
+          name: newDevice.name || "Heater Module",
         };
         setLastDevice(deviceInfo);
         void deviceRepository.setLastDevice(deviceInfo, "heater");
@@ -187,22 +181,16 @@ export function HeaterDeviceProviderV2({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!device) return;
-    const subscription = device.onDisconnected(() => setDeviceState(null));
-    return () => subscription?.remove();
-  }, [device]);
+    return bluetooth.onDisconnected(device, () => setDeviceState(null));
+  }, [bluetooth, device]);
 
   const autoConnect = useCallback(
-    async (bluetooth: Bluetooth) => {
+    async (connector: DeviceConnector) => {
       if (!lastDevice || device !== null || isConnecting) return;
       setIsConnecting(true);
       try {
-        const connectionPromise = (async () => {
-          const connectedDevice = await bluetooth.connect(lastDevice.id);
-          await connectedDevice.discoverAllServicesAndCharacteristics();
-          return connectedDevice;
-        })();
         const connectedDevice = await withTimeout(
-          connectionPromise,
+          connector.connect(lastDevice.id),
           CONNECTION_TIMEOUT_MS,
         );
         setDevice(connectedDevice);
@@ -219,24 +207,24 @@ export function HeaterDeviceProviderV2({ children }: PropsWithChildren) {
   const disconnect = useCallback(async () => {
     if (device) {
       try {
-        await device.cancelConnection();
+        await bluetooth.disconnect(device);
       } catch {
         // Ignore disconnection errors
       }
       setDeviceState(null);
     }
-  }, [device]);
+  }, [bluetooth, device]);
 
   const forgetDevice = useCallback(async () => {
     if (device) {
       try {
-        await device.cancelConnection();
+        await bluetooth.disconnect(device);
       } catch {}
       setDeviceState(null);
     }
     setLastDevice(null);
     await deviceRepository.clearLastDevice("heater");
-  }, [device, deviceRepository]);
+  }, [bluetooth, device, deviceRepository]);
 
   const value: ModuleDeviceContextValue = {
     device,
@@ -280,8 +268,8 @@ export function useHeaterDevice(): ModuleDeviceContextValue {
 
 /** Specialized battery device provider with its own context */
 export function BatteryDeviceProviderV2({ children }: PropsWithChildren) {
-  const { deviceRepository } = useContainer();
-  const [device, setDeviceState] = useState<Device | null>(null);
+  const { bluetooth, deviceRepository } = useContainer();
+  const [device, setDeviceState] = useState<DeviceHandle | null>(null);
   const [lastDevice, setLastDevice] = useState<DeviceInfo | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -292,12 +280,12 @@ export function BatteryDeviceProviderV2({ children }: PropsWithChildren) {
   }, [deviceRepository]);
 
   const setDevice = useCallback(
-    (newDevice: Device | null) => {
+    (newDevice: DeviceHandle | null) => {
       setDeviceState(newDevice);
       if (newDevice) {
         const deviceInfo: DeviceInfo = {
           id: newDevice.id,
-          name: newDevice.name ?? "JK BMS",
+          name: newDevice.name || "JK BMS",
         };
         setLastDevice(deviceInfo);
         void deviceRepository.setLastDevice(deviceInfo, "battery");
@@ -308,22 +296,16 @@ export function BatteryDeviceProviderV2({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!device) return;
-    const subscription = device.onDisconnected(() => setDeviceState(null));
-    return () => subscription?.remove();
-  }, [device]);
+    return bluetooth.onDisconnected(device, () => setDeviceState(null));
+  }, [bluetooth, device]);
 
   const autoConnect = useCallback(
-    async (bluetooth: Bluetooth) => {
+    async (connector: DeviceConnector) => {
       if (!lastDevice || device !== null || isConnecting) return;
       setIsConnecting(true);
       try {
-        const connectionPromise = (async () => {
-          const connectedDevice = await bluetooth.connect(lastDevice.id);
-          await connectedDevice.discoverAllServicesAndCharacteristics();
-          return connectedDevice;
-        })();
         const connectedDevice = await withTimeout(
-          connectionPromise,
+          connector.connect(lastDevice.id),
           CONNECTION_TIMEOUT_MS,
         );
         setDevice(connectedDevice);
@@ -340,24 +322,24 @@ export function BatteryDeviceProviderV2({ children }: PropsWithChildren) {
   const disconnect = useCallback(async () => {
     if (device) {
       try {
-        await device.cancelConnection();
+        await bluetooth.disconnect(device);
       } catch {
         // Ignore disconnection errors
       }
       setDeviceState(null);
     }
-  }, [device]);
+  }, [bluetooth, device]);
 
   const forgetDevice = useCallback(async () => {
     if (device) {
       try {
-        await device.cancelConnection();
+        await bluetooth.disconnect(device);
       } catch {}
       setDeviceState(null);
     }
     setLastDevice(null);
     await deviceRepository.clearLastDevice("battery");
-  }, [device, deviceRepository]);
+  }, [bluetooth, device, deviceRepository]);
 
   const value: ModuleDeviceContextValue = {
     device,

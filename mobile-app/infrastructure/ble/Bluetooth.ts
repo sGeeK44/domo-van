@@ -1,12 +1,19 @@
 import { PermissionsAndroid, Platform } from "react-native";
-import { BleManager, Device } from "react-native-ble-plx";
+import { BleManager } from "react-native-ble-plx";
+import type { Unsubscribe } from "@/core/observable";
 import type {
   BluetoothScanner,
   DiscoveredBluetoothDevice,
 } from "@/domain/ports/BluetoothScanner";
+import type { DeviceConnector } from "@/domain/ports/DeviceConnector";
+import type { DeviceHandle } from "@/domain/ports/DeviceHandle";
+import type { BleConnections } from "@/infrastructure/ble/BleConnections";
 
-export class Bluetooth implements BluetoothScanner {
-  constructor(private readonly BleManager: BleManager) {}
+export class Bluetooth implements BluetoothScanner, DeviceConnector {
+  constructor(
+    private readonly BleManager: BleManager,
+    private readonly connections: BleConnections,
+  ) {}
 
   private async ensureBlePermissionsAndroid(): Promise<boolean> {
     if (Platform.OS !== "android") return true;
@@ -65,7 +72,7 @@ export class Bluetooth implements BluetoothScanner {
     this.BleManager.stopDeviceScan();
   }
 
-  public async connect(deviceId: string): Promise<Device> {
+  public async connect(deviceId: string): Promise<DeviceHandle> {
     let device = await this.BleManager.connectToDevice(deviceId, {
       autoConnect: false,
       timeout: 10000,
@@ -73,12 +80,35 @@ export class Bluetooth implements BluetoothScanner {
     if (Platform.OS === "android") {
       device = await device.requestMTU(185);
     }
+    device = await device.discoverAllServicesAndCharacteristics();
 
-    return device;
+    device.onDisconnected(() => this.connections.remove(device.id));
+    return this.connections.add(device);
+  }
+
+  public async disconnect(handle: DeviceHandle): Promise<void> {
+    const device = this.connections.find(handle);
+    if (!device) return;
+
+    try {
+      await device.cancelConnection();
+    } finally {
+      this.connections.remove(handle.id);
+    }
+  }
+
+  public onDisconnected(
+    handle: DeviceHandle,
+    listener: () => void,
+  ): Unsubscribe {
+    const subscription = this.connections
+      .find(handle)
+      ?.onDisconnected(listener);
+    return () => subscription?.remove();
   }
 }
 
 /** Builds the BLE stack. The `BleManager` must exist exactly once per app. */
-export function createBluetooth(): Bluetooth {
-  return new Bluetooth(new BleManager());
+export function createBluetooth(connections: BleConnections): Bluetooth {
+  return new Bluetooth(new BleManager(), connections);
 }

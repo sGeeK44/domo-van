@@ -105,9 +105,7 @@ export default function BatterySettingsScreen() {
     async (deviceId: string) => {
       await stopScan();
       try {
-        const connectedDevice = await bluetooth.connect(deviceId);
-        await connectedDevice.discoverAllServicesAndCharacteristics();
-        setDevice(connectedDevice);
+        setDevice(await bluetooth.connect(deviceId));
       } catch (e) {
         setLastError(e instanceof Error ? e.message : "Connection failed");
       }
@@ -118,10 +116,10 @@ export default function BatterySettingsScreen() {
   // Disconnect
   const disconnect = useCallback(async () => {
     if (device) {
-      await device.cancelConnection();
+      await bluetooth.disconnect(device);
       setDevice(null);
     }
-  }, [device, setDevice]);
+  }, [bluetooth, device, setDevice]);
 
   return (
     <SafeAreaView style={styles.container}>
