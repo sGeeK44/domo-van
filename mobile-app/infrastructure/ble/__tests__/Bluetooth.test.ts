@@ -9,11 +9,17 @@ class FakeDevice {
   isDiscovered = false;
   isCancelled = false;
   private listeners: (() => void)[] = [];
+  private cancellationSettlers: (() => void)[] = [];
+  private holdsCancellation = false;
 
   constructor(
     readonly id: string,
     readonly name: string | null,
   ) {}
+
+  get disconnectListenerCount() {
+    return this.listeners.length;
+  }
 
   async requestMTU(mtu: number) {
     this.mtu = mtu;
@@ -37,28 +43,61 @@ class FakeDevice {
   async cancelConnection() {
     this.isCancelled = true;
     this.dropConnection();
+    if (this.holdsCancellation) {
+      await new Promise<void>((resolve) => {
+        this.cancellationSettlers.push(resolve);
+      });
+    }
     return this;
   }
 
+  holdCancellation() {
+    this.holdsCancellation = true;
+  }
+
+  settleCancellation() {
+    for (const settle of this.cancellationSettlers.splice(0)) settle();
+  }
+
   dropConnection() {
-    for (const listener of [...this.listeners]) listener();
+    this.emitDisconnection()();
+  }
+
+  // The radio emits now, the callbacks land one bridge batch later.
+  emitDisconnection(): () => void {
+    const notified = [...this.listeners];
+    return () => {
+      for (const listener of notified) listener();
+    };
   }
 }
 
-function bluetoothWith(...devices: FakeDevice[]) {
-  const manager = {
-    connectToDevice: async (id: string) => {
-      const device = devices.find((d) => d.id === id);
-      if (!device) throw new Error(`No such device: ${id}`);
-      return device;
-    },
-  };
+function bluetoothConnectingWith(
+  connectToDevice: (id: string) => Promise<FakeDevice>,
+) {
   const connections = new BleConnections();
   const bluetooth = new Bluetooth(
-    manager as unknown as BleManager,
+    { connectToDevice } as unknown as BleManager,
     connections,
   );
   return { bluetooth, connections };
+}
+
+function bluetoothWith(...devices: FakeDevice[]) {
+  return bluetoothConnectingWith(async (id: string) => {
+    const device = devices.find((d) => d.id === id);
+    if (!device) throw new Error(`No such device: ${id}`);
+    return device;
+  });
+}
+
+function bluetoothHandingOut(...devices: FakeDevice[]) {
+  const queue = [...devices];
+  return bluetoothConnectingWith(async () => {
+    const device = queue.shift();
+    if (!device) throw new Error("No device left to hand out.");
+    return device;
+  });
 }
 
 const UNKNOWN_HANDLE: DeviceHandle = { id: "never-connected", name: "Ghost" };
@@ -137,6 +176,53 @@ describe("Bluetooth.disconnect", () => {
     const { bluetooth } = bluetoothWith();
 
     await expect(bluetooth.disconnect(UNKNOWN_HANDLE)).resolves.toBeUndefined();
+  });
+});
+
+describe("Bluetooth reconnection", () => {
+  it("keeps the new connection when the disconnect of the previous one resolves afterwards", async () => {
+    const dropped = new FakeDevice("water-id", "Water Module");
+    const reconnected = new FakeDevice("water-id", "Water Module");
+    const { bluetooth, connections } = bluetoothHandingOut(
+      dropped,
+      reconnected,
+    );
+    const staleHandle = await bluetooth.connect("water-id");
+    dropped.holdCancellation();
+    const pendingDisconnect = bluetooth.disconnect(staleHandle);
+
+    const handle = await bluetooth.connect("water-id");
+    dropped.settleCancellation();
+    await pendingDisconnect;
+
+    expect(connections.find(handle)).toBe(reconnected);
+  });
+
+  it("keeps the new connection when a disconnect event of the previous one lands late", async () => {
+    const dropped = new FakeDevice("water-id", "Water Module");
+    const reconnected = new FakeDevice("water-id", "Water Module");
+    const { bluetooth, connections } = bluetoothHandingOut(
+      dropped,
+      reconnected,
+    );
+    await bluetooth.connect("water-id");
+    const deliverStaleEvent = dropped.emitDisconnection();
+
+    const handle = await bluetooth.connect("water-id");
+    deliverStaleEvent();
+
+    expect(connections.find(handle)).toBe(reconnected);
+  });
+
+  it("unsubscribes the previous device when the same id connects again", async () => {
+    const dropped = new FakeDevice("water-id", "Water Module");
+    const reconnected = new FakeDevice("water-id", "Water Module");
+    const { bluetooth } = bluetoothHandingOut(dropped, reconnected);
+    await bluetooth.connect("water-id");
+
+    await bluetooth.connect("water-id");
+
+    expect(dropped.disconnectListenerCount).toBe(0);
   });
 });
 

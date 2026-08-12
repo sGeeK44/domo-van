@@ -34,6 +34,10 @@ class FakeDevice {
     this.writes.push({ uuid: characteristicUuid, payload });
     return this;
   }
+
+  onDisconnected(_listener: () => void) {
+    return { remove: () => {} };
+  }
 }
 
 function connect(connections: BleConnections, device: FakeDevice) {
@@ -89,10 +93,11 @@ describe("BleTransportFactory", () => {
 
   it("stops resolving a handle once the device is dropped", () => {
     const connections = new BleConnections();
-    const handle = connect(connections, new FakeDevice("water-id", "Water"));
+    const water = new FakeDevice("water-id", "Water");
+    const handle = connect(connections, water);
     const factory = new BleTransportFactory(connections);
 
-    connections.remove(handle.id);
+    connections.remove(water as unknown as Device);
 
     expect(() => factory.moduleTransport(handle, "0001")).toThrow(
       UnknownDeviceError,
