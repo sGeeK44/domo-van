@@ -1,14 +1,15 @@
+import type { BluetoothScanner } from "@/domain/ports/BluetoothScanner";
+import type { DeviceConnector } from "@/domain/ports/DeviceConnector";
 import type { DeviceRepository } from "@/domain/ports/DeviceRepository";
+import type { TransportFactory } from "@/domain/ports/TransportFactory";
+import { BleConnections } from "@/infrastructure/ble/BleConnections";
 import { BleTransportFactory } from "@/infrastructure/ble/BleTransportFactory";
-import {
-  type Bluetooth,
-  createBluetooth,
-} from "@/infrastructure/ble/Bluetooth";
+import { createBluetooth } from "@/infrastructure/ble/Bluetooth";
 import { SecureStoreDeviceRepository } from "@/infrastructure/storage/SecureStoreDeviceRepository";
 
 export type Container = {
-  bluetooth: Bluetooth;
-  transports: BleTransportFactory;
+  bluetooth: BluetoothScanner & DeviceConnector;
+  transports: TransportFactory;
   deviceRepository: DeviceRepository;
 };
 
@@ -17,9 +18,11 @@ export type Container = {
  * interfaces. Nothing else in the app is allowed to `new` an adapter.
  */
 export function createContainer(): Container {
+  const connections = new BleConnections();
+
   return {
-    bluetooth: createBluetooth(),
-    transports: new BleTransportFactory(),
+    bluetooth: createBluetooth(connections),
+    transports: new BleTransportFactory(connections),
     deviceRepository: new SecureStoreDeviceRepository(),
   };
 }

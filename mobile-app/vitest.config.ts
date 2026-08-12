@@ -5,6 +5,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
+      "react-native": path.resolve(__dirname, "__mocks__/react-native.ts"),
+      "react-native-ble-plx": path.resolve(
+        __dirname,
+        "__mocks__/react-native-ble-plx.ts",
+      ),
     },
   },
   test: {

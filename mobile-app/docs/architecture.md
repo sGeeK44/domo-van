@@ -32,14 +32,15 @@ every pull request, so a violation blocks the merge.
 | `core` | — | **none**, except `core/react/**` → `react` only |
 | `domain` | `core` | **none at all** |
 | `infrastructure` | `core`, `domain` | any |
-| `composition` | `core`, `domain`, `infrastructure` | any except `react-native-ble-plx` (see below) |
+| `composition` | `core`, `domain`, `infrastructure` | any except `react-native-ble-plx` |
 | `design-system` | `core` | react / react-native / expo-\* / svg — **not** ble-plx |
 | `components` | `core`, `domain`, `design-system` (barrel only) | as design-system |
 | `screens` | `core`, `domain`, `design-system` (barrel), `components`, `composition` | as design-system |
 | `app` | `screens`, `composition`, `design-system` (barrel) | any |
 
-`react-native-ble-plx` is confined to `infrastructure/ble/` and, temporarily,
-`composition/connection/`.
+`react-native-ble-plx` is confined to `infrastructure/ble/`. Everything else
+sees a connected device through the `DeviceHandle` port and asks
+`DeviceConnector` / `TransportFactory` to act on it.
 
 ## Rules of the road
 

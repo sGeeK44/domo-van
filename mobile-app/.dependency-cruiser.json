@@ -150,9 +150,9 @@
     },
     {
       "name": "ble-plx-only-in-infrastructure",
-      "comment": "react-native-ble-plx is a transport detail. It survives in infrastructure/ble/ and in composition/connection/ (temporary tenant) only.",
+      "comment": "react-native-ble-plx is a transport detail. It lives in infrastructure/ble/ and nowhere else.",
       "severity": "error",
-      "from": { "pathNot": "^(infrastructure/ble|composition/connection)/" },
+      "from": { "pathNot": "^infrastructure/ble/" },
       "to": { "path": "^node_modules/react-native-ble-plx/" }
     },
     {
