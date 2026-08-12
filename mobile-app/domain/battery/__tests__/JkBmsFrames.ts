@@ -11,14 +11,18 @@ export const MOS_TEMP = [0x80, 0x00, 0x68];
 export const PACK_VOLTAGE = [0x83, 0x05, 0x28];
 // Field 0x84: current, +500 × 10 mA = 5.00 A charging.
 export const CURRENT = [0x84, 0x01, 0xf4];
+// Same field, sign bit set: 500 × 10 mA = 5.00 A discharging.
+export const DISCHARGE_CURRENT = [0x84, 0x81, 0xf4];
+// Same field at zero: the pack neither charges nor discharges.
+export const NO_CURRENT = [0x84, 0x00, 0x00];
 // Field 0x85: state of charge, 98 %.
 export const STATE_OF_CHARGE = [0x85, 0x62];
 // Field 0x8a: cell count, 4.
 export const CELL_COUNT = [0x8a, 0x00, 0x04];
-// Field 0x84: current, 0 × 10 mA, the pack neither charging nor discharging.
-export const NO_CURRENT = [0x84, 0x00, 0x00];
 // Field 0x8f: charge MOSFET closed.
 export const CHARGE_MOSFET_ON = [0x8f, 0x01];
+// Same field: charge MOSFET open.
+export const CHARGE_MOSFET_OFF = [0x8f, 0x00];
 // Field 0x90: discharge MOSFET closed.
 export const DISCHARGE_MOSFET_ON = [0x90, 0x01];
 

@@ -278,7 +278,10 @@ function parseDataSection(dataSection: Uint8Array): JkBmsData | null {
       case FIELD_CELL_VOLTAGES: {
         const voltages = readCellVoltages(cursor);
         if (voltages === null) return null;
-        if (result.cellCount && result.cellCount !== voltages.length) {
+        if (
+          result.cellCount !== undefined &&
+          result.cellCount !== voltages.length
+        ) {
           return null;
         }
         result.cellVoltages = voltages;

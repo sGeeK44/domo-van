@@ -23,6 +23,7 @@ export class BatterySystem implements Observable<BatterySnapshot> {
   private readonly frameReader = new JkBmsFrameReader();
   private readonly state: ReturnType<typeof createObservable<BatterySnapshot>>;
   private transportUnsub: Unsubscribe | null = null;
+  private lastReported: JkBmsData = {};
 
   constructor(private readonly transport: BinaryTransport) {
     this.state = createObservable<BatterySnapshot>(DEFAULT_BATTERY_SNAPSHOT);
@@ -65,7 +66,8 @@ export class BatterySystem implements Observable<BatterySnapshot> {
    * Handle incoming BMS data and update state
    */
   private onBmsData = (data: JkBmsData): void => {
-    this.state.setValue(applyFrame(this.state.getValue(), data));
+    this.lastReported = mergeFrames(this.lastReported, data);
+    this.state.setValue(toSnapshot(this.lastReported));
   };
 
   /**
@@ -82,25 +84,24 @@ export class BatterySystem implements Observable<BatterySnapshot> {
 /** Current above which the pack counts as charging, whatever the MOSFET says. */
 const CHARGE_CURRENT_THRESHOLD = 0.1;
 
-/** Folds a frame into the last snapshot: a field the frame omits keeps its previous value. */
-function applyFrame(
-  previous: BatterySnapshot,
-  data: JkBmsData,
-): BatterySnapshot {
-  const cellVoltages = data.cellVoltages
-    ? data.cellVoltages.filter((v) => v > 0)
-    : previous.cellVoltages;
+/** Folds raw fields only, so no derived value can be fed back into itself. */
+function mergeFrames(previous: JkBmsData, incoming: JkBmsData): JkBmsData {
+  return { ...previous, ...incoming };
+}
+
+/** Derives the whole snapshot from the raw fields, with no memory of its own. */
+function toSnapshot(data: JkBmsData): BatterySnapshot {
+  const cellVoltages = (data.cellVoltages ?? []).filter((v) => v > 0);
   const minCellVoltage =
     cellVoltages.length > 0 ? Math.min(...cellVoltages) : 0;
   const maxCellVoltage =
     cellVoltages.length > 0 ? Math.max(...cellVoltages) : 0;
 
-  const percentage = data.soc ?? previous.percentage;
-  const voltage = data.totalVoltage ?? previous.voltage;
-  const current = data.current ?? previous.current;
-  const capacityAh = data.capacityAh ?? previous.capacityAh;
-  const alarms =
-    data.errors === undefined ? previous.alarms : parseAlarms(data.errors);
+  const percentage = data.soc ?? 0;
+  const voltage = data.totalVoltage ?? 0;
+  const current = data.current ?? 0;
+  const capacityAh = data.capacityAh ?? 0;
+  const alarms = data.errors === undefined ? [] : parseAlarms(data.errors);
 
   return {
     // Main indicators
@@ -111,33 +112,28 @@ function applyFrame(
 
     // Cell details
     cellVoltages,
-    cellCount: data.cellCount ?? previous.cellCount,
+    cellCount: data.cellCount ?? 0,
     minCellVoltage,
     maxCellVoltage,
     cellDelta: maxCellVoltage - minCellVoltage,
 
     // Temperatures
-    tempMos: data.tempMos ?? previous.tempMos,
-    tempCell1: data.tempSensor1 ?? previous.tempCell1,
-    tempCell2: data.tempSensor2 ?? previous.tempCell2,
+    tempMos: data.tempMos ?? 0,
+    tempCell1: data.tempSensor1 ?? 0,
+    tempCell2: data.tempSensor2 ?? 0,
 
     // Capacity
     capacityAh,
     remainingAh: (percentage / 100) * capacityAh,
-    cycleCount: data.cycleCount ?? previous.cycleCount,
+    cycleCount: data.cycleCount ?? 0,
 
     // Status
     isCharging:
-      (data.isCharging ?? previous.isCharging) ||
-      current > CHARGE_CURRENT_THRESHOLD,
+      (data.isCharging ?? false) || current > CHARGE_CURRENT_THRESHOLD,
     isDischarging:
-      (data.isDischarging ?? previous.isDischarging) ||
-      current < -CHARGE_CURRENT_THRESHOLD,
-    balancing:
-      data.balanceState === undefined
-        ? previous.balancing
-        : data.balanceState !== 0,
-    balanceCurrent: data.balanceCurrent ?? previous.balanceCurrent,
+      (data.isDischarging ?? false) || current < -CHARGE_CURRENT_THRESHOLD,
+    balancing: (data.balanceState ?? 0) !== 0,
+    balanceCurrent: data.balanceCurrent ?? 0,
 
     // Alarms
     alarms,

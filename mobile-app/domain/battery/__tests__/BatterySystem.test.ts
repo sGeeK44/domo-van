@@ -3,7 +3,10 @@ import { Listener, Unsubscribe } from "@/core/observable";
 import { BatterySystem } from "@/domain/battery/BatterySystem";
 import type { BinaryTransport } from "@/domain/ports/BinaryTransport";
 import {
+  CHARGE_MOSFET_OFF,
   CHARGE_MOSFET_ON,
+  CURRENT,
+  DISCHARGE_CURRENT,
   DISCHARGE_MOSFET_ON,
   FRAME,
   frame,
@@ -106,6 +109,65 @@ describe("BatterySystem", () => {
     transport.emit(frame([0x85, 0x32]));
 
     expect(system.getValue().isDischarging).toBe(true);
+    system.dispose();
+  });
+
+  it("clears the charge flag when a frame reports the charge MOSFET open", () => {
+    const transport = new FakeBinaryTransport();
+    const system = new BatterySystem(transport);
+    transport.emit(frame([...NO_CURRENT, ...CHARGE_MOSFET_ON]));
+    expect(system.getValue().isCharging).toBe(true);
+
+    transport.emit(frame([...CHARGE_MOSFET_OFF]));
+
+    expect(system.getValue().isCharging).toBe(false);
+    system.dispose();
+  });
+
+  it("stops reporting a charge once the current falls back to zero", () => {
+    const transport = new FakeBinaryTransport();
+    const system = new BatterySystem(transport);
+    transport.emit(frame([...CURRENT]));
+    expect(system.getValue().isCharging).toBe(true);
+
+    transport.emit(frame([...NO_CURRENT]));
+
+    expect(system.getValue().isCharging).toBe(false);
+    system.dispose();
+  });
+
+  it("reports a discharge, and only that, once the current reverses", () => {
+    const transport = new FakeBinaryTransport();
+    const system = new BatterySystem(transport);
+    transport.emit(frame([...CURRENT]));
+
+    transport.emit(frame([...DISCHARGE_CURRENT]));
+
+    expect(system.getValue()).toMatchObject({
+      isCharging: false,
+      isDischarging: true,
+    });
+    system.dispose();
+  });
+
+  it("never reports charging and discharging at once whatever the current does", () => {
+    const transport = new FakeBinaryTransport();
+    const system = new BatterySystem(transport);
+    const sequence = [
+      [CURRENT, { isCharging: true, isDischarging: false }],
+      [NO_CURRENT, { isCharging: false, isDischarging: false }],
+      [DISCHARGE_CURRENT, { isCharging: false, isDischarging: true }],
+      [CURRENT, { isCharging: true, isDischarging: false }],
+      [DISCHARGE_CURRENT, { isCharging: false, isDischarging: true }],
+    ] as const;
+
+    for (const [payload, expected] of sequence) {
+      transport.emit(frame([...payload]));
+
+      const snapshot = system.getValue();
+      expect(snapshot).toMatchObject(expected);
+      expect(snapshot.isCharging && snapshot.isDischarging).toBe(false);
+    }
     system.dispose();
   });
 

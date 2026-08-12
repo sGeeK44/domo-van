@@ -69,6 +69,16 @@ describe("parseResponse", () => {
     expect(data).toBeNull();
   });
 
+  it("rejects a zero cell count that disagrees with a later cell voltage block", () => {
+    const noCells = [0x8a, 0x00, 0x00];
+
+    const data = parseResponse(
+      new Uint8Array(frame([...noCells, ...CELL_VOLTAGES])),
+    );
+
+    expect(data).toBeNull();
+  });
+
   it("rejects a cell voltage block that reports the same cell twice", () => {
     const duplicated = [...CELL_VOLTAGES];
     duplicated[8] = 0x01;
