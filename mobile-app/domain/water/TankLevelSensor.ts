@@ -4,12 +4,13 @@ import {
   Observable,
   Unsubscribe,
 } from "@/core/observable";
+import { parseAckMessage } from "@/domain/AckMessage";
 import { Channel } from "@/domain/ports/Channel";
-
-export type TankConfig = {
-  volumeLiters: number;
-  heightMm: number;
-};
+import {
+  parseDistanceMessage,
+  parseTankConfigMessage,
+  TankConfig,
+} from "@/domain/water/WaterProtocol";
 
 export type TankTelemetry =
   | { type: "config"; config: TankConfig }
@@ -40,27 +41,6 @@ export function distanceToPercentage(
   }
   const ratio = clamp01(1 - distanceMm / heightMm);
   return ratio * 100;
-}
-
-export function parseTankConfigMessage(msg: string): TankConfig | null {
-  const trimmed = msg.trim();
-  if (!trimmed.startsWith("CFG:")) return null;
-  const vMatch = /V=(\d+)/.exec(trimmed);
-  const hMatch = /H=(\d+)/.exec(trimmed);
-  if (!vMatch?.[1] || !hMatch?.[1]) return null;
-
-  const volumeLiters = Number(vMatch[1]);
-  const heightMm = Number(hMatch[1]);
-  if (!Number.isFinite(volumeLiters) || !Number.isFinite(heightMm)) return null;
-  return { volumeLiters, heightMm };
-}
-
-export function parseDistanceMessage(msg: string): number | null {
-  const trimmed = msg.trim();
-  if (!/^\d+$/.test(trimmed)) return null;
-  const distanceMm = Number(trimmed);
-  if (!Number.isFinite(distanceMm) || distanceMm < 0) return null;
-  return distanceMm;
 }
 
 export class TankLevelSensor implements Observable<TankLevelSnapshot> {
@@ -138,7 +118,7 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
       });
       return;
     }
-    if (msg === "OK") {
+    if (parseAckMessage(msg)?.type === "ok") {
       this.state.update((prev) => {
         return {
           ...prev,

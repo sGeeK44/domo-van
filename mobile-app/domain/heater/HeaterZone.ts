@@ -4,6 +4,14 @@ import {
   Observable,
   Unsubscribe,
 } from "@/core/observable";
+import { parseAckMessage } from "@/domain/AckMessage";
+import {
+  PidConfig,
+  parsePidConfigMessage,
+  parseSetpointMessage,
+  parseStatusMessage,
+  parseTemperatureNotification,
+} from "@/domain/heater/HeaterProtocol";
 import { Channel } from "@/domain/ports/Channel";
 
 export type HeaterZoneSnapshot = {
@@ -13,106 +21,6 @@ export type HeaterZoneSnapshot = {
   pidConfig: PidConfig | null; // PID configuration
   lastMessage: string | null; // Last feedback message
 };
-
-export type PidConfig = {
-  kp: number; // Proportional gain (real value, e.g., 10.0)
-  ki: number; // Integral gain (real value, e.g., 0.1)
-  kd: number; // Derivative gain (real value, e.g., 0.5)
-};
-
-/**
- * Parse STATUS response: STATUS:T=<temp×10>;SP=<setpoint×10>;RUN=<0|1>
- */
-export function parseStatusMessage(msg: string): {
-  temperatureCelsius: number;
-  setpointCelsius: number;
-  isRunning: boolean;
-} | null {
-  const trimmed = msg.trim();
-  if (!trimmed.startsWith("STATUS:")) return null;
-
-  const tMatch = /T=(-?\d+)/.exec(trimmed);
-  const spMatch = /SP=(\d+)/.exec(trimmed);
-  const runMatch = /RUN=([01])/.exec(trimmed);
-
-  if (!tMatch?.[1] || !spMatch?.[1] || !runMatch?.[1]) return null;
-
-  const tempTenths = Number(tMatch[1]);
-  const spTenths = Number(spMatch[1]);
-  const run = runMatch[1];
-
-  if (!Number.isFinite(tempTenths) || !Number.isFinite(spTenths)) return null;
-
-  return {
-    temperatureCelsius: tempTenths / 10,
-    setpointCelsius: spTenths / 10,
-    isRunning: run === "1",
-  };
-}
-
-/**
- * Parse setpoint response: SP:<celsius×10>
- */
-export function parseSetpointMessage(msg: string): number | null {
-  const trimmed = msg.trim();
-  if (!trimmed.startsWith("SP:")) return null;
-
-  const value = trimmed.substring(3);
-  if (!/^\d+$/.test(value)) return null;
-
-  const tenths = Number(value);
-  if (!Number.isFinite(tenths)) return null;
-
-  return tenths / 10;
-}
-
-/**
- * Parse temperature notification: <name>:T=<temperature>
- * Example: "heater_0:T=22.50"
- */
-export function parseTemperatureNotification(msg: string): number | null {
-  const trimmed = msg.trim();
-  const match = /:T=(-?\d+(?:\.\d+)?)$/.exec(trimmed);
-  if (!match?.[1]) return null;
-
-  const temp = Number(match[1]);
-  if (!Number.isFinite(temp)) return null;
-
-  return temp;
-}
-
-/**
- * Parse PID config response: CFG:KP=<kp>;KI=<ki>;KD=<kd>
- * Values are stored as integers × 100
- */
-export function parsePidConfigMessage(msg: string): PidConfig | null {
-  const trimmed = msg.trim();
-  if (!trimmed.startsWith("CFG:")) return null;
-
-  const kpMatch = /KP=(\d+)/.exec(trimmed);
-  const kiMatch = /KI=(\d+)/.exec(trimmed);
-  const kdMatch = /KD=(\d+)/.exec(trimmed);
-
-  if (!kpMatch?.[1] || !kiMatch?.[1] || !kdMatch?.[1]) return null;
-
-  const kpRaw = Number(kpMatch[1]);
-  const kiRaw = Number(kiMatch[1]);
-  const kdRaw = Number(kdMatch[1]);
-
-  if (
-    !Number.isFinite(kpRaw) ||
-    !Number.isFinite(kiRaw) ||
-    !Number.isFinite(kdRaw)
-  ) {
-    return null;
-  }
-
-  return {
-    kp: kpRaw / 100,
-    ki: kiRaw / 100,
-    kd: kdRaw / 100,
-  };
-}
 
 export class HeaterZone implements Observable<HeaterZoneSnapshot> {
   private readonly state = createObservable<HeaterZoneSnapshot>({
@@ -277,20 +185,11 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
       return;
     }
 
-    // Handle OK response
-    if (msg.trim() === "OK") {
+    const ack = parseAckMessage(msg);
+    if (ack) {
       this.state.update((prev) => ({
         ...prev,
-        lastMessage: "OK",
-      }));
-      return;
-    }
-
-    // Handle error responses
-    if (msg.startsWith("ERR_")) {
-      this.state.update((prev) => ({
-        ...prev,
-        lastMessage: `Erreur: ${msg}`,
+        lastMessage: ack.type === "ok" ? "OK" : `Erreur: ${ack.code}`,
       }));
       return;
     }

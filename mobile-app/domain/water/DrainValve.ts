@@ -4,7 +4,12 @@ import {
   Observable,
   Unsubscribe,
 } from "@/core/observable";
+import { parseAckMessage } from "@/domain/AckMessage";
 import { Channel } from "@/domain/ports/Channel";
+import {
+  parseCountdownMessage,
+  parseValveConfigMessage,
+} from "@/domain/water/WaterProtocol";
 
 export type ValvePosition = "open" | "closed" | "unknown";
 
@@ -14,27 +19,6 @@ export type ValveState = {
   remainingSeconds: number;
   lastMessage: string | null;
 };
-
-export function parseValveConfigMessage(msg: string): number | null {
-  const trimmed = msg.trim();
-  if (!trimmed.startsWith("CFG:")) return null;
-  const tMatch = /T=(\d+)/.exec(trimmed);
-  if (!tMatch?.[1]) return null;
-
-  const autoCloseSeconds = Number(tMatch[1]);
-  if (!Number.isFinite(autoCloseSeconds)) return null;
-  return autoCloseSeconds;
-}
-
-export function parseCountdownMessage(msg: string): number | null {
-  const trimmed = msg.trim();
-  if (!trimmed.startsWith("COUNTDOWN:")) return null;
-  const value = trimmed.substring("COUNTDOWN:".length);
-  if (!/^\d+$/.test(value)) return null;
-  const seconds = Number(value);
-  if (!Number.isFinite(seconds) || seconds < 0) return null;
-  return seconds;
-}
 
 export class DrainValve implements Observable<ValveState> {
   private readonly state = createObservable<ValveState>({
@@ -143,20 +127,14 @@ export class DrainValve implements Observable<ValveState> {
       return;
     }
 
-    // Handle OK response
-    if (msg === "OK") {
+    const ack = parseAckMessage(msg);
+    if (ack) {
       this.state.update((prev) => ({
         ...prev,
-        lastMessage: "Configuration enregistrée",
-      }));
-      return;
-    }
-
-    // Handle error responses
-    if (msg.startsWith("ERR_")) {
-      this.state.update((prev) => ({
-        ...prev,
-        lastMessage: `Erreur: ${msg}`,
+        lastMessage:
+          ack.type === "ok"
+            ? "Configuration enregistrée"
+            : `Erreur: ${ack.code}`,
       }));
       return;
     }

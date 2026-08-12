@@ -4,6 +4,8 @@ import {
   Observable,
   Unsubscribe,
 } from "@/core/observable";
+import { parseAckMessage } from "@/domain/AckMessage";
+import { parseEnvironmentMessage } from "@/domain/heater/HeaterProtocol";
 import { Channel } from "@/domain/ports/Channel";
 
 export type EnvironmentSnapshot = {
@@ -13,48 +15,6 @@ export type EnvironmentSnapshot = {
   pressureHPa: number; // Atmospheric pressure in hPa (e.g., 1013.2)
   lastMessage: string | null; // Last feedback message
 };
-
-/**
- * Parse ENV response: ENV:T=<temp×10>;H=<humidity×10>;P=<pressure×10>;EXT=<ext×10>
- */
-export function parseEnvironmentMessage(msg: string): {
-  temperatureCelsius: number;
-  exteriorTemperatureCelsius: number;
-  humidity: number;
-  pressureHPa: number;
-} | null {
-  const trimmed = msg.trim();
-  if (!trimmed.startsWith("ENV:")) return null;
-
-  const tMatch = /T=(-?\d+)/.exec(trimmed);
-  const hMatch = /H=(\d+)/.exec(trimmed);
-  const pMatch = /P=(\d+)/.exec(trimmed);
-  const extMatch = /EXT=(-?\d+)/.exec(trimmed);
-
-  if (!tMatch?.[1] || !hMatch?.[1] || !pMatch?.[1] || !extMatch?.[1])
-    return null;
-
-  const tempTenths = Number(tMatch[1]);
-  const humidityTenths = Number(hMatch[1]);
-  const pressureTenths = Number(pMatch[1]);
-  const extTempTenths = Number(extMatch[1]);
-
-  if (
-    !Number.isFinite(tempTenths) ||
-    !Number.isFinite(humidityTenths) ||
-    !Number.isFinite(pressureTenths) ||
-    !Number.isFinite(extTempTenths)
-  ) {
-    return null;
-  }
-
-  return {
-    temperatureCelsius: tempTenths / 10,
-    exteriorTemperatureCelsius: extTempTenths / 10,
-    humidity: humidityTenths / 10,
-    pressureHPa: pressureTenths / 10,
-  };
-}
 
 export class EnvironmentData implements Observable<EnvironmentSnapshot> {
   private readonly state = createObservable<EnvironmentSnapshot>({
@@ -98,11 +58,11 @@ export class EnvironmentData implements Observable<EnvironmentSnapshot> {
       return;
     }
 
-    // Handle error responses
-    if (msg.startsWith("ERR_")) {
+    const ack = parseAckMessage(msg);
+    if (ack?.type === "error") {
       this.state.update((prev) => ({
         ...prev,
-        lastMessage: `Erreur: ${msg}`,
+        lastMessage: `Erreur: ${ack.code}`,
       }));
       return;
     }

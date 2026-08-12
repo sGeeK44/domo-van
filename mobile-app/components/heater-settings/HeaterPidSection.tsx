@@ -17,7 +17,8 @@ import {
   type ThemeColors,
   useThemeColor,
 } from "@/design-system";
-import type { HeaterZone, PidConfig } from "@/domain/heater/HeaterZone";
+import type { PidConfig } from "@/domain/heater/HeaterProtocol";
+import type { HeaterZone } from "@/domain/heater/HeaterZone";
 
 const showToast = (message: string) => {
   ToastAndroid.show(message, ToastAndroid.SHORT);
