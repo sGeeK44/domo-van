@@ -1,14 +1,17 @@
 import {
+  declaredFrameLength,
   findFrameStart,
-  hasCompleteFrame,
   type JkBmsData,
+  MIN_FRAME_SIZE,
   parseResponse,
 } from "@/domain/battery/JkBmsProtocol";
 
-/** Offset of the 16-bit big-endian frame length, right after the start bytes. */
-const LENGTH_OFFSET = 2;
 /** The length field counts every byte after the two start bytes. */
 const START_BYTES = 2;
+/** A read-all reply of a 32-cell pack stays well under this. */
+const MAX_FRAME_BYTES = 1024;
+/** Ceiling on the pending bytes, so a frame that never completes cannot grow forever. */
+const MAX_BUFFER_BYTES = 2 * MAX_FRAME_BYTES;
 
 /**
  * Reassembles JK BMS frames out of a byte stream: notifications arrive in
@@ -22,6 +25,7 @@ export class JkBmsFrameReader {
     for (const byte of chunk) {
       this.buffer.push(byte);
     }
+    this.dropOverflow();
 
     const frames: JkBmsData[] = [];
     while (this.extractFrame(frames)) {
@@ -43,20 +47,37 @@ export class JkBmsFrameReader {
     if (frameStart > 0) {
       this.buffer = this.buffer.slice(frameStart);
     }
-    if (!hasCompleteFrame(new Uint8Array(this.buffer))) {
+
+    const frameLength = declaredFrameLength(new Uint8Array(this.buffer));
+    if (frameLength === null) {
+      return false;
+    }
+    if (frameLength < MIN_FRAME_SIZE || frameLength > MAX_FRAME_BYTES) {
+      return this.resynchronise();
+    }
+    if (this.buffer.length < frameLength) {
       return false;
     }
 
-    const length =
-      (this.buffer[LENGTH_OFFSET] << 8) | this.buffer[LENGTH_OFFSET + 1];
-    const frameLength = length + START_BYTES;
     const frame = new Uint8Array(this.buffer.slice(0, frameLength));
-    this.buffer = this.buffer.slice(frameLength);
-
     const parsed = parseResponse(frame);
-    if (parsed) {
-      frames.push(parsed);
+    if (!parsed) {
+      return this.resynchronise();
     }
+
+    this.buffer = this.buffer.slice(frameLength);
+    frames.push(parsed);
     return this.buffer.length > 0;
+  }
+
+  /** Drops the rejected start marker, so the next scan picks the following one. */
+  private resynchronise(): boolean {
+    this.buffer = this.buffer.slice(START_BYTES);
+    return this.buffer.length > 0;
+  }
+
+  private dropOverflow(): void {
+    if (this.buffer.length <= MAX_BUFFER_BYTES) return;
+    this.buffer = this.buffer.slice(this.buffer.length - MAX_BUFFER_BYTES);
   }
 }

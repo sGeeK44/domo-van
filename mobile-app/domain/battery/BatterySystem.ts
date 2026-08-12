@@ -65,53 +65,7 @@ export class BatterySystem implements Observable<BatterySnapshot> {
    * Handle incoming BMS data and update state
    */
   private onBmsData = (data: JkBmsData): void => {
-    const cellVoltages = data.cellVoltages.filter((v) => v > 0);
-    const minCellVoltage =
-      cellVoltages.length > 0 ? Math.min(...cellVoltages) : 0;
-    const maxCellVoltage =
-      cellVoltages.length > 0 ? Math.max(...cellVoltages) : 0;
-
-    const alarms = parseAlarms(data.errors);
-
-    const snapshot: BatterySnapshot = {
-      // Main indicators
-      percentage: data.soc,
-      voltage: data.totalVoltage,
-      current: data.current,
-      power: data.totalVoltage * data.current,
-
-      // Cell details
-      cellVoltages,
-      cellCount: data.cellCount || cellVoltages.length,
-      minCellVoltage,
-      maxCellVoltage,
-      cellDelta: maxCellVoltage - minCellVoltage,
-
-      // Temperatures
-      tempMos: data.tempMos,
-      tempCell1: data.tempSensor1,
-      tempCell2: data.tempSensor2,
-
-      // Capacity
-      capacityAh: data.capacityAh,
-      remainingAh: (data.soc / 100) * data.capacityAh,
-      cycleCount: data.cycleCount,
-
-      // Status
-      isCharging: data.isCharging || data.current > 0.1,
-      isDischarging: data.isDischarging || data.current < -0.1,
-      balancing: data.balanceState !== 0,
-      balanceCurrent: data.balanceCurrent,
-
-      // Alarms
-      alarms,
-      hasAlarm: alarms.length > 0,
-
-      // Timestamp
-      lastUpdate: Date.now(),
-    };
-
-    this.state.setValue(snapshot);
+    this.state.setValue(applyFrame(this.state.getValue(), data));
   };
 
   /**
@@ -122,5 +76,72 @@ export class BatterySystem implements Observable<BatterySnapshot> {
     this.transportUnsub = null;
     this.frameReader.reset();
     this.state.destroy();
+  };
+}
+
+/** Current above which the pack counts as charging, whatever the MOSFET says. */
+const CHARGE_CURRENT_THRESHOLD = 0.1;
+
+/** Folds a frame into the last snapshot: a field the frame omits keeps its previous value. */
+function applyFrame(
+  previous: BatterySnapshot,
+  data: JkBmsData,
+): BatterySnapshot {
+  const cellVoltages = data.cellVoltages
+    ? data.cellVoltages.filter((v) => v > 0)
+    : previous.cellVoltages;
+  const minCellVoltage =
+    cellVoltages.length > 0 ? Math.min(...cellVoltages) : 0;
+  const maxCellVoltage =
+    cellVoltages.length > 0 ? Math.max(...cellVoltages) : 0;
+
+  const percentage = data.soc ?? previous.percentage;
+  const voltage = data.totalVoltage ?? previous.voltage;
+  const current = data.current ?? previous.current;
+  const capacityAh = data.capacityAh ?? previous.capacityAh;
+  const alarms =
+    data.errors === undefined ? previous.alarms : parseAlarms(data.errors);
+
+  return {
+    // Main indicators
+    percentage,
+    voltage,
+    current,
+    power: voltage * current,
+
+    // Cell details
+    cellVoltages,
+    cellCount: data.cellCount ?? previous.cellCount,
+    minCellVoltage,
+    maxCellVoltage,
+    cellDelta: maxCellVoltage - minCellVoltage,
+
+    // Temperatures
+    tempMos: data.tempMos ?? previous.tempMos,
+    tempCell1: data.tempSensor1 ?? previous.tempCell1,
+    tempCell2: data.tempSensor2 ?? previous.tempCell2,
+
+    // Capacity
+    capacityAh,
+    remainingAh: (percentage / 100) * capacityAh,
+    cycleCount: data.cycleCount ?? previous.cycleCount,
+
+    // Status
+    isCharging:
+      (data.isCharging ?? false) || current > CHARGE_CURRENT_THRESHOLD,
+    isDischarging:
+      (data.isDischarging ?? false) || current < -CHARGE_CURRENT_THRESHOLD,
+    balancing:
+      data.balanceState === undefined
+        ? previous.balancing
+        : data.balanceState !== 0,
+    balanceCurrent: data.balanceCurrent ?? previous.balanceCurrent,
+
+    // Alarms
+    alarms,
+    hasAlarm: alarms.length > 0,
+
+    // Timestamp
+    lastUpdate: Date.now(),
   };
 }
