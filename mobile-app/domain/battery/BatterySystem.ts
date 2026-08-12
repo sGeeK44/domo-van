@@ -77,6 +77,7 @@ export class BatterySystem implements Observable<BatterySnapshot> {
     this.transportUnsub?.();
     this.transportUnsub = null;
     this.frameReader.reset();
+    this.lastReported = {};
     this.state.destroy();
   };
 }
