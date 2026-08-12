@@ -4,6 +4,7 @@ import {
   Observable,
   Unsubscribe,
 } from "@/core/observable";
+import { parseAckMessage } from "@/domain/AckMessage";
 import { Channel } from "@/domain/ports/Channel";
 
 export type AdminSnapshot = {
@@ -32,12 +33,12 @@ export class AdminModule implements Observable<AdminSnapshot> {
   };
 
   private onMessageReceived = (msg: string) => {
-    const trimmed = msg.trim();
+    const ack = parseAckMessage(msg);
     this.state.update((prev) => {
       return {
         ...prev,
-        success: trimmed === "OK",
-        error: trimmed.startsWith("ERR_") ? trimmed : null,
+        success: ack?.type === "ok",
+        error: ack?.type === "error" ? ack.code : null,
       };
     });
   };
