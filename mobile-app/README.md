@@ -14,6 +14,17 @@
    npx expo start
    ```
 
+3. Start the app without a van, Bluetooth off
+
+   ```bash
+   EXPO_PUBLIC_FAKE_BLE=1 npm start
+   ```
+
+   Every screen renders real data served by the fakes in
+   `infrastructure/fake/`. See
+   [docs/architecture.md](docs/architecture.md#running-without-hardware) for
+   what each module serves and how to add a scenario.
+
 ## Déploiement
 
 Le projet utilise [EAS Build](https://docs.expo.dev/build/introduction/) pour générer les builds Android/iOS.

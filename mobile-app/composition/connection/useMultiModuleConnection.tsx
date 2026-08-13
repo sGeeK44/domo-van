@@ -33,6 +33,9 @@ export type MultiModuleConnectionContextValue = {
 const MultiModuleConnectionContext =
   createContext<MultiModuleConnectionContextValue | null>(null);
 
+/** Lets the device providers load their saved pairing before the first try. */
+const AUTO_CONNECT_DELAY_MS = 100;
+
 /**
  * Provider that manages connections to ALL BLE modules simultaneously.
  * Auto-connects to all saved modules on mount (app startup).
@@ -43,7 +46,6 @@ export function MultiModuleConnectionProvider({ children }: PropsWithChildren) {
   const waterDevice = useWaterDevice();
   const heaterDevice = useHeaterDevice();
   const batteryDevice = useBatteryDevice();
-  const hasAutoConnected = useRef(false);
 
   // Compute global connection status
   const isConnecting =
@@ -98,6 +100,8 @@ export function MultiModuleConnectionProvider({ children }: PropsWithChildren) {
     await Promise.all(promises);
   }, [bluetooth, waterDevice, heaterDevice, batteryDevice]);
 
+  const latestConnectAll = useRef(connectAll);
+
   // Disconnect from all modules
   const disconnectAll = useCallback(async () => {
     const promises: Promise<void>[] = [];
@@ -115,18 +119,18 @@ export function MultiModuleConnectionProvider({ children }: PropsWithChildren) {
     await Promise.all(promises);
   }, [waterDevice, heaterDevice, batteryDevice]);
 
-  // Auto-connect on mount (app startup only)
   useEffect(() => {
-    if (hasAutoConnected.current) return;
-    hasAutoConnected.current = true;
+    latestConnectAll.current = connectAll;
+  });
 
-    // Small delay to ensure providers are ready
+  // Depending on `connectAll` here would cancel the timer on the next render.
+  useEffect(() => {
     const timer = setTimeout(() => {
-      void connectAll();
-    }, 100);
+      void latestConnectAll.current();
+    }, AUTO_CONNECT_DELAY_MS);
 
     return () => clearTimeout(timer);
-  }, [connectAll]);
+  }, []);
 
   const value: MultiModuleConnectionContextValue = {
     globalStatus,

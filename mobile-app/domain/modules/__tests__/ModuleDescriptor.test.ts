@@ -2,23 +2,21 @@ import { describe, expect, it } from "vitest";
 import { JK_BMS_SERVICE_UUID } from "@/domain/battery/JkBmsUuids";
 import { buildServiceUuid } from "@/domain/modules/BleUuid";
 import {
+  ALL_MODULES,
   BATTERY_MODULE,
   HEATER_MODULE,
-  type ModuleDescriptor,
   WATER_MODULE,
 } from "@/domain/modules/ModuleDescriptor";
 
-const MODULES: ModuleDescriptor[] = [
-  WATER_MODULE,
-  HEATER_MODULE,
-  BATTERY_MODULE,
-];
-
 describe("ModuleDescriptor", () => {
   it("gives every module a distinct key", () => {
-    const keys = MODULES.map((module) => module.key);
+    const keys = ALL_MODULES.map((module) => module.key);
 
-    expect(new Set(keys).size).toBe(MODULES.length);
+    expect(new Set(keys).size).toBe(ALL_MODULES.length);
+  });
+
+  it("lists every module the app knows how to talk to", () => {
+    expect(ALL_MODULES).toEqual([WATER_MODULE, HEATER_MODULE, BATTERY_MODULE]);
   });
 
   it("scans a van module on the service its own id builds", () => {

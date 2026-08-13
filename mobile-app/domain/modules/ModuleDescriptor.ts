@@ -35,3 +35,9 @@ export const BATTERY_MODULE: ModuleDescriptor = {
   serviceId: null,
   scanServiceUuid: JK_BMS_SERVICE_UUID,
 };
+
+export const ALL_MODULES: readonly ModuleDescriptor[] = [
+  WATER_MODULE,
+  HEATER_MODULE,
+  BATTERY_MODULE,
+];
