@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { Observable } from "@/core/observable";
 import { WaterSystem } from "@/domain/water/WaterSystem";
 import { FakeModuleTransport } from "@/infrastructure/fake/FakeModuleTransport";
 import { waterScenario } from "@/infrastructure/fake/scenarios/waterScenario";
@@ -7,6 +8,13 @@ const ADMIN = "0001";
 const CLEAN_TANK = "0002";
 const GREY_TANK = "0003";
 const GREY_VALVE = "0004";
+
+const STATE_CHANGING_FRAMES: Record<string, string> = {
+  [ADMIN]: "OK",
+  [CLEAN_TANK]: "10",
+  [GREY_TANK]: "10",
+  [GREY_VALVE]: "COUNTDOWN:7",
+};
 
 describe("WaterSystem", () => {
   it("exposes a clean tank level of 72 % without any BLE hardware", () => {
@@ -52,7 +60,7 @@ describe("WaterSystem", () => {
 
     const water = new WaterSystem(transport);
 
-    expect(water.greyDrainValve.getValue().autoCloseSeconds).toBe(30);
+    expect(water.greyDrainValve.getValue().autoCloseSeconds).toBe(45);
   });
 
   it("opens the grey valve on the valve channel and starts its countdown", async () => {
@@ -64,16 +72,43 @@ describe("WaterSystem", () => {
     expect(transport.channel(GREY_VALVE).commands).toContain("OPEN");
     expect(water.greyDrainValve.getValue()).toMatchObject({
       position: "open",
-      remainingSeconds: 30,
+      remainingSeconds: 45,
     });
   });
 
-  it("closes the grey valve when the module confirms it", async () => {
+  it("counts down the delay the module kept when it refused a longer one", async () => {
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport);
+    await water.greyDrainValve.setAutoCloseTime(400);
+
+    await water.greyDrainValve.open();
+
+    expect(water.greyDrainValve.getValue()).toMatchObject({
+      autoCloseSeconds: 400,
+      remainingSeconds: 45,
+    });
+  });
+
+  it("closes the grey valve on the valve channel", async () => {
     const transport = new FakeModuleTransport(waterScenario());
     const water = new WaterSystem(transport);
     await water.greyDrainValve.open();
 
     await water.greyDrainValve.close();
+
+    expect(transport.channel(GREY_VALVE).commands).toContain("CLOSE");
+    expect(water.greyDrainValve.getValue()).toMatchObject({
+      position: "closed",
+      remainingSeconds: 0,
+    });
+  });
+
+  it("reports the grey valve shut when the module auto-closes it", async () => {
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport);
+    await water.greyDrainValve.open();
+
+    transport.channel(GREY_VALVE).emit("AUTO_CLOSED");
 
     expect(water.greyDrainValve.getValue()).toMatchObject({
       position: "closed",
@@ -86,7 +121,6 @@ describe("WaterSystem", () => {
     const water = new WaterSystem(transport);
 
     await water.cleanTank.setConfig("120", "112");
-    await water.cleanTank.getConfig();
 
     expect(water.cleanTank.getValue()).toMatchObject({
       capacityLiters: 120,
@@ -95,13 +129,43 @@ describe("WaterSystem", () => {
     });
   });
 
-  it("stops listening on every channel once disposed", () => {
+  it("takes back the config the module kept when it refused the write", async () => {
     const transport = new FakeModuleTransport(waterScenario());
     const water = new WaterSystem(transport);
 
-    water.dispose();
+    await water.cleanTank.setConfig("120", "20000");
+    await water.cleanTank.getConfig();
 
-    for (const channelId of [ADMIN, CLEAN_TANK, GREY_TANK, GREY_VALVE]) {
+    expect(water.cleanTank.getValue()).toMatchObject({
+      capacityLiters: 100,
+      heightMm: 200,
+      percentage: 72,
+    });
+  });
+
+  it("ignores every frame the module sends once disposed", () => {
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport);
+    const leaves: Observable<unknown>[] = [
+      water.admin,
+      water.cleanTank,
+      water.greyTank,
+      water.greyDrainValve,
+    ];
+    const notifications: unknown[] = [];
+    for (const leaf of leaves) {
+      leaf.subscribe((snapshot) => notifications.push(snapshot));
+    }
+    const before = leaves.map((leaf) => leaf.getValue());
+
+    water.dispose();
+    for (const [channelId, frame] of Object.entries(STATE_CHANGING_FRAMES)) {
+      transport.channel(channelId).emit(frame);
+    }
+
+    expect(leaves.map((leaf) => leaf.getValue())).toEqual(before);
+    expect(notifications).toEqual([]);
+    for (const channelId of Object.keys(STATE_CHANGING_FRAMES)) {
       expect(transport.channel(channelId).listenerCount).toBe(0);
     }
   });

@@ -7,16 +7,17 @@ import type {
 type ZoneReading = {
   temperatureTenths: number;
   setpointTenths: number;
+  running: boolean;
 };
 
 const PID_WRITE = /^CFG:KP=(\d+);KI=(\d+);KD=(\d+)$/;
 const SETPOINT_WRITE = /^SP:(\d+)$/;
 
 const ZONES: readonly ZoneReading[] = [
-  { temperatureTenths: 215, setpointTenths: 210 },
-  { temperatureTenths: 190, setpointTenths: 200 },
-  { temperatureTenths: 175, setpointTenths: 180 },
-  { temperatureTenths: 230, setpointTenths: 220 },
+  { temperatureTenths: 215, setpointTenths: 210, running: true },
+  { temperatureTenths: 190, setpointTenths: 195, running: false },
+  { temperatureTenths: 175, setpointTenths: 185, running: false },
+  { temperatureTenths: 230, setpointTenths: 225, running: true },
 ];
 
 const ENVIRONMENT_READING = "ENV:T=215;H=450;P=10132;EXT=120";
@@ -24,7 +25,7 @@ const ENVIRONMENT_READING = "ENV:T=215;H=450;P=10132;EXT=120";
 function heaterZoneScenario(zone: ZoneReading): ChannelScenario {
   let setpointTenths = zone.setpointTenths;
   let pid = { kp: 1000, ki: 10, kd: 50 };
-  let running = false;
+  let running = zone.running;
 
   const status = () =>
     `STATUS:T=${zone.temperatureTenths};SP=${setpointTenths};RUN=${running ? 1 : 0}`;
