@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Modal, StyleSheet, Text, View } from "react-native";
 import {
   Button,
@@ -26,14 +27,19 @@ export function UnpairSheet({
   onConfirm,
 }: UnpairSheetProps) {
   const colors = useThemeColor();
-  const styles = getStyles(colors);
+  const styles = useMemo(() => getStyles(colors), [colors]);
+
+  // the hardware back gesture reaches the sheet too, and an unpair in flight owns the slot
+  const dismiss = () => {
+    if (!isUnpairing) onCancel();
+  };
 
   return (
     <Modal
       visible={visible}
       transparent
       animationType="slide"
-      onRequestClose={onCancel}
+      onRequestClose={dismiss}
     >
       <View style={styles.backdrop}>
         <View style={styles.sheet}>

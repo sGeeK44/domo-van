@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import {
   BorderRadius,
@@ -10,31 +11,62 @@ import {
   useThemeColor,
 } from "@/design-system";
 import {
+  type ModuleDescriptor,
   type ModuleKey,
   moduleForAdvertisement,
 } from "@/domain/modules/ModuleDescriptor";
+import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
+import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
 
 export type DiscoveredModuleRowProps = {
   device: DiscoveredBluetoothDevice;
-  occupiedKeys: readonly ModuleKey[];
+  slots: readonly ModuleSlot[];
   isPairing: boolean;
   onPair: (key: ModuleKey, device: DiscoveredBluetoothDevice) => void;
 };
 
 export function DiscoveredModuleRow({
   device,
-  occupiedKeys,
+  slots,
   isPairing,
   onPair,
 }: DiscoveredModuleRowProps) {
-  const colors = useThemeColor();
-  const styles = getStyles(colors);
-
   const module = moduleForAdvertisement(device.serviceUuids);
   if (!module) return null;
 
-  const occupied = occupiedKeys.includes(module.key);
+  const slot = slots.find((candidate) => candidate.module.key === module.key);
+
+  return (
+    <ResolvedRow
+      device={device}
+      module={module}
+      pairing={slot?.pairing ?? null}
+      isPairing={isPairing}
+      onPair={onPair}
+    />
+  );
+}
+
+type ResolvedRowProps = {
+  device: DiscoveredBluetoothDevice;
+  module: ModuleDescriptor;
+  pairing: DeviceInfo | null;
+  isPairing: boolean;
+  onPair: (key: ModuleKey, device: DiscoveredBluetoothDevice) => void;
+};
+
+function ResolvedRow({
+  device,
+  module,
+  pairing,
+  isPairing,
+  onPair,
+}: ResolvedRowProps) {
+  const colors = useThemeColor();
+  const styles = useMemo(() => getStyles(colors), [colors]);
+
+  const taken = takenLabel(pairing, device.id);
 
   return (
     <View testID={`discovered-${device.id}`} style={styles.row}>
@@ -44,8 +76,8 @@ export function DiscoveredModuleRow({
         <Text style={styles.subtitle}>{module.displayName}</Text>
       </View>
 
-      {occupied ? (
-        <Text style={styles.occupied}>Emplacement occupé</Text>
+      {taken ? (
+        <Text style={styles.occupied}>{taken}</Text>
       ) : (
         <Button
           testID={`pair-${device.id}`}
@@ -57,6 +89,11 @@ export function DiscoveredModuleRow({
       )}
     </View>
   );
+}
+
+function takenLabel(pairing: DeviceInfo | null, deviceId: string): string {
+  if (!pairing) return "";
+  return pairing.id === deviceId ? "Déjà appairé" : "Emplacement occupé";
 }
 
 const getStyles = (colors: ThemeColors) =>

@@ -2,7 +2,11 @@ import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useModuleSlot } from "@/composition/ModuleRegistryProvider";
+import { ModuleLinkNotice } from "@/components/modules";
+import {
+  useModuleRegistry,
+  useModuleSlot,
+} from "@/composition/ModuleRegistryProvider";
 import { useBatterySystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import {
@@ -23,7 +27,8 @@ export default function BatterySettingsScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
 
-  const { link } = useModuleSlot(BATTERY_MODULE.key);
+  const { pairing, link } = useModuleSlot(BATTERY_MODULE.key);
+  const { reconnect } = useModuleRegistry();
   const batterySystem = useBatterySystem();
   const battery = useObservable(batterySystem, DEFAULT_BATTERY_SNAPSHOT);
 
@@ -34,7 +39,15 @@ export default function BatterySettingsScreen() {
       <SettingsHeader title="Batterie" onBackPress={() => router.back()} />
 
       <ScrollView>
-        {isOnline && <BatteryInfoSection battery={battery} colors={colors} />}
+        {isOnline ? (
+          <BatteryInfoSection battery={battery} colors={colors} />
+        ) : (
+          <ModuleLinkNotice
+            deviceName={pairing?.name ?? null}
+            isConnecting={link.status === "connecting"}
+            onReconnect={() => void reconnect(BATTERY_MODULE.key)}
+          />
+        )}
       </ScrollView>
     </SafeAreaView>
   );

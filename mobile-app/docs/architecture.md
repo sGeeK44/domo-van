@@ -61,9 +61,9 @@ sees a connected device through the `DeviceHandle` port and asks
   the registry inside its mount effect and disposes it on unmount; disposal is
   terminal, so a remount builds a fresh one rather than restarting a corpse.
   Screens read a slot with `useModuleSlot(key)` and act through
-  `useModuleRegistry()`. The three settings screens are the exception: they
-  still take `bluetooth` from the container to run the scan and to disconnect,
-  until task T5 of issue #3 moves that behind the registry.
+  `useModuleRegistry()`. `screens/add-module-screen.tsx` is the exception: it
+  still takes `bluetooth` from the container to run the pairing scan, which no
+  slot owns.
 - **`composition/ModuleSessions.ts` owns system lifetime**: one instance per
   **pairing**, not per connection. It is opened when the module is paired and
   disposed when it is unpaired, and it is the only file that constructs

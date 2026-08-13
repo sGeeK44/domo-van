@@ -4,7 +4,11 @@ import { ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HeaterPidSection } from "@/components/heater-settings";
 import { AdminSection } from "@/components/module-settings";
-import { useModuleSlot } from "@/composition/ModuleRegistryProvider";
+import { ModuleLinkNotice } from "@/components/modules";
+import {
+  useModuleRegistry,
+  useModuleSlot,
+} from "@/composition/ModuleRegistryProvider";
 import { useHeaterSystem } from "@/composition/ModuleSystemsProvider";
 import {
   SettingsHeader,
@@ -21,6 +25,7 @@ export default function HeaterSettingsScreen() {
   const router = useRouter();
 
   const { pairing, link } = useModuleSlot(HEATER_MODULE.key);
+  const { reconnect } = useModuleRegistry();
   const heaterSystem = useHeaterSystem();
 
   const isOnline = link.status === "online";
@@ -30,20 +35,28 @@ export default function HeaterSettingsScreen() {
       <SettingsHeader title="Chauffage" onBackPress={() => router.back()} />
 
       <ScrollView>
-        {isOnline && heaterSystem && (
-          <>
-            <AdminSection
-              adminModule={heaterSystem.admin}
-              deviceName={pairing?.name ?? null}
-            />
-            {heaterSystem.zones.map((zone, index) => (
-              <HeaterPidSection
-                key={index}
-                heaterZone={zone}
-                zoneName={ZONE_NAMES[index]}
+        {isOnline ? (
+          heaterSystem && (
+            <>
+              <AdminSection
+                adminModule={heaterSystem.admin}
+                deviceName={pairing?.name ?? null}
               />
-            ))}
-          </>
+              {heaterSystem.zones.map((zone, index) => (
+                <HeaterPidSection
+                  key={index}
+                  heaterZone={zone}
+                  zoneName={ZONE_NAMES[index]}
+                />
+              ))}
+            </>
+          )
+        ) : (
+          <ModuleLinkNotice
+            deviceName={pairing?.name ?? null}
+            isConnecting={link.status === "connecting"}
+            onReconnect={() => void reconnect(HEATER_MODULE.key)}
+          />
         )}
       </ScrollView>
     </SafeAreaView>

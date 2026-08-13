@@ -7,26 +7,35 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-// The container is built when ContainerProvider is imported, so the switch has
-// to be flipped before that import — hence the dynamic imports below.
+// The container is built when ContainerProvider is imported, so the switch is flipped before it.
 process.env.EXPO_PUBLIC_FAKE_BLE = "1";
 
 const { pairOnly, renderModuleScreen } = await import("./moduleScreenHarness");
 const { default: AddModuleScreen } = await import(
   "@/screens/add-module-screen"
 );
+const { ModuleRegistry } = await import("@/domain/modules/ModuleRegistry");
+const { FakeBluetooth } = await import("@/infrastructure/fake/FakeBluetooth");
 const { resetNavigation, routerHistory } = await import(
   "@/__mocks__/expo-router"
 );
 
 const WATER_DEVICE = "discovered-fake-water";
+const SCAN_TIMEOUT_MS = 30_000;
+
+/** Lets every pending promise settle, timers included, before the assertion reads the radio. */
+function flush(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
 
 describe("the Ajouter screen", () => {
   afterEach(() => {
     cleanup();
     resetNavigation();
+    vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it("lists an advertising module with its name and MAC address", async () => {
@@ -59,7 +68,7 @@ describe("the Ajouter screen", () => {
 
     const row = within(await screen.findByTestId(WATER_DEVICE));
 
-    expect(row.getByText("Emplacement occupé")).toBeTruthy();
+    expect(row.getByText("Déjà appairé")).toBeTruthy();
     expect(screen.queryByTestId("pair-fake-water")).toBeNull();
   });
 
@@ -69,6 +78,115 @@ describe("the Ajouter screen", () => {
 
     expect(screen.queryByTestId("pair-fake-water")).toBeNull();
     expect(await screen.findByTestId("pair-fake-heater")).toBeTruthy();
+  });
+
+  it("stops the scan when the 30 s window closes", async () => {
+    vi.useFakeTimers();
+    const stopScan = vi.spyOn(FakeBluetooth.prototype, "stopScan");
+    renderModuleScreen(<AddModuleScreen />);
+
+    await act(async () => {
+      vi.advanceTimersByTime(SCAN_TIMEOUT_MS);
+    });
+
+    expect(stopScan).toHaveBeenCalled();
+    expect(screen.getByText("Recherche terminée")).toBeTruthy();
+  });
+
+  it("stops the scan when the screen goes away", async () => {
+    const stopScan = vi.spyOn(FakeBluetooth.prototype, "stopScan");
+    renderModuleScreen(<AddModuleScreen />);
+    await screen.findByTestId(WATER_DEVICE);
+    stopScan.mockClear();
+
+    await act(async () => {
+      cleanup();
+    });
+
+    expect(stopScan).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves no radio scanning when the screen goes away before the scan starts", async () => {
+    const radio = { isScanning: false };
+    let grantPermission = () => {};
+    vi.spyOn(FakeBluetooth.prototype, "startScan").mockImplementation(
+      async () => {
+        await new Promise<void>((resolve) => {
+          grantPermission = resolve;
+        });
+        radio.isScanning = true;
+      },
+    );
+    vi.spyOn(FakeBluetooth.prototype, "stopScan").mockImplementation(
+      async () => {
+        radio.isScanning = false;
+      },
+    );
+    renderModuleScreen(<AddModuleScreen />);
+
+    await act(async () => {
+      cleanup();
+    });
+    await act(async () => {
+      grantPermission();
+      await flush();
+    });
+
+    expect(radio.isScanning).toBe(false);
+  });
+
+  it("does not navigate when a slow pairing lands after the screen is gone", async () => {
+    let completePairing = () => {};
+    vi.spyOn(ModuleRegistry.prototype, "pair").mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          completePairing = resolve;
+        }),
+    );
+    const harness = renderModuleScreen(<AddModuleScreen />);
+    await pairOnly(harness, []);
+
+    await act(async () => {
+      fireEvent.click(await screen.findByTestId("pair-fake-water"));
+    });
+    await act(async () => {
+      cleanup();
+    });
+    await act(async () => {
+      completePairing();
+      await flush();
+    });
+
+    expect(routerHistory).not.toContainEqual({ method: "back" });
+  });
+
+  it("says nothing was found once a fruitless scan ends", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(FakeBluetooth.prototype, "startScan").mockResolvedValue(undefined);
+    renderModuleScreen(<AddModuleScreen />);
+
+    await act(async () => {
+      vi.advanceTimersByTime(SCAN_TIMEOUT_MS);
+    });
+
+    expect(screen.getByText("Aucun module trouvé.")).toBeTruthy();
+  });
+
+  it("runs a new scan when the user asks for one", async () => {
+    vi.useFakeTimers();
+    const startScan = vi.spyOn(FakeBluetooth.prototype, "startScan");
+    renderModuleScreen(<AddModuleScreen />);
+    await act(async () => {
+      vi.advanceTimersByTime(SCAN_TIMEOUT_MS);
+    });
+    startScan.mockClear();
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("rescan"));
+    });
+
+    expect(startScan).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("Recherche en cours…")).toBeTruthy();
   });
 });
 

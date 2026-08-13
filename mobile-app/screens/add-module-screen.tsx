@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DiscoveredModuleRow } from "@/components/modules";
@@ -9,6 +9,7 @@ import {
   useModuleSlots,
 } from "@/composition/ModuleRegistryProvider";
 import {
+  Button,
   FontSize,
   SettingsHeader,
   Spacing,
@@ -18,6 +19,7 @@ import {
 import {
   ALL_SCAN_SERVICE_UUIDS,
   type ModuleKey,
+  moduleForAdvertisement,
 } from "@/domain/modules/ModuleDescriptor";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 
@@ -36,34 +38,60 @@ export default function AddModuleScreen() {
   const [isScanning, setIsScanning] = useState(true);
   const [pairingId, setPairingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const isMounted = useRef(true);
+  const stopRunningScan = useRef(() => {});
 
   useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  const scan = useCallback(() => {
+    let cancelled = false;
+
+    setFound([]);
+    setError(null);
+    setIsScanning(true);
+
     const timer = setTimeout(() => {
       setIsScanning(false);
       void bluetooth.stopScan();
     }, SCAN_TIMEOUT_MS);
 
-    const remember = (device: DiscoveredBluetoothDevice) =>
+    const remember = (device: DiscoveredBluetoothDevice) => {
+      if (!moduleForAdvertisement(device.serviceUuids)) return;
       setFound((seen) =>
         seen.some((known) => known.id === device.id) ? seen : [...seen, device],
       );
+    };
 
-    bluetooth
+    const started = bluetooth
       .startScan(ALL_SCAN_SERVICE_UUIDS, remember)
       .catch((cause: unknown) => {
+        if (cancelled) return;
         setIsScanning(false);
         setError(message(cause, "La recherche a échoué."));
       });
 
-    return () => {
+    stopRunningScan.current = () => {
+      cancelled = true;
       clearTimeout(timer);
-      void bluetooth.stopScan();
+      // the radio only starts scanning once the permission round-trip resolves, which outlives the screen
+      void started.then(() => bluetooth.stopScan());
     };
   }, [bluetooth]);
 
-  const occupiedKeys = slots
-    .filter((slot) => slot.pairing !== null)
-    .map((slot) => slot.module.key);
+  useEffect(() => {
+    scan();
+    return () => stopRunningScan.current();
+  }, [scan]);
+
+  const rescan = () => {
+    stopRunningScan.current();
+    scan();
+  };
 
   const pairDevice = async (
     key: ModuleKey,
@@ -73,11 +101,11 @@ export default function AddModuleScreen() {
     setError(null);
     try {
       await pair(key, device);
-      router.back();
+      if (isMounted.current) router.back();
     } catch (cause: unknown) {
-      setError(message(cause, "L'appairage a échoué."));
+      if (isMounted.current) setError(message(cause, "L'appairage a échoué."));
     } finally {
-      setPairingId(null);
+      if (isMounted.current) setPairingId(null);
     }
   };
 
@@ -95,11 +123,21 @@ export default function AddModuleScreen() {
           <DiscoveredModuleRow
             key={device.id}
             device={device}
-            occupiedKeys={occupiedKeys}
+            slots={slots}
             isPairing={pairingId === device.id}
             onPair={pairDevice}
           />
         ))}
+
+        {!isScanning && found.length === 0 && (
+          <Text style={styles.empty}>Aucun module trouvé.</Text>
+        )}
+
+        {!isScanning && (
+          <Button testID="rescan" variant="secondary" onPress={rescan}>
+            Relancer la recherche
+          </Button>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -127,5 +165,9 @@ const createStyles = (colors: ThemeColors) =>
     error: {
       color: colors.danger["500"],
       fontSize: FontSize.xs,
+    },
+    empty: {
+      color: colors.text.secondary,
+      fontSize: FontSize.m,
     },
   });

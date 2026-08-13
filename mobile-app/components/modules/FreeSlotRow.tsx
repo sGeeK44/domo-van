@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 import {
   BorderRadius,
@@ -17,7 +18,7 @@ export type FreeSlotRowProps = {
 
 export function FreeSlotRow({ module, onPress }: FreeSlotRowProps) {
   const colors = useThemeColor();
-  const styles = getStyles(colors);
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   return (
     <Pressable

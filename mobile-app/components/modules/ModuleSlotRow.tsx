@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   BorderRadius,
@@ -24,7 +25,7 @@ export function ModuleSlotRow({
   onUnpair,
 }: ModuleSlotRowProps) {
   const colors = useThemeColor();
-  const styles = getStyles(colors);
+  const styles = useMemo(() => getStyles(colors), [colors]);
   const { module, pairing, link } = slot;
 
   if (!pairing) return null;
