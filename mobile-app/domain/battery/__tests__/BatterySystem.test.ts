@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BatterySystem } from "@/domain/battery/BatterySystem";
+import { buildReadAllCommand } from "@/domain/battery/JkBmsProtocol";
 import { FakeBinaryTransport } from "@/infrastructure/fake/FakeBinaryTransport";
 import {
   CHARGE_MOSFET_OFF,
@@ -148,6 +149,19 @@ describe("BatterySystem", () => {
       expect(snapshot).toMatchObject(expected);
       expect(snapshot.isCharging && snapshot.isDischarging).toBe(false);
     }
+    system.dispose();
+  });
+
+  it("re-issues the read-all the constructor sent on resync", () => {
+    const transport = new FakeBinaryTransport(SILENT);
+    const system = new BatterySystem(transport);
+
+    system.resync();
+
+    expect(transport.sent).toEqual([
+      buildReadAllCommand(),
+      buildReadAllCommand(),
+    ]);
     system.dispose();
   });
 

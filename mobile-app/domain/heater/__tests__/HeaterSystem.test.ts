@@ -127,6 +127,23 @@ describe("HeaterSystem", () => {
     expect(() => heater.getZone(4)).toThrow("Invalid zone index");
   });
 
+  it("re-issues the status and PID probes of every zone on resync", () => {
+    const transport = new FakeModuleTransport(heaterScenario());
+    const heater = new HeaterSystem(transport);
+
+    heater.resync();
+
+    for (const channelId of ZONE_CHANNELS) {
+      expect(transport.channel(channelId).commands).toEqual([
+        "STATUS?",
+        "STATUS?",
+        "CFG?",
+      ]);
+    }
+    expect(transport.channel(ENVIRONMENT).commands).toEqual(["ENV?", "ENV?"]);
+    expect(transport.channel(ADMIN).commands).toEqual([]);
+  });
+
   it("ignores every frame the module sends once disposed", () => {
     const transport = new FakeModuleTransport(heaterScenario());
     const heater = new HeaterSystem(transport);

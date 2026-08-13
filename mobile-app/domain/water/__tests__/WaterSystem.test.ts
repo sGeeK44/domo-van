@@ -143,6 +143,18 @@ describe("WaterSystem", () => {
     });
   });
 
+  it("re-issues every constructor probe on resync", () => {
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport);
+
+    water.resync();
+
+    expect(transport.channel(CLEAN_TANK).commands).toEqual(["CFG?", "CFG?"]);
+    expect(transport.channel(GREY_TANK).commands).toEqual(["CFG?", "CFG?"]);
+    expect(transport.channel(GREY_VALVE).commands).toEqual(["CFG?", "CFG?"]);
+    expect(transport.channel(ADMIN).commands).toEqual([]);
+  });
+
   it("ignores every frame the module sends once disposed", () => {
     const transport = new FakeModuleTransport(waterScenario());
     const water = new WaterSystem(transport);

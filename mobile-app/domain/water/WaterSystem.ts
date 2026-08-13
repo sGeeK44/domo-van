@@ -35,6 +35,13 @@ export class WaterSystem {
     );
   }
 
+  /** Re-issues the probes each leaf sent from its constructor, once a link is back. */
+  resync = () => {
+    void this.cleanTank.getConfig().catch(() => {});
+    void this.greyTank.getConfig().catch(() => {});
+    void this.greyDrainValve.getConfig().catch(() => {});
+  };
+
   dispose = () => {
     this.admin.dispose();
     this.cleanTank.dispose();
