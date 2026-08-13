@@ -18,6 +18,7 @@ export class FakeBinaryTransport implements BinaryTransport {
   );
   private readonly frames: readonly Uint8Array[];
   private readonly intervalMs: number;
+  private readonly stops = new Set<Unsubscribe>();
   readonly sent: Uint8Array[] = [];
 
   constructor(options: FakeBinaryTransportOptions = {}) {
@@ -29,9 +30,14 @@ export class FakeBinaryTransport implements BinaryTransport {
     return this.notifications.size;
   }
 
+  /** Subscribing is silent, as on a radio: ask with a read-all, or wait for the cadence. */
   listen(onBytes: Listener<Uint8Array>): Unsubscribe {
-    const stop = this.notifications.add(onBytes);
-    this.replay();
+    const stopFanout = this.notifications.add(onBytes);
+    const stop = () => {
+      this.stops.delete(stop);
+      stopFanout();
+    };
+    this.stops.add(stop);
     return stop;
   }
 
@@ -54,6 +60,14 @@ export class FakeBinaryTransport implements BinaryTransport {
     this.notifications.emit(
       bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes),
     );
+  }
+
+  /** Drops every listener, so the cadence stops even if a caller forgot to unsubscribe. */
+  dispose(): void {
+    for (const stop of [...this.stops]) {
+      stop();
+    }
+    this.sent.length = 0;
   }
 
   private startTicking(): Source {

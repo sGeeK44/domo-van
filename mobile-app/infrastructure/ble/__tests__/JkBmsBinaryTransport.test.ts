@@ -41,12 +41,21 @@ class FakeDevice {
     return this;
   }
 
-  notify(bytes: number[]): void {
-    const value = base64Encode(String.fromCharCode(...bytes));
+  notify(bytes: ArrayLike<number>): void {
+    const value = base64Encode(toBinaryString(bytes));
     for (const monitor of [...this.monitors]) {
       monitor(null, { value } as Characteristic);
     }
   }
+}
+
+/** Per-byte, because spreading a large frame onto the argument stack overflows it. */
+function toBinaryString(bytes: ArrayLike<number>): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return binary;
 }
 
 function transportOn(device: FakeDevice) {
@@ -117,6 +126,16 @@ describe("JkBmsBinaryTransport", () => {
     device.notify([0x02]);
 
     expect(chunks).toEqual([new Uint8Array([0x02])]);
+  });
+
+  it("delivers a notification too large to spread onto the argument stack", () => {
+    const device = new FakeDevice();
+    const transport = transportOn(device);
+    const { chunks } = collect(transport);
+
+    device.notify(new Uint8Array(200_000).fill(0x41));
+
+    expect(chunks[0]).toHaveLength(200_000);
   });
 
   it("writes a frame too large to spread onto the argument stack", async () => {
