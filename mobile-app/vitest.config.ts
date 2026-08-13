@@ -3,7 +3,6 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   // Metro defines it for every bundle; expo packages read it at import time.
-  define: { __DEV__: "true" },
   // tsconfig says "react-native", which Metro compiles and esbuild preserves.
   esbuild: { jsx: "automatic" },
   resolve: {

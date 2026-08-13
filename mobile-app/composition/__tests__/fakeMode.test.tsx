@@ -169,7 +169,7 @@ describe("the app running on the fake transport", () => {
     expect(shown("environment")).toBe("21.5°C 45% 1013.2hPa 12°C");
   });
 
-  it("charges the battery gauge off the recorded BMS frames", async () => {
+  it("charges the battery gauge off the synthesised BMS frames", async () => {
     renderDashboard();
 
     await waitForConnection();
