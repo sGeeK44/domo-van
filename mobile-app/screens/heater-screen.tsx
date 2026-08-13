@@ -3,12 +3,15 @@ import { useCallback } from "react";
 import { StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CircularTemperatureDial } from "@/components/heater/circular-temperature-dial";
-import { useModuleSlot } from "@/composition/ModuleRegistryProvider";
+import { linkTone, reconnectAction } from "@/components/home/link-view";
+import {
+  useModuleRegistry,
+  useModuleSlot,
+} from "@/composition/ModuleRegistryProvider";
 import { useHeaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import { Colors, PageHeader, useThemeColor } from "@/design-system";
 import { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
-import { useModulesLink } from "@/screens/hooks/useModulesLink";
 
 const DEFAULT_ZONE_STATE: HeaterZoneSnapshot = {
   temperatureCelsius: 0,
@@ -25,9 +28,10 @@ export default function HeaterScreen() {
   const styles = getStyles(colors);
   const router = useRouter();
 
-  const isConnected = useModuleSlot("heater").link.status === "online";
+  const { link } = useModuleSlot("heater");
+  const { reconnect } = useModuleRegistry();
+  const isConnected = link.status === "online";
   const heaterSystem = useHeaterSystem();
-  const link = useModulesLink();
 
   // Subscribe to all 4 zones
   const zone0 = useObservable(
@@ -80,9 +84,9 @@ export default function HeaterScreen() {
         <PageHeader
           title="Chauffage"
           onSettingsPress={() => router.push("/heater-settings")}
-          onBluetoothPress={link.reconnectAll}
-          bluetoothStatus={link.status}
-          bluetoothDisabled={!link.canReconnect}
+          onBluetoothPress={() => void reconnect("heater")}
+          bluetoothStatus={linkTone(link)}
+          bluetoothDisabled={reconnectAction(link)?.disabled ?? true}
         />
 
         {/* 2x2 Grid of Circular Dials */}

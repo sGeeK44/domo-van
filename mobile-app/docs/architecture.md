@@ -80,9 +80,10 @@ sees a connected device through the `DeviceHandle` port and asks
   the reconnection.
 - **One vocabulary for a link, everywhere.** `components/home/link-view.ts`
   turns a `LinkState` into the tone of its dot, the line naming the time of
-  last contact and the reconnection offer; `LinkBadge` draws the dot. The tab
-  icon, the dashboard card and the *Modules* row all go through them, so the
-  four surfaces cannot drift apart.
+  last contact and the reconnection offer; `LinkBadge` draws the dot. Three
+  surfaces go through them today and cannot drift apart: the tab icon, the
+  dashboard card and the *Eau* / *Chauff* header. The *Modules* row is task T5
+  of issue #3; nothing takes a screen over when its module goes offline.
 - **Import the design system through its barrel** from outside
   `design-system/`, and always through concrete files from inside it — the
   barrel would close a cycle.

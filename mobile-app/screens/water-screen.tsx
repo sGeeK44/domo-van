@@ -1,15 +1,18 @@
 import { useRouter } from "expo-router";
 import { StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { linkTone, reconnectAction } from "@/components/home/link-view";
 import { DrainSlider } from "@/components/water/drain-slider";
 import { WaterTank } from "@/components/water/water-tank";
-import { useModuleSlot } from "@/composition/ModuleRegistryProvider";
+import {
+  useModuleRegistry,
+  useModuleSlot,
+} from "@/composition/ModuleRegistryProvider";
 import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import { Colors, PageHeader, useThemeColor } from "@/design-system";
 import { ValveState } from "@/domain/water/DrainValve";
 import { TankLevelSnapshot } from "@/domain/water/TankLevelSensor";
-import { useModulesLink } from "@/screens/hooks/useModulesLink";
 
 const DEFAULT_TANK_STATE: TankLevelSnapshot = {
   capacityLiters: 0,
@@ -31,9 +34,10 @@ export default function WaterScreen() {
   const styles = getStyles(colors);
   const router = useRouter();
 
-  const isConnected = useModuleSlot("water").link.status === "online";
+  const { link } = useModuleSlot("water");
+  const { reconnect } = useModuleRegistry();
+  const isConnected = link.status === "online";
   const waterSystem = useWaterSystem();
-  const link = useModulesLink();
 
   const clean = useObservable(
     waterSystem?.cleanTank ?? null,
@@ -69,9 +73,9 @@ export default function WaterScreen() {
         <PageHeader
           title="Niveaux d'Eau"
           onSettingsPress={() => router.push("/water-settings")}
-          onBluetoothPress={link.reconnectAll}
-          bluetoothStatus={link.status}
-          bluetoothDisabled={!link.canReconnect}
+          onBluetoothPress={() => void reconnect("water")}
+          bluetoothStatus={linkTone(link)}
+          bluetoothDisabled={reconnectAction(link)?.disabled ?? true}
         />
         <View style={styles.content}>
           <View style={styles.tanksRow}>
