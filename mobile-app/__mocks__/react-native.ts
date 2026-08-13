@@ -1,7 +1,37 @@
 // react-native ships Flow source that Vite cannot parse, so tests resolve it
-// to this stub through the alias in vitest.config.ts.
+// to this stub through the alias in vitest.config.ts. react-native-web renders
+// the same component API to the DOM, which is what jsdom tests need.
 
-export const Platform = { OS: "android", Version: 31 };
+export type {
+  OpaqueColorValue,
+  PressableProps,
+  StyleProp,
+  TextStyle,
+  ViewStyle,
+} from "react-native-web";
+export {
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useColorScheme,
+  View,
+} from "react-native-web";
+
+type PlatformSpec<T> = { android?: T; native?: T; default?: T };
+
+export const Platform = {
+  OS: "android",
+  Version: 31,
+  select: <T>(spec: PlatformSpec<T>): T | undefined =>
+    spec.android ?? spec.native ?? spec.default,
+};
 
 export const PermissionsAndroid = {
   PERMISSIONS: {

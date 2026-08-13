@@ -17,6 +17,15 @@ export default defineConfig({
         __dirname,
         "__mocks__/expo-secure-store.ts",
       ),
+      "expo-router": path.resolve(__dirname, "__mocks__/expo-router.ts"),
+      "react-native-safe-area-context": path.resolve(
+        __dirname,
+        "__mocks__/react-native-safe-area-context.tsx",
+      ),
+      "@expo/vector-icons/MaterialIcons": path.resolve(
+        __dirname,
+        "__mocks__/expo-vector-icons-material.tsx",
+      ),
     },
   },
   test: {
