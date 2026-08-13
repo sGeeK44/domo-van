@@ -1,5 +1,6 @@
 import type { BleManager, Subscription } from "react-native-ble-plx";
 import { describe, expect, it } from "vitest";
+import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 import type { DeviceHandle } from "@/domain/ports/DeviceHandle";
 import { BleConnections } from "@/infrastructure/ble/BleConnections";
 import { Bluetooth } from "@/infrastructure/ble/Bluetooth";
@@ -7,6 +8,17 @@ import { Bluetooth } from "@/infrastructure/ble/Bluetooth";
 type DisconnectionRegistration = {
   deviceId: string;
   deliver: (disconnectedId: string) => void;
+};
+
+type Advertisement = {
+  id: string;
+  name: string | null;
+  serviceUUIDs?: string[] | null;
+};
+
+type ScanRequest = {
+  uuids: string[] | null;
+  options: { allowDuplicates?: boolean } | null;
 };
 
 /** Models ble-plx: one manager-wide emitter, every listener filtered by id. */
@@ -34,6 +46,28 @@ class FakeRadio {
 
   async isDeviceConnected(deviceId: string): Promise<boolean> {
     return this.connectedIds.has(deviceId);
+  }
+
+  scanRequest: ScanRequest | null = null;
+  private scanListener:
+    | ((error: Error | null, device: Advertisement | null) => void)
+    | null = null;
+
+  startDeviceScan(
+    uuids: string[] | null,
+    options: { allowDuplicates?: boolean } | null,
+    listener: (error: Error | null, device: Advertisement | null) => void,
+  ): void {
+    this.scanRequest = { uuids, options };
+    this.scanListener = listener;
+  }
+
+  stopDeviceScan(): void {
+    this.scanListener = null;
+  }
+
+  broadcast(advertisement: Advertisement): void {
+    this.scanListener?.(null, advertisement);
   }
 
   onDeviceDisconnected(deviceId: string, listener: () => void): Subscription {
@@ -164,6 +198,57 @@ function flushRadioEvents(): Promise<void> {
 }
 
 const UNKNOWN_HANDLE: DeviceHandle = { id: "never-connected", name: "Ghost" };
+
+describe("Bluetooth.startScan", () => {
+  const WATER_SERVICE = "b1f8707e-0001-0000-0000-000000000000";
+  const HEATER_SERVICE = "b1f8707e-0002-0000-0000-000000000000";
+
+  it("asks the radio for every requested service in one scan", async () => {
+    const { bluetooth, radio } = bluetoothOn(new FakeRadio());
+
+    await bluetooth.startScan([WATER_SERVICE, HEATER_SERVICE], () => {});
+
+    expect(radio.scanRequest?.uuids).toEqual([WATER_SERVICE, HEATER_SERVICE]);
+  });
+
+  it("keeps duplicate advertisements out of the scan", async () => {
+    const { bluetooth, radio } = bluetoothOn(new FakeRadio());
+
+    await bluetooth.startScan([WATER_SERVICE], () => {});
+
+    expect(radio.scanRequest?.options).toEqual({ allowDuplicates: false });
+  });
+
+  it("hands the advertised services to the caller, so a result can be typed", async () => {
+    const { bluetooth, radio } = bluetoothOn(new FakeRadio());
+    const found: DiscoveredBluetoothDevice[] = [];
+
+    await bluetooth.startScan([WATER_SERVICE], (device) => found.push(device));
+    radio.broadcast({
+      id: "water-id",
+      name: "Water Module",
+      serviceUUIDs: [WATER_SERVICE],
+    });
+
+    expect(found).toEqual([
+      {
+        id: "water-id",
+        name: "Water Module",
+        serviceUuids: [WATER_SERVICE],
+      },
+    ]);
+  });
+
+  it("reports an advertisement carrying no service as an empty list", async () => {
+    const { bluetooth, radio } = bluetoothOn(new FakeRadio());
+    const found: DiscoveredBluetoothDevice[] = [];
+
+    await bluetooth.startScan([WATER_SERVICE], (device) => found.push(device));
+    radio.broadcast({ id: "water-id", name: "Water Module" });
+
+    expect(found[0].serviceUuids).toEqual([]);
+  });
+});
 
 describe("Bluetooth.connect", () => {
   it("returns a handle carrying the id and name of the device", async () => {

@@ -46,7 +46,7 @@ export class Bluetooth implements BluetoothScanner, DeviceConnector {
   }
 
   public async startScan(
-    serviceUuid: string,
+    serviceUuids: readonly string[],
     onDeviceFound: (device: DiscoveredBluetoothDevice) => void,
   ): Promise<void> {
     const ok = await this.ensureBlePermissionsAndroid();
@@ -55,7 +55,7 @@ export class Bluetooth implements BluetoothScanner, DeviceConnector {
     }
 
     this.BleManager.startDeviceScan(
-      [serviceUuid],
+      [...serviceUuids],
       { allowDuplicates: false },
       (err, d) => {
         if (err) {
@@ -63,7 +63,11 @@ export class Bluetooth implements BluetoothScanner, DeviceConnector {
         }
         if (!d) return;
 
-        onDeviceFound({ id: d.id, name: d.name ?? "NO_NAME" });
+        onDeviceFound({
+          id: d.id,
+          name: d.name ?? "NO_NAME",
+          serviceUuids: d.serviceUUIDs ?? [],
+        });
       },
     );
   }

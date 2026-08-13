@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   ALL_MODULES,
+  ALL_SCAN_SERVICE_UUIDS,
   BATTERY_MODULE,
+  moduleForAdvertisement,
   WATER_MODULE,
 } from "@/domain/modules/ModuleDescriptor";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
@@ -11,9 +13,11 @@ import {
   UnadvertisedDeviceError,
 } from "@/infrastructure/fake/FakeBluetooth";
 
-async function scan(serviceUuid: string): Promise<DiscoveredBluetoothDevice[]> {
+async function scan(
+  ...serviceUuids: readonly string[]
+): Promise<DiscoveredBluetoothDevice[]> {
   const found: DiscoveredBluetoothDevice[] = [];
-  await new FakeBluetooth().startScan(serviceUuid, (device) =>
+  await new FakeBluetooth().startScan(serviceUuids, (device) =>
     found.push(device),
   );
   return found;
@@ -35,6 +39,20 @@ describe("FakeBluetooth", () => {
     }
   });
 
+  it("hands the whole catalogue to a single scan asking for every service", async () => {
+    const found = await scan(...ALL_SCAN_SERVICE_UUIDS);
+
+    expect(found).toHaveLength(ALL_MODULES.length);
+  });
+
+  it("advertises each device with the service that types it back to its module", async () => {
+    const found = await scan(...ALL_SCAN_SERVICE_UUIDS);
+
+    expect(
+      found.map((device) => moduleForAdvertisement(device.serviceUuids)),
+    ).toEqual([...ALL_MODULES]);
+  });
+
   it("finds nothing on a service no module advertises", async () => {
     const found = await scan("0000ffff-0000-1000-8000-00805f9b34fb");
 
@@ -53,7 +71,7 @@ describe("FakeBluetooth", () => {
 
     const handle = await new FakeBluetooth().connect(advertised.id);
 
-    expect(handle).toEqual(advertised);
+    expect(handle).toEqual({ id: advertised.id, name: advertised.name });
   });
 
   it("refuses a device it never advertised", async () => {
