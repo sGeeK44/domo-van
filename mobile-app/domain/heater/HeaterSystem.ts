@@ -47,6 +47,15 @@ export class HeaterSystem {
     return this.zones[index];
   }
 
+  /** Re-issues the probes each leaf sent from its constructor, once a link is back. */
+  resync = () => {
+    for (const zone of this.zones) {
+      void zone.getStatus().catch(() => {});
+      void zone.getPidConfig().catch(() => {});
+    }
+    void this.environment.getEnvironment().catch(() => {});
+  };
+
   dispose = () => {
     this.admin.dispose();
     for (const zone of this.zones) {

@@ -35,8 +35,9 @@ export function fakePairedDevices(): [ModuleKey, DeviceInfo][] {
   });
 }
 
-/** A radio advertising the module catalogue, whose links never drop. */
+/** A radio advertising the module catalogue, whose links drop only on demand. */
 export class FakeBluetooth implements BluetoothScanner, DeviceConnector {
+  private readonly dropListeners = new Map<string, (() => void)[]>();
   private readonly advertised = new Map(
     ALL_MODULES.map((module) => [
       fakeDeviceFor(module).id,
@@ -63,7 +64,21 @@ export class FakeBluetooth implements BluetoothScanner, DeviceConnector {
 
   async disconnect(_device: DeviceHandle): Promise<void> {}
 
-  onDisconnected(_device: DeviceHandle, _listener: () => void): Unsubscribe {
-    return () => {};
+  onDisconnected(device: DeviceHandle, listener: () => void): Unsubscribe {
+    const listeners = this.dropListeners.get(device.id) ?? [];
+    listeners.push(listener);
+    this.dropListeners.set(device.id, listeners);
+
+    return () => {
+      const index = listeners.indexOf(listener);
+      if (index >= 0) listeners.splice(index, 1);
+    };
+  }
+
+  /** Cuts the radio link the way a van wall does, without unpairing the device. */
+  dropLink(deviceId: string): void {
+    for (const listener of [...(this.dropListeners.get(deviceId) ?? [])]) {
+      listener();
+    }
   }
 }

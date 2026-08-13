@@ -93,6 +93,46 @@ describe("FakeBluetooth", () => {
     expect(dropped).toBe(false);
   });
 
+  it("reports the drop of the link it was asked to cut", async () => {
+    const bluetooth = new FakeBluetooth();
+    const handle = await bluetooth.connect(fakePairedDevices()[0][1].id);
+    let dropped = false;
+    bluetooth.onDisconnected(handle, () => {
+      dropped = true;
+    });
+
+    bluetooth.dropLink(handle.id);
+
+    expect(dropped).toBe(true);
+  });
+
+  it("leaves the other links up when one drops", async () => {
+    const bluetooth = new FakeBluetooth();
+    const [[, first], [, second]] = fakePairedDevices();
+    const handle = await bluetooth.connect(second.id);
+    let dropped = false;
+    bluetooth.onDisconnected(handle, () => {
+      dropped = true;
+    });
+
+    bluetooth.dropLink(first.id);
+
+    expect(dropped).toBe(false);
+  });
+
+  it("stops reporting to a listener that unsubscribed", async () => {
+    const bluetooth = new FakeBluetooth();
+    const handle = await bluetooth.connect(fakePairedDevices()[0][1].id);
+    const drops: string[] = [];
+    bluetooth.onDisconnected(handle, () => drops.push("kept"));
+    const stop = bluetooth.onDisconnected(handle, () => drops.push("gone"));
+
+    stop();
+    bluetooth.dropLink(handle.id);
+
+    expect(drops).toEqual(["kept"]);
+  });
+
   it("pairs every module up front, so no screen waits on a scan", () => {
     const paired = fakePairedDevices();
 
