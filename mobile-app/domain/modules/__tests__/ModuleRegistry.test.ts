@@ -195,6 +195,15 @@ type SessionCall = {
 
 class SpySessions implements ModuleSessions {
   readonly calls: SessionCall[] = [];
+  private bindFailure: Error | null = null;
+
+  failBinds(error: Error): void {
+    this.bindFailure = error;
+  }
+
+  serveBinds(): void {
+    this.bindFailure = null;
+  }
 
   open(module: ModuleDescriptor, pairing: DeviceInfo): void {
     this.calls.push({ action: "open", key: module.key, pairing });
@@ -202,6 +211,7 @@ class SpySessions implements ModuleSessions {
 
   bind(module: ModuleDescriptor, device: DeviceHandle): void {
     this.calls.push({ action: "bind", key: module.key, device });
+    if (this.bindFailure) throw this.bindFailure;
   }
 
   unbind(module: ModuleDescriptor): void {
@@ -783,6 +793,66 @@ describe("ModuleRegistry", () => {
       status: "offline",
       lastContactAt: droppedAt,
     });
+  });
+
+  it("stays offline with no last contact when the first bind of a pairing fails", async () => {
+    const { connector, sessions, registry } = setup();
+    sessions.failBinds(new Error("the device is gone"));
+
+    await registry.pair("water", WATER_SCAN);
+
+    expect(registry.slotOf("water")).toMatchObject({
+      pairing: { id: "water-1" },
+      link: { status: "offline", lastContactAt: null },
+    });
+    expect(sessions.actionsOn("water")).toEqual(["open", "bind", "unbind"]);
+    expect(connector.watcherCount("water-1")).toBe(0);
+    expect(connector.disconnectCalls).toEqual(["water-1"]);
+  });
+
+  it("keeps the last contact when the session cannot bind the reconnected device", async () => {
+    const { connector, sessions, registry, tick } = setup();
+    await registry.pair("water", WATER_SCAN);
+    const droppedAt = tick(1_000);
+    connector.dropLink("water-1");
+    await flushMicrotasks();
+    sessions.failBinds(new Error("the device is gone"));
+    tick(3_000);
+
+    await registry.reconnect("water");
+
+    expect(registry.slotOf("water").link).toEqual({
+      status: "offline",
+      lastContactAt: droppedAt,
+    });
+    expect(sessions.actionsOn("water")).toEqual([
+      "open",
+      "bind",
+      "unbind",
+      "bind",
+      "unbind",
+    ]);
+    expect(connector.watcherCount("water-1")).toBe(0);
+    expect(connector.disconnectCalls).toEqual(["water-1"]);
+  });
+
+  it("comes online again once the session can bind the device", async () => {
+    const { connector, sessions, registry, tick } = setup();
+    await registry.pair("water", WATER_SCAN);
+    connector.dropLink("water-1");
+    await flushMicrotasks();
+    sessions.failBinds(new Error("the device is gone"));
+    await registry.reconnect("water");
+
+    sessions.serveBinds();
+    const boundAt = tick(1_000);
+    await registry.reconnect("water");
+
+    expect(registry.slotOf("water").link).toEqual({
+      status: "online",
+      since: boundAt,
+    });
+    expect(connector.watcherCount("water-1")).toBe(1);
   });
 
   it("does nothing when unpairing a free slot", async () => {

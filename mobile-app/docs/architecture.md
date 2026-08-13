@@ -51,7 +51,11 @@ sees a connected device through the `DeviceHandle` port and asks
   module's service.
 - **Nothing outside `composition/createContainer.ts` constructs an adapter.**
   Screens get their systems from `useWaterSystem()` / `useHeaterSystem()` /
-  `useBatterySystem()`, never from `new`.
+  `useBatterySystem()`, never from `new`. The persistent transports built by
+  `composition/ModuleSessions.ts` are the one carve-out: they name no driver
+  and no device API, they only decorate the `TransportFactory` the container
+  injected, and one exists per pairing — session lifetime, which the container
+  knows nothing about.
 - **`ModuleRegistry` owns the slots.** One slot per module type holds the
   pairing and the link state. `composition/ModuleRegistryProvider.tsx` builds
   the registry inside its mount effect and disposes it on unmount; disposal is

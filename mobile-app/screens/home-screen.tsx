@@ -84,6 +84,7 @@ export default function HomeScreen() {
           onSettingsPress={() => router.push("/battery-settings")}
           onBluetoothPress={link.reconnectAll}
           bluetoothStatus={link.status}
+          bluetoothDisabled={!link.canReconnect}
         />
 
         {/* Content */}

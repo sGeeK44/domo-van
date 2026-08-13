@@ -13,6 +13,7 @@ export type PageHeaderProps = {
   onSettingsPress: () => void;
   onBluetoothPress: () => void;
   bluetoothStatus: StatusBadgeProps["status"];
+  bluetoothDisabled?: boolean;
 };
 
 export function PageHeader({
@@ -20,6 +21,7 @@ export function PageHeader({
   onSettingsPress,
   onBluetoothPress,
   bluetoothStatus,
+  bluetoothDisabled = false,
 }: PageHeaderProps) {
   const { colorScheme, toggleTheme } = useTheme();
 
@@ -31,7 +33,11 @@ export function PageHeader({
           icon={colorScheme === "dark" ? "light-mode" : "dark-mode"}
           onPress={toggleTheme}
         />
-        <IconCircleButton icon="bluetooth" onPress={onBluetoothPress}>
+        <IconCircleButton
+          icon="bluetooth"
+          onPress={onBluetoothPress}
+          disabled={bluetoothDisabled}
+        >
           <StatusBadge status={bluetoothStatus} />
         </IconCircleButton>
         <IconCircleButton icon="settings" onPress={onSettingsPress} />

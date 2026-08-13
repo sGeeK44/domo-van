@@ -71,6 +71,7 @@ export default function WaterScreen() {
           onSettingsPress={() => router.push("/water-settings")}
           onBluetoothPress={link.reconnectAll}
           bluetoothStatus={link.status}
+          bluetoothDisabled={!link.canReconnect}
         />
         <View style={styles.content}>
           <View style={styles.tanksRow}>

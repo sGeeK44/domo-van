@@ -22,10 +22,7 @@ export type Container = {
 /** A real BMS pushes telemetry unprompted; the fake one has to be told to. */
 const FAKE_BMS_PUSH_MS = 1000;
 
-/**
- * The single place where concrete implementations are bound to domain
- * interfaces. Nothing else in the app is allowed to `new` an adapter.
- */
+/** The only place that builds an adapter; `ModuleSessions` may just decorate what it builds. */
 export function createContainer(): Container {
   return isFakeBleEnabled() ? fakeContainer() : bleContainer();
 }

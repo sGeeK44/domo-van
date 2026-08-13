@@ -35,7 +35,6 @@ export default function WaterSettingsScreen() {
   // Bluetooth for scanning and connecting
   const { bluetooth } = useContainer();
 
-  // Pairing and link state, owned by the registry
   const { pairing, link } = useModuleSlot(WATER_MODULE.key);
   const { pair, unpair, reconnect } = useModuleRegistry();
 
@@ -97,7 +96,6 @@ export default function WaterSettingsScreen() {
     else void startScan();
   };
 
-  // Pairing hands the device to the registry, which connects it from then on
   const pairDevice = useCallback(
     async (deviceId: string) => {
       await stopScan();
@@ -119,7 +117,7 @@ export default function WaterSettingsScreen() {
     [reconnect],
   );
 
-  // Dropping the radio link leaves the pairing in place; the registry sees it go offline
+  // Goes straight to the radio: the registry only ever connects, and sees the drop
   const disconnect = useCallback(async () => {
     if (pairing) await bluetooth.disconnect(pairing);
   }, [bluetooth, pairing]);
