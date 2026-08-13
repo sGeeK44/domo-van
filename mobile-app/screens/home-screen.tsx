@@ -77,8 +77,10 @@ export default function HomeScreen() {
   const heat = useHeaterSummary();
 
   const batteryOnline = batterySlot.link.status === "online";
+  const waterOnline = waterSlot.link.status === "online";
   const heaterOnline = heaterSlot.link.status === "online";
   const heaterPaired = heaterSlot.pairing !== null;
+  const heating = heaterOnline && heat.isRunning;
 
   const remainingTime = useMemo(() => {
     if (!batteryOnline) return "-";
@@ -125,7 +127,9 @@ export default function HomeScreen() {
             >
               <StatusCard
                 icon="water-drop"
-                value={`${Math.round(cleanTank.percentage)}%`}
+                value={
+                  waterOnline ? `${Math.round(cleanTank.percentage)}%` : "-"
+                }
                 label="Eau propre"
                 backgroundColor={colors.water.clean}
                 onPress={() => router.push("/water")}
@@ -138,14 +142,12 @@ export default function HomeScreen() {
             >
               <StatusCard
                 icon="local-fire-department"
-                value={heat.isRunning ? "Chauffe" : "Arrêt"}
-                label={
-                  heat.isRunning
-                    ? `> ${heat.setpointCelsius.toFixed(0)}°C`
-                    : "-"
+                value={
+                  heaterOnline ? (heat.isRunning ? "Chauffe" : "Arrêt") : "-"
                 }
+                label={heating ? `> ${heat.setpointCelsius.toFixed(0)}°C` : "-"}
                 backgroundColor={
-                  heat.isRunning ? colors.heater.warm : colors.neutral["500"]
+                  heating ? colors.heater.warm : colors.neutral["500"]
                 }
                 onPress={() => router.push("/heater")}
               />
