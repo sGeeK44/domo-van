@@ -29,22 +29,6 @@ export class SlotOccupiedError extends Error {
   }
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("Connection timeout")), ms);
-
-    promise
-      .then((result) => {
-        clearTimeout(timer);
-        resolve(result);
-      })
-      .catch((error) => {
-        clearTimeout(timer);
-        reject(error);
-      });
-  });
-}
-
 function offline(lastContactAt: number | null = null): LinkState {
   return { status: "offline", lastContactAt };
 }
@@ -56,6 +40,8 @@ function lastContactOf(link: LinkState): number | null {
 }
 
 type PairedEntry = { module: ModuleDescriptor; pairing: DeviceInfo };
+
+type AbortConnect = (reason: string) => void;
 
 export type ModuleRegistryDeps = {
   repository: DeviceRepository;
@@ -74,6 +60,8 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
   private readonly slots: MutableObservable<readonly ModuleSlot[]>;
   private readonly handles = new Map<ModuleKey, DeviceHandle>();
   private readonly linkWatchers = new Map<ModuleKey, Unsubscribe>();
+  private readonly epochs = new Map<ModuleKey, number>();
+  private readonly pendingConnects = new Set<AbortConnect>();
   private disposed = false;
 
   constructor(deps: ModuleRegistryDeps) {
@@ -132,8 +120,15 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
       id: device.id,
       name: device.name || slot.module.displayName,
     };
-    await this.repository.setLastDevice(pairing, key);
-    this.patch(key, { pairing });
+    this.claimSlot(key, pairing);
+
+    try {
+      await this.repository.setLastDevice(pairing, key);
+    } catch (error) {
+      this.restoreSlot(key, slot);
+      throw error;
+    }
+
     this.sessions.open(slot.module, pairing);
 
     await this.connect(key);
@@ -143,19 +138,14 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
     const slot = this.slotOf(key);
     if (!slot.pairing) return;
 
+    this.bumpEpoch(key);
     const handle = this.handles.get(key);
     this.stopWatching(key);
     this.handles.delete(key);
     this.sessions.unbind(slot.module);
     this.sessions.close(slot.module);
 
-    if (handle) {
-      try {
-        await this.connector.disconnect(handle);
-      } catch {
-        // the radio link may already be down
-      }
-    }
+    if (handle) await this.releaseHandle(handle);
 
     await this.repository.clearLastDevice(key);
     this.patch(key, { pairing: null, link: offline() });
@@ -170,6 +160,8 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
 
   dispose(): void {
     this.disposed = true;
+    for (const abort of [...this.pendingConnects]) abort("Registry disposed");
+    this.pendingConnects.clear();
     for (const slot of this.slots.getValue()) {
       this.stopWatching(slot.module.key);
       if (slot.pairing) this.sessions.close(slot.module);
@@ -183,25 +175,106 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
     if (!slot.pairing) return;
 
     const lastContactAt = lastContactOf(slot.link);
+    const epoch = this.epochOf(key);
     this.patch(key, { link: { status: "connecting" } });
 
+    let device: DeviceHandle;
     try {
-      const device = await withTimeout(
-        this.connector.connect(slot.pairing.id),
+      device = await this.connectWithTimeout(slot.pairing.id);
+    } catch {
+      if (this.isStale(key, epoch)) return;
+      this.patch(key, { link: offline(lastContactAt) });
+      return;
+    }
+
+    if (this.isStale(key, epoch)) {
+      await this.releaseHandle(device);
+      return;
+    }
+
+    this.attachLink(key, slot.module, device);
+    this.patch(key, { link: { status: "online", since: this.now() } });
+  }
+
+  private connectWithTimeout(deviceId: string): Promise<DeviceHandle> {
+    return new Promise<DeviceHandle>((resolve, reject) => {
+      let pending = true;
+      const settle = () => {
+        pending = false;
+        clearTimeout(timer);
+        this.pendingConnects.delete(abort);
+      };
+      const abort: AbortConnect = (reason) => {
+        if (!pending) return;
+        settle();
+        reject(new Error(reason));
+      };
+      const timer = setTimeout(
+        () => abort("Connection timeout"),
         this.connectTimeoutMs,
       );
-      if (this.disposed) return;
+      this.pendingConnects.add(abort);
 
-      this.handles.set(key, device);
-      this.linkWatchers.set(
-        key,
-        this.connector.onDisconnected(device, () => this.dropLink(key)),
+      this.connector.connect(deviceId).then(
+        (device) => {
+          if (!pending) {
+            void this.releaseHandle(device);
+            return;
+          }
+          settle();
+          resolve(device);
+        },
+        (error: unknown) => {
+          if (!pending) return;
+          settle();
+          reject(error);
+        },
       );
-      this.sessions.bind(slot.module, device);
-      this.patch(key, { link: { status: "online", since: this.now() } });
+    });
+  }
+
+  private attachLink(
+    key: ModuleKey,
+    module: ModuleDescriptor,
+    device: DeviceHandle,
+  ): void {
+    this.stopWatching(key);
+    this.handles.set(key, device);
+    this.linkWatchers.set(
+      key,
+      this.connector.onDisconnected(device, () => this.dropLink(key)),
+    );
+    this.sessions.bind(module, device);
+  }
+
+  private async releaseHandle(device: DeviceHandle): Promise<void> {
+    try {
+      await this.connector.disconnect(device);
     } catch {
-      this.patch(key, { link: offline(lastContactAt) });
+      // the radio link may already be down
     }
+  }
+
+  private claimSlot(key: ModuleKey, pairing: DeviceInfo): void {
+    this.bumpEpoch(key);
+    this.patch(key, { pairing });
+  }
+
+  private restoreSlot(key: ModuleKey, previous: ModuleSlot): void {
+    this.bumpEpoch(key);
+    this.patch(key, { pairing: previous.pairing, link: previous.link });
+  }
+
+  private isStale(key: ModuleKey, epoch: number): boolean {
+    return this.disposed || this.epochOf(key) !== epoch;
+  }
+
+  private epochOf(key: ModuleKey): number {
+    return this.epochs.get(key) ?? 0;
+  }
+
+  private bumpEpoch(key: ModuleKey): void {
+    this.epochs.set(key, this.epochOf(key) + 1);
   }
 
   private dropLink(key: ModuleKey): void {

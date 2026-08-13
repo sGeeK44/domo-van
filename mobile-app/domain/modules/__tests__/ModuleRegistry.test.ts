@@ -46,7 +46,13 @@ class StubConnector implements DeviceConnector {
   readonly connectCalls: string[] = [];
   readonly disconnectCalls: string[] = [];
   private readonly listeners = new Map<string, Set<() => void>>();
+  private readonly deferred = new Map<
+    string,
+    { resolve: (handle: DeviceHandle) => void; reject: (error: Error) => void }
+  >();
+  private readonly requestSignals = new Map<string, () => void>();
   private hangs = false;
+  private defers = false;
   private rejection: Error | null = null;
 
   hangForever(): void {
@@ -57,11 +63,47 @@ class StubConnector implements DeviceConnector {
     this.rejection = error;
   }
 
+  deferConnects(): void {
+    this.defers = true;
+  }
+
+  whenConnectRequested(deviceId: string): Promise<void> {
+    if (this.deferred.has(deviceId)) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      this.requestSignals.set(deviceId, resolve);
+    });
+  }
+
+  settleConnect(deviceId: string): void {
+    const waiter = this.takeDeferred(deviceId);
+    waiter?.resolve({ id: deviceId, name: `handle:${deviceId}` });
+  }
+
+  rejectConnect(deviceId: string, error: Error): void {
+    const waiter = this.takeDeferred(deviceId);
+    waiter?.reject(error);
+  }
+
+  private takeDeferred(deviceId: string) {
+    const waiter = this.deferred.get(deviceId);
+    this.deferred.delete(deviceId);
+    return waiter;
+  }
+
   async connect(deviceId: string): Promise<DeviceHandle> {
     this.connectCalls.push(deviceId);
     if (this.hangs) return new Promise<DeviceHandle>(() => {});
     if (this.rejection) throw this.rejection;
+    if (this.defers) return this.deferConnect(deviceId);
     return { id: deviceId, name: `handle:${deviceId}` };
+  }
+
+  private deferConnect(deviceId: string): Promise<DeviceHandle> {
+    return new Promise<DeviceHandle>((resolve, reject) => {
+      this.deferred.set(deviceId, { resolve, reject });
+      this.requestSignals.get(deviceId)?.();
+      this.requestSignals.delete(deviceId);
+    });
   }
 
   async disconnect(device: DeviceHandle): Promise<void> {
@@ -321,6 +363,105 @@ describe("ModuleRegistry", () => {
       link: { status: "offline", lastContactAt: null },
     });
     expect(sessions.actionsOn("water")).toEqual(["open"]);
+  });
+
+  it("drops a connect that lands after the slot was unpaired", async () => {
+    const { connector, sessions, registry } = setup();
+    connector.deferConnects();
+
+    const pairing = registry.pair("water", WATER_DEVICE);
+    await connector.whenConnectRequested("water-1");
+    await registry.unpair("water");
+
+    connector.settleConnect("water-1");
+    await pairing;
+
+    expect(registry.slotOf("water")).toMatchObject({
+      pairing: null,
+      link: { status: "offline", lastContactAt: null },
+    });
+    expect(sessions.actionsOn("water")).toEqual(["open", "unbind", "close"]);
+    expect(connector.disconnectCalls).toEqual(["water-1"]);
+    expect(connector.watcherCount("water-1")).toBe(0);
+  });
+
+  it("keeps the freed slot untouched when a late connect fails after unpair", async () => {
+    const { connector, registry, tick } = setup();
+    await registry.pair("water", WATER_DEVICE);
+    tick(5_000);
+    connector.dropLink("water-1");
+    connector.deferConnects();
+
+    const reconnecting = registry.reconnect("water");
+    await connector.whenConnectRequested("water-1");
+    await registry.unpair("water");
+
+    connector.rejectConnect("water-1", new Error("out of range"));
+    await reconnecting;
+
+    expect(registry.slotOf("water")).toMatchObject({
+      pairing: null,
+      link: { status: "offline", lastContactAt: null },
+    });
+  });
+
+  it("refuses a second pairing issued in the same tick as the first", async () => {
+    const { repository, connector, sessions, registry } = setup();
+
+    const first = registry.pair("water", WATER_DEVICE);
+    const second = registry.pair("water", {
+      id: "water-2",
+      name: "Another Water",
+    });
+
+    await expect(second).rejects.toBeInstanceOf(SlotOccupiedError);
+    await first;
+
+    expect(repository.writes).toEqual([{ key: "water", device: WATER_DEVICE }]);
+    expect(connector.connectCalls).toEqual(["water-1"]);
+    expect(sessions.actionsOn("water")).toEqual(["open", "bind"]);
+    expect(registry.slotOf("water")).toMatchObject({
+      pairing: { id: "water-1" },
+      link: { status: "online" },
+    });
+  });
+
+  it("disconnects a connection that lands after the connect timeout", async () => {
+    vi.useFakeTimers();
+    const { connector, sessions, registry } = setup();
+    connector.deferConnects();
+
+    const pairing = registry.pair("water", WATER_DEVICE);
+    await connector.whenConnectRequested("water-1");
+    await vi.advanceTimersByTimeAsync(15_000);
+    await pairing;
+
+    connector.settleConnect("water-1");
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(connector.disconnectCalls).toEqual(["water-1"]);
+    expect(registry.slotOf("water").link).toEqual({
+      status: "offline",
+      lastContactAt: null,
+    });
+    expect(sessions.actionsOn("water")).toEqual(["open"]);
+    expect(connector.watcherCount("water-1")).toBe(0);
+  });
+
+  it("clears the pending connect timer on dispose", async () => {
+    vi.useFakeTimers();
+    const { connector, registry } = setup();
+    connector.hangForever();
+
+    const pairing = registry.pair("water", WATER_DEVICE);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(registry.slotOf("water").link.status).toBe("connecting");
+    expect(vi.getTimerCount()).toBe(1);
+
+    registry.dispose();
+
+    expect(vi.getTimerCount()).toBe(0);
+    await pairing;
   });
 
   it("closes every open session and drops every link watcher on dispose", async () => {
