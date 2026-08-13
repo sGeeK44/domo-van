@@ -1,30 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { Listener, Unsubscribe } from "@/core/observable";
 import { Channel } from "@/domain/ports/Channel";
 import { DrainValve } from "@/domain/water/DrainValve";
 import { TankLevelSensor } from "@/domain/water/TankLevelSensor";
-
-class FakeChannel implements Channel {
-  private listener: Listener<string> | null = null;
-  public commands: string[] = [];
-
-  listen(listener: Listener<string>): Unsubscribe {
-    this.listener = listener;
-    return () => {
-      this.listener = null;
-    };
-  }
-  send(command: string): Promise<void> {
-    this.commands.push(command);
-    return Promise.resolve();
-  }
-
-  /** Simulate receiving a message on a channel */
-  emit(msg: string) {
-    if (!this.listener) return;
-    this.listener(msg);
-  }
-}
+import { FakeChannel } from "@/infrastructure/fake/FakeChannel";
 
 describe("TankLevelSensor", () => {
   it("requests config on first subscribe and computes percentage", async () => {
