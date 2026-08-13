@@ -73,9 +73,12 @@ sees a connected device through the `DeviceHandle` port and asks
 EXPO_PUBLIC_FAKE_BLE=1 npm start
 ```
 
-Every screen then renders real data with Bluetooth switched off. The app boots
-already paired: the three modules reach *connected* on their own, so nothing
-has to be scanned or tapped.
+The app then runs with Bluetooth switched off. It boots already paired: the
+three modules reach *connected* on their own, so nothing has to be scanned or
+tapped. Every value on Eau and Chauffage, and Bord's battery and environment
+cards, comes from a fake. Bord's water and heater `StatusCard`s are still wired
+to the `MOCK_WATER` / `MOCK_HEATER` constants in `screens/home-screen.tsx`, so
+they disagree with Eau and Chauffage on purpose until #3 rewrites them.
 
 `EXPO_PUBLIC_FAKE_BLE` is read **once**, by `createContainer()`, and it is the
 only branch in the app. Expo inlines `EXPO_PUBLIC_*` at build time, so this is
@@ -94,7 +97,7 @@ What the fake serves:
 |---|---|---|
 | water | `scenarios/waterScenario.ts` | clean tank 100 L at 72 %, grey tank 80 L at 40 %, drain valve auto-closing after 45 s |
 | heater | `scenarios/heaterScenario.ts` | four zones (21.5 / 19.0 / 17.5 / 23.0 °C), zones 0 and 3 running, indoor 21.5 °C / 45 % / 1013.2 hPa, outdoor 12.0 °C |
-| battery | `scenarios/jkBmsFrames.ts` | a recorded JK-BMS read-all reply: 4 cells, 13.20 V, +5.00 A, 98 % |
+| battery | `scenarios/jkBmsFrames.ts` | a JK-BMS read-all reply — synthesised, not captured from the van: 4 cells, 13.20 V, +5.00 A, 98 % |
 
 The fakes are firmware, not fixtures: they answer commands and keep what they
 are told. Writing a setpoint and reading it back returns the new value, and a

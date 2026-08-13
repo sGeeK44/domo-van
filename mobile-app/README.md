@@ -20,8 +20,9 @@
    EXPO_PUBLIC_FAKE_BLE=1 npm start
    ```
 
-   Every screen renders real data served by the fakes in
-   `infrastructure/fake/`. See
+   Eau, Chauffage and the battery and environment cards on Bord render real
+   data served by the fakes in `infrastructure/fake/`. Bord's water and heater
+   cards still read hardcoded constants, so ignore the 75 % they show. See
    [docs/architecture.md](docs/architecture.md#running-without-hardware) for
    what each module serves and how to add a scenario.
 
