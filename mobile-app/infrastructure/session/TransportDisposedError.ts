@@ -1,4 +1,4 @@
-/** Raised by a persistent transport used after its owner released it. */
+/** Unlike NotConnectedError, no session will ever come back: a retry is pointless. */
 export class TransportDisposedError extends Error {
   constructor() {
     super("This transport has been disposed.");

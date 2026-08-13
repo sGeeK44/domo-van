@@ -49,6 +49,24 @@ function flakyTransport() {
   return { transport, sessions, broken };
 }
 
+/** A session that refuses one channel on the first ask only, as a flickering link does. */
+function flickeringTransport(channelId: string) {
+  const sessions: FakeModuleTransport[] = [];
+  let refusing = true;
+  const transport = new PersistentModuleTransport((): ModuleTransport => {
+    const session = new FakeModuleTransport(waterScenario());
+    sessions.push(session);
+    return {
+      openChannel(id: string): Channel {
+        if (id !== channelId || !refusing) return session.openChannel(id);
+        refusing = false;
+        throw new Error("device is gone");
+      },
+    };
+  });
+  return { transport, sessions };
+}
+
 describe("PersistentModuleTransport", () => {
   it("keeps the last known level through a link drop and updates it on the next session", () => {
     const { transport, sessions } = persistentTransport();
@@ -224,6 +242,45 @@ describe("PersistentModuleTransport", () => {
     await expect(cleanTank.send("CFG?")).rejects.toThrow(NotConnectedError);
   });
 
+  it("caches no channel whose pipe failed, so the next ask reads the session", () => {
+    const { transport, sessions } = flickeringTransport(GREY_VALVE);
+    transport.bind(DEVICE);
+    expect(() => transport.openChannel(GREY_VALVE)).toThrow();
+
+    const frames: string[] = [];
+    transport.openChannel(GREY_VALVE).listen((frame) => frames.push(frame));
+    sessions[0].channel(GREY_VALVE).emit("OK");
+
+    expect(frames).toEqual(["OK"]);
+  });
+
+  it("rejects a write on a channel opened after an unbind", async () => {
+    const { transport } = persistentTransport();
+    transport.bind(DEVICE);
+    transport.unbind();
+
+    const channel = transport.openChannel(GREY_VALVE);
+
+    await expect(channel.send("CFG?")).rejects.toThrow(NotConnectedError);
+  });
+
+  it("subscribes once when a failed bind is followed by a successful one", () => {
+    const { transport, sessions, broken } = flakyTransport();
+    const frames: string[] = [];
+    transport.openChannel(CLEAN_TANK).listen((frame) => frames.push(frame));
+    transport.openChannel(GREY_VALVE);
+    transport.bind(DEVICE);
+    broken.channelId = GREY_VALVE;
+    expect(() => transport.bind(DEVICE)).toThrow();
+
+    broken.channelId = null;
+    transport.bind(DEVICE);
+
+    sessions[0].channel(CLEAN_TANK).emit("1");
+    sessions[2].channel(CLEAN_TANK).emit(HALF_FULL_DISTANCE);
+    expect(frames).toEqual([HALF_FULL_DISTANCE]);
+  });
+
   it("releases the underlying subscriptions when disposed", () => {
     const { transport, sessions } = persistentTransport();
     new WaterSystem(transport);
@@ -239,16 +296,36 @@ describe("PersistentModuleTransport", () => {
     transport.bind(DEVICE);
     transport.dispose();
 
-    expect(() => transport.bind(DEVICE)).toThrow(TransportDisposedError);
+    transport.bind(DEVICE);
+
     expect(sessions).toHaveLength(1);
   });
 
-  it("refuses to open a channel once disposed", () => {
+  it("swallows a late unbind once disposed", () => {
+    const { transport } = persistentTransport();
+    transport.bind(DEVICE);
+    transport.dispose();
+
+    expect(() => transport.unbind()).not.toThrow();
+  });
+
+  it("hands out an inert channel once disposed", async () => {
     const { transport } = persistentTransport();
     transport.dispose();
 
-    expect(() => transport.openChannel(CLEAN_TANK)).toThrow(
-      TransportDisposedError,
-    );
+    const channel = transport.openChannel(CLEAN_TANK);
+
+    expect(() => channel.listen(() => {})()).not.toThrow();
+    await expect(channel.send("CFG?")).rejects.toThrow(TransportDisposedError);
+  });
+
+  it("rejects a write on a channel handed out before the dispose", async () => {
+    const { transport } = persistentTransport();
+    const channel = transport.openChannel(CLEAN_TANK);
+    transport.bind(DEVICE);
+
+    transport.dispose();
+
+    await expect(channel.send("CFG?")).rejects.toThrow(TransportDisposedError);
   });
 });

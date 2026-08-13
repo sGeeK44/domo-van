@@ -14,12 +14,14 @@ type Pipe = { channel: Channel; stop: Unsubscribe };
 class PersistentChannel implements Channel {
   private readonly frames = createDetachedFanout<string>();
   private live: Pipe | null = null;
+  private disposed = false;
 
   listen(listener: Listener<string>): Unsubscribe {
     return this.frames.add(listener);
   }
 
   send(command: string): Promise<void> {
+    if (this.disposed) return Promise.reject(new TransportDisposedError());
     if (!this.live) return Promise.reject(new NotConnectedError());
     return this.live.channel.send(command);
   }
@@ -32,7 +34,6 @@ class PersistentChannel implements Channel {
   }
 
   adopt(pipe: Pipe): void {
-    this.unbind();
     this.live = pipe;
   }
 
@@ -40,6 +41,17 @@ class PersistentChannel implements Channel {
     this.live?.stop();
     this.live = null;
   }
+
+  dispose(): void {
+    this.unbind();
+    this.disposed = true;
+  }
+}
+
+function inertChannel(): PersistentChannel {
+  const channel = new PersistentChannel();
+  channel.dispose();
+  return channel;
 }
 
 /** A module transport that outlives its BLE sessions, so a system spans the pairing. */
@@ -51,9 +63,9 @@ export class PersistentModuleTransport implements ModuleTransport {
   constructor(private readonly openSession: ModuleSessionFactory) {}
 
   openChannel(channelId: string): Channel {
-    this.refuseWhenDisposed();
     const known = this.channels.get(channelId);
     if (known) return known;
+    if (this.disposed) return inertChannel();
 
     const channel = new PersistentChannel();
     if (this.session) {
@@ -65,7 +77,7 @@ export class PersistentModuleTransport implements ModuleTransport {
 
   /** All-or-nothing: a half-piped session would leave channels mute and unretried. */
   bind(device: DeviceHandle): void {
-    this.refuseWhenDisposed();
+    if (this.disposed) return;
     const session = this.openSession(device);
     const pipes = this.pipeAll(session);
 
@@ -84,9 +96,13 @@ export class PersistentModuleTransport implements ModuleTransport {
     this.session = null;
   }
 
+  /** Inert once disposed: no session opens, no listener fires, every write rejects. */
   dispose(): void {
-    this.unbind();
+    for (const channel of this.channels.values()) {
+      channel.dispose();
+    }
     this.channels.clear();
+    this.session = null;
     this.disposed = true;
   }
 
@@ -103,9 +119,5 @@ export class PersistentModuleTransport implements ModuleTransport {
       }
       throw error;
     }
-  }
-
-  private refuseWhenDisposed(): void {
-    if (this.disposed) throw new TransportDisposedError();
   }
 }

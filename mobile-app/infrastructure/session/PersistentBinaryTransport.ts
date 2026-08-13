@@ -19,18 +19,18 @@ export class PersistentBinaryTransport implements BinaryTransport {
   constructor(private readonly openSession: BinarySessionFactory) {}
 
   listen(onBytes: Listener<Uint8Array>): Unsubscribe {
-    this.refuseWhenDisposed();
     return this.notifications.add(onBytes);
   }
 
   send(bytes: Uint8Array): Promise<void> {
+    if (this.disposed) return Promise.reject(new TransportDisposedError());
     if (!this.live) return Promise.reject(new NotConnectedError());
     return this.live.transport.send(bytes);
   }
 
   /** All-or-nothing: a stream that failed to subscribe would leave the domain deaf. */
   bind(device: DeviceHandle): void {
-    this.refuseWhenDisposed();
+    if (this.disposed) return;
     const pipe = this.pipeFrom(this.openSession(device));
 
     this.unbind();
@@ -43,6 +43,7 @@ export class PersistentBinaryTransport implements BinaryTransport {
     this.live = null;
   }
 
+  /** Inert once disposed: no session opens, no listener fires, every write rejects. */
   dispose(): void {
     this.unbind();
     this.disposed = true;
@@ -53,9 +54,5 @@ export class PersistentBinaryTransport implements BinaryTransport {
       transport,
       stop: transport.listen((chunk) => this.notifications.emit(chunk)),
     };
-  }
-
-  private refuseWhenDisposed(): void {
-    if (this.disposed) throw new TransportDisposedError();
   }
 }
