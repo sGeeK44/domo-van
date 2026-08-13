@@ -3,12 +3,12 @@ import { useCallback } from "react";
 import { StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CircularTemperatureDial } from "@/components/heater/circular-temperature-dial";
-import { useHeaterDevice } from "@/composition/connection/useModuleDevice";
-import { useMultiModuleConnection } from "@/composition/connection/useMultiModuleConnection";
+import { useModuleSlot } from "@/composition/ModuleRegistryProvider";
 import { useHeaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import { Colors, PageHeader, useThemeColor } from "@/design-system";
 import { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
+import { useModulesLink } from "@/screens/hooks/useModulesLink";
 
 const DEFAULT_ZONE_STATE: HeaterZoneSnapshot = {
   temperatureCelsius: 0,
@@ -25,21 +25,9 @@ export default function HeaterScreen() {
   const styles = getStyles(colors);
   const router = useRouter();
 
-  const { isConnected } = useHeaterDevice();
+  const isConnected = useModuleSlot("heater").link.status === "online";
   const heaterSystem = useHeaterSystem();
-  const { globalStatus, connectAll, disconnectAll } =
-    useMultiModuleConnection();
-
-  const handleBluetoothPress = () => {
-    if (globalStatus === "connected" || globalStatus === "partial") {
-      void disconnectAll();
-    } else {
-      void connectAll();
-    }
-  };
-
-  const bluetoothStatus =
-    globalStatus === "connecting" ? "loading" : globalStatus;
+  const link = useModulesLink();
 
   // Subscribe to all 4 zones
   const zone0 = useObservable(
@@ -92,8 +80,8 @@ export default function HeaterScreen() {
         <PageHeader
           title="Chauffage"
           onSettingsPress={() => router.push("/heater-settings")}
-          onBluetoothPress={handleBluetoothPress}
-          bluetoothStatus={bluetoothStatus}
+          onBluetoothPress={link.reconnectAll}
+          bluetoothStatus={link.status}
         />
 
         {/* 2x2 Grid of Circular Dials */}

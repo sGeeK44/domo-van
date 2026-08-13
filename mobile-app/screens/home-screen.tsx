@@ -5,12 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BatteryGauge } from "@/components/home/battery-gauge";
 import { EnvironmentCard } from "@/components/home/environment-card";
 import { StatusCard } from "@/components/home/status-card";
-import {
-  useBatteryDevice,
-  useHeaterDevice,
-  useWaterDevice,
-} from "@/composition/connection/useModuleDevice";
-import { useMultiModuleConnection } from "@/composition/connection/useMultiModuleConnection";
+import { useModuleSlot } from "@/composition/ModuleRegistryProvider";
 import {
   useBatterySystem,
   useHeaterSystem,
@@ -23,6 +18,7 @@ import {
   formatRemainingTime,
 } from "@/domain/battery/BatteryTelemetry";
 import { EnvironmentSnapshot } from "@/domain/heater/EnvironmentData";
+import { useModulesLink } from "@/screens/hooks/useModulesLink";
 
 // Mocked data for modules not yet connected to real data
 const MOCK_WATER = {
@@ -47,11 +43,10 @@ export default function HomeScreen() {
   const styles = getStyles(colors);
   const router = useRouter();
 
-  const { globalStatus, connectAll, disconnectAll } =
-    useMultiModuleConnection();
-  const waterDevice = useWaterDevice();
-  const heaterDevice = useHeaterDevice();
-  const batteryDevice = useBatteryDevice();
+  const link = useModulesLink();
+  const waterOnline = useModuleSlot("water").link.status === "online";
+  const heaterOnline = useModuleSlot("heater").link.status === "online";
+  const batteryOnline = useModuleSlot("battery").link.status === "online";
   const batterySystem = useBatterySystem();
   const heaterSystem = useHeaterSystem();
 
@@ -66,7 +61,7 @@ export default function HomeScreen() {
 
   // Calculate remaining time based on current flow
   const remainingTime = useMemo(() => {
-    if (!batteryDevice.isConnected) return "-";
+    if (!batteryOnline) return "-";
     const hours = calculateRemainingTime(
       battery.percentage,
       battery.capacityAh,
@@ -75,21 +70,10 @@ export default function HomeScreen() {
     if (hours === null) return "-";
     const suffix = battery.current < 0 ? "restantes" : "pour charger";
     return `${formatRemainingTime(hours)} ${suffix}`;
-  }, [battery, batteryDevice.isConnected]);
+  }, [battery, batteryOnline]);
 
   // Calculate consumption in watts (negative = consuming, positive = charging)
-  const consumption = batteryDevice.isConnected ? Math.round(battery.power) : 0;
-
-  const handleBluetoothPress = () => {
-    if (globalStatus === "connected" || globalStatus === "partial") {
-      void disconnectAll();
-    } else {
-      void connectAll();
-    }
-  };
-
-  const bluetoothStatus =
-    globalStatus === "connecting" ? "loading" : globalStatus;
+  const consumption = batteryOnline ? Math.round(battery.power) : 0;
 
   return (
     <View style={styles.container}>
@@ -98,8 +82,8 @@ export default function HomeScreen() {
         <PageHeader
           title="Home"
           onSettingsPress={() => router.push("/battery-settings")}
-          onBluetoothPress={handleBluetoothPress}
-          bluetoothStatus={bluetoothStatus}
+          onBluetoothPress={link.reconnectAll}
+          bluetoothStatus={link.status}
         />
 
         {/* Content */}
@@ -111,7 +95,7 @@ export default function HomeScreen() {
               remainingTime={remainingTime}
               voltage={battery.voltage}
               consumption={consumption}
-              isConnected={batteryDevice.isConnected}
+              isConnected={batteryOnline}
             />
           </View>
 
@@ -119,26 +103,18 @@ export default function HomeScreen() {
           <View style={styles.cardsRow}>
             <StatusCard
               icon="water-drop"
-              value={
-                waterDevice.isConnected ? `${MOCK_WATER.percentage}%` : "-"
-              }
+              value={waterOnline ? `${MOCK_WATER.percentage}%` : "-"}
               backgroundColor={
-                waterDevice.isConnected
-                  ? colors.water.clean
-                  : colors.neutral["500"]
+                waterOnline ? colors.water.clean : colors.neutral["500"]
               }
               onPress={() => router.push("/water")}
             />
             <StatusCard
               icon="local-fire-department"
-              value={heaterDevice.isConnected ? "Chauffe" : "-"}
-              label={
-                heaterDevice.isConnected ? `> ${MOCK_HEATER.setpoint}°C` : "-"
-              }
+              value={heaterOnline ? "Chauffe" : "-"}
+              label={heaterOnline ? `> ${MOCK_HEATER.setpoint}°C` : "-"}
               backgroundColor={
-                heaterDevice.isConnected
-                  ? colors.heater.warm
-                  : colors.neutral["500"]
+                heaterOnline ? colors.heater.warm : colors.neutral["500"]
               }
               onPress={() => router.push("/heater")}
             />
@@ -148,25 +124,23 @@ export default function HomeScreen() {
           <EnvironmentCard
             topLeft={{
               icon: "home",
-              value: heaterDevice.isConnected
+              value: heaterOnline
                 ? `${environment.temperatureCelsius.toFixed(1)}°C`
                 : "-",
             }}
             topRight={{
               icon: "water-drop",
-              value: heaterDevice.isConnected
-                ? `${environment.humidity.toFixed(0)}%`
-                : "-",
+              value: heaterOnline ? `${environment.humidity.toFixed(0)}%` : "-",
             }}
             bottomLeft={{
               icon: "park",
-              value: heaterDevice.isConnected
+              value: heaterOnline
                 ? `${environment.exteriorTemperatureCelsius.toFixed(1)}°C`
                 : "-",
             }}
             bottomRight={{
               icon: "speed",
-              value: heaterDevice.isConnected
+              value: heaterOnline
                 ? `${environment.pressureHPa.toFixed(0)} hPa`
                 : "-",
             }}
