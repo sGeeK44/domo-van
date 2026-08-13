@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
-import { useEffect } from "react";
+import { Fragment, StrictMode, useEffect } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 
 // The container is built when ContainerProvider is imported, so the switch has
@@ -109,6 +109,18 @@ describe("the lifetime of a module system", () => {
     expect(gauge).toHaveLength(1);
   });
 
+  it("comes online through the double mount strict mode performs", async () => {
+    const { gauge, harness } = renderWaterScreen(StrictMode);
+
+    await waitFor(() => expect(shown("water-link")).toBe("online"));
+
+    expect(last(gauge)).toBeInstanceOf(WaterSystem);
+
+    await dropLink(harness);
+    await act(() => harness.reconnect());
+    await waitFor(() => expect(shown("water-link")).toBe("online"));
+  });
+
   it("keeps the last reading a dropped module reported", async () => {
     const { harness } = renderWaterScreen();
 
@@ -121,7 +133,7 @@ describe("the lifetime of a module system", () => {
   });
 });
 
-function renderWaterScreen() {
+function renderWaterScreen(Wrapper = Fragment) {
   const gauge: Water[] = [];
   const panel: Water[] = [];
   const harness: Harness = {
@@ -131,13 +143,15 @@ function renderWaterScreen() {
   };
 
   render(
-    <ContainerProvider>
-      <ModuleRegistryProvider>
-        <WaterLink harness={harness} />
-        <WaterConsumer testId="water-gauge" seen={gauge} />
-        <WaterConsumer testId="water-panel" seen={panel} />
-      </ModuleRegistryProvider>
-    </ContainerProvider>,
+    <Wrapper>
+      <ContainerProvider>
+        <ModuleRegistryProvider>
+          <WaterLink harness={harness} />
+          <WaterConsumer testId="water-gauge" seen={gauge} />
+          <WaterConsumer testId="water-panel" seen={panel} />
+        </ModuleRegistryProvider>
+      </ContainerProvider>
+    </Wrapper>,
   );
 
   return { gauge, panel, harness };

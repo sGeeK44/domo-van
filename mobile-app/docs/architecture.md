@@ -53,14 +53,17 @@ sees a connected device through the `DeviceHandle` port and asks
   Screens get their systems from `useWaterSystem()` / `useHeaterSystem()` /
   `useBatterySystem()`, never from `new`.
 - **`ModuleRegistry` owns the slots.** One slot per module type holds the
-  pairing and the link state, and `composition/ModuleRegistryProvider.tsx`
-  builds the registry once, starts it on mount and disposes it on unmount.
+  pairing and the link state. `composition/ModuleRegistryProvider.tsx` builds
+  the registry inside its mount effect and disposes it on unmount; disposal is
+  terminal, so a remount builds a fresh one rather than restarting a corpse.
   Screens read a slot with `useModuleSlot(key)` and act through
-  `useModuleRegistry()` — they never connect a device themselves.
+  `useModuleRegistry()`. The three settings screens are the exception: they
+  still take `bluetooth` from the container to run the scan and to disconnect,
+  until task T5 of issue #3 moves that behind the registry.
 - **`composition/ModuleSessions.ts` owns system lifetime**: one instance per
   **pairing**, not per connection. It is opened when the module is paired and
-  disposed when it is unpaired, and it is the only file naming `WaterSystem` /
-  `HeaterSystem` / `BatterySystem`.
+  disposed when it is unpaired, and it is the only file that constructs
+  `WaterSystem` / `HeaterSystem` / `BatterySystem`.
 - **A system outlives a link drop.** A drop only unbinds the persistent
   transport, so the domain objects — and the last values they hold — survive
   it; a reconnection rebinds those same objects and calls `resync()`. That is

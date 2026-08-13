@@ -33,12 +33,21 @@ const ModuleRegistryContext = createContext<ModuleRegistryValue | null>(null);
 /** Owns the registry for the app's lifetime: pairings, slots and the systems behind them. */
 export function ModuleRegistryProvider({ children }: PropsWithChildren) {
   const container = useContainer();
-  const [value] = useState(() => createRegistry(container));
+  const [value, setValue] = useState<ModuleRegistryValue | null>(null);
 
   useEffect(() => {
-    void value.registry.start();
-    return () => value.registry.dispose();
-  }, [value]);
+    const mounted = createRegistry(container);
+    setValue(mounted);
+    void mounted.registry.start();
+
+    return () => {
+      // dispose is terminal, so the next mount has to build its own registry
+      setValue((current) => (current === mounted ? null : current));
+      mounted.registry.dispose();
+    };
+  }, [container]);
+
+  if (!value) return null;
 
   return (
     <ModuleRegistryContext.Provider value={value}>

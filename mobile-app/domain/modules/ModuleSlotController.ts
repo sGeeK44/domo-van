@@ -187,9 +187,30 @@ export class ModuleSlotController {
 
   private attach(device: DeviceHandle): void {
     this.handle = device;
-    this.sessions.bind(this.module, device);
+    if (!this.bindSession(device)) {
+      this.failAttach(device);
+      return;
+    }
+
     this.setLink({ status: "online", since: this.now() });
     this.watch(device);
+  }
+
+  private bindSession(device: DeviceHandle): boolean {
+    try {
+      this.sessions.bind(this.module, device);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** A device that cannot carry a session is as good as never connected, and stays reconnectable. */
+  private failAttach(device: DeviceHandle): void {
+    this.detach();
+    this.sessions.unbind(this.module);
+    this.setLink(offline(this.now()));
+    void this.releaseHandle(device);
   }
 
   private watch(device: DeviceHandle): void {
