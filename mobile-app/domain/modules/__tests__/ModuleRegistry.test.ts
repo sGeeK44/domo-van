@@ -104,21 +104,31 @@ class StubConnector implements DeviceConnector {
   }
 
   settleConnect(deviceId: string): void {
-    this.takeDeferred(deviceId, "last")?.resolve(handleFor(deviceId));
+    this.takeLiveConnect(deviceId)?.resolve(handleFor(deviceId));
   }
 
-  /** Settles the attempt a previous timeout walked away from. */
   settleAbandonedConnect(deviceId: string): void {
-    this.takeDeferred(deviceId, "first")?.resolve(handleFor(deviceId));
+    this.takeAbandonedConnect(deviceId)?.resolve(handleFor(deviceId));
   }
 
   rejectConnect(deviceId: string, error: Error): void {
-    this.takeDeferred(deviceId, "last")?.reject(error);
+    this.takeLiveConnect(deviceId)?.reject(error);
   }
 
-  private takeDeferred(deviceId: string, end: "first" | "last") {
+  private takeLiveConnect(deviceId: string) {
+    return this.takeDeferred(deviceId, (waiting) => waiting.pop());
+  }
+
+  private takeAbandonedConnect(deviceId: string) {
+    return this.takeDeferred(deviceId, (waiting) => waiting.shift());
+  }
+
+  private takeDeferred(
+    deviceId: string,
+    take: (waiting: DeferredConnect[]) => DeferredConnect | undefined,
+  ) {
     const waiting = this.deferred.get(deviceId) ?? [];
-    const waiter = end === "first" ? waiting.shift() : waiting.pop();
+    const waiter = take(waiting);
     if (waiting.length === 0) this.deferred.delete(deviceId);
     return waiter;
   }
@@ -254,6 +264,26 @@ describe("ModuleRegistry", () => {
     });
   });
 
+  it("connects the restored modules side by side, so a slow one holds up nothing", async () => {
+    const { repository, connector, registry } = setup();
+    repository.store("water", WATER_DEVICE);
+    repository.store("heater", HEATER_DEVICE);
+    connector.deferConnects();
+
+    const starting = registry.start();
+    await connector.whenConnectRequested("heater-1");
+
+    expect(connector.connectCalls).toEqual(["water-1", "heater-1"]);
+    connector.settleConnect("heater-1");
+    await flushMicrotasks();
+
+    expect(registry.slotOf("heater").link.status).toBe("online");
+    expect(registry.slotOf("water").link.status).toBe("connecting");
+
+    connector.settleConnect("water-1");
+    await starting;
+  });
+
   it("keeps the catalogue order and exposes one slot per module", () => {
     const { registry } = setup();
 
@@ -313,6 +343,26 @@ describe("ModuleRegistry", () => {
     expect(connector.connectCalls).toEqual(["water-1"]);
     expect(sessions.actionsOn("water")).toEqual(["open", "bind"]);
     expect(registry.slotOf("water")).toEqual(slotBefore);
+  });
+
+  it("names the occupied slot on the refusal", async () => {
+    const { registry } = setup();
+    await registry.pair("water", WATER_DEVICE);
+
+    const refusal = await registry
+      .pair("water", { id: "water-2", name: "Another Water" })
+      .catch((error: unknown) => error);
+
+    expect(refusal).toBeInstanceOf(SlotOccupiedError);
+    expect((refusal as SlotOccupiedError).key).toBe("water");
+  });
+
+  it("refuses a slot lookup outside the catalogue", () => {
+    const { registry } = setup();
+
+    expect(() => registry.slotOf("fridge" as ModuleKey)).toThrow(
+      'Unknown module "fridge"',
+    );
   });
 
   it("closes the session, clears storage and frees the slot on unpair", async () => {
@@ -545,6 +595,33 @@ describe("ModuleRegistry", () => {
       link: { status: "offline", lastContactAt: null },
     });
     expect(connector.watcherCount("water-1")).toBe(0);
+  });
+
+  it("keeps the replacement paired when it lands during the storage clear of an unpair", async () => {
+    const { repository, sessions, registry } = setup();
+    const replacement = { id: "water-2", name: "Replacement Water" };
+    await registry.pair("water", WATER_DEVICE);
+    repository.blockClears();
+
+    const unpairing = registry.unpair("water");
+    const repairing = registry.pair("water", replacement);
+    repository.releaseClears();
+    await Promise.all([unpairing, repairing]);
+
+    expect(await repository.getLastDevice("water")).toEqual(replacement);
+    expect(repository.clears).toEqual(["water"]);
+    expect(registry.slotOf("water")).toMatchObject({
+      pairing: replacement,
+      link: { status: "online" },
+    });
+    expect(sessions.actionsOn("water")).toEqual([
+      "open",
+      "bind",
+      "unbind",
+      "close",
+      "open",
+      "bind",
+    ]);
   });
 
   it("keeps the live link when a timed-out connect lands on the same device", async () => {

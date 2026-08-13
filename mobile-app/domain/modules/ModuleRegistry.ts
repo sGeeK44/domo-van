@@ -5,43 +5,22 @@ import {
   type Observable,
   type Unsubscribe,
 } from "@/core/observable";
-import {
-  ALL_MODULES,
-  type ModuleDescriptor,
-  type ModuleKey,
-} from "@/domain/modules/ModuleDescriptor";
-import type { LinkState, ModuleSlot } from "@/domain/modules/ModuleSlot";
+import { ALL_MODULES, type ModuleKey } from "@/domain/modules/ModuleDescriptor";
+import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
+import { ModuleSlotController } from "@/domain/modules/ModuleSlotController";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 import type { DeviceConnector } from "@/domain/ports/DeviceConnector";
-import type { DeviceHandle } from "@/domain/ports/DeviceHandle";
 import type {
   DeviceInfo,
   DeviceRepository,
 } from "@/domain/ports/DeviceRepository";
 import type { ModuleSessions } from "@/domain/ports/ModuleSessions";
 
+export { SlotOccupiedError } from "@/domain/modules/SlotOccupiedError";
+
 const DEFAULT_CONNECT_TIMEOUT_MS = 15_000;
 
-export class SlotOccupiedError extends Error {
-  constructor(readonly key: ModuleKey) {
-    super(`Module slot "${key}" already holds a pairing`);
-    this.name = "SlotOccupiedError";
-  }
-}
-
-function offline(lastContactAt: number | null = null): LinkState {
-  return { status: "offline", lastContactAt };
-}
-
-function lastContactOf(link: LinkState): number | null {
-  if (link.status === "online") return link.since;
-  if (link.status === "offline") return link.lastContactAt;
-  return null;
-}
-
-type PairedEntry = { module: ModuleDescriptor; pairing: DeviceInfo };
-
-type AbortConnect = (reason: string) => void;
+type StoredPairing = { controller: ModuleSlotController; pairing: DeviceInfo };
 
 export type ModuleRegistryDeps = {
   repository: DeviceRepository;
@@ -53,26 +32,24 @@ export type ModuleRegistryDeps = {
 
 export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
   private readonly repository: DeviceRepository;
-  private readonly connector: DeviceConnector;
-  private readonly sessions: ModuleSessions;
-  private readonly now: () => number;
-  private readonly connectTimeoutMs: number;
+  private readonly controllers: readonly ModuleSlotController[];
   private readonly slots: MutableObservable<readonly ModuleSlot[]>;
-  private readonly handles = new Map<ModuleKey, DeviceHandle>();
-  private readonly linkWatchers = new Map<ModuleKey, Unsubscribe>();
-  private readonly epochs = new Map<ModuleKey, number>();
-  private readonly pendingConnects = new Map<ModuleKey, AbortConnect>();
-  private disposed = false;
 
   constructor(deps: ModuleRegistryDeps) {
     this.repository = deps.repository;
-    this.connector = deps.connector;
-    this.sessions = deps.sessions;
-    this.now = deps.now ?? Date.now;
-    this.connectTimeoutMs = deps.connectTimeoutMs ?? DEFAULT_CONNECT_TIMEOUT_MS;
-    this.slots = createObservable<readonly ModuleSlot[]>(
-      ALL_MODULES.map((module) => ({ module, pairing: null, link: offline() })),
+    this.controllers = ALL_MODULES.map(
+      (module) =>
+        new ModuleSlotController({
+          module,
+          repository: deps.repository,
+          connector: deps.connector,
+          sessions: deps.sessions,
+          now: deps.now ?? Date.now,
+          connectTimeoutMs: deps.connectTimeoutMs ?? DEFAULT_CONNECT_TIMEOUT_MS,
+          onChange: () => this.publish(),
+        }),
     );
+    this.slots = createObservable<readonly ModuleSlot[]>(this.snapshot());
   }
 
   getValue(): readonly ModuleSlot[] {
@@ -84,265 +61,67 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
   }
 
   slotOf(key: ModuleKey): ModuleSlot {
-    const slot = this.slots
-      .getValue()
-      .find((candidate) => candidate.module.key === key);
-    if (!slot) throw new Error(`Unknown module "${key}"`);
-    return slot;
+    return this.controllerOf(key).snapshot();
   }
 
   async start(): Promise<void> {
-    const restored = await this.restorePairings();
-    const paired = restored.filter((entry) => this.isFree(entry.module.key));
-
-    for (const entry of paired) {
-      this.patch(entry.module.key, { pairing: entry.pairing });
-      this.sessions.open(entry.module, entry.pairing);
-    }
+    const stored = await this.storedPairings();
 
     await Promise.allSettled(
-      paired.map((entry) => this.connect(entry.module.key)),
+      stored.map((entry) => entry.controller.restore(entry.pairing)),
     );
   }
 
   async pair(key: ModuleKey, device: DiscoveredBluetoothDevice): Promise<void> {
-    const slot = this.slotOf(key);
-    if (slot.pairing) throw new SlotOccupiedError(key);
-
-    const pairing: DeviceInfo = {
+    const controller = this.controllerOf(key);
+    await controller.claim({
       id: device.id,
-      name: device.name || slot.module.displayName,
-    };
-    this.claimSlot(key, pairing);
-    const epoch = this.epochOf(key);
-
-    try {
-      await this.repository.setLastDevice(pairing, key);
-    } catch (error) {
-      this.restoreSlot(key, slot);
-      throw error;
-    }
-
-    if (this.isStale(key, epoch, pairing)) return;
-
-    this.sessions.open(slot.module, pairing);
-
-    await this.connect(key);
-  }
-
-  async unpair(key: ModuleKey): Promise<void> {
-    const slot = this.slotOf(key);
-    if (!slot.pairing) return;
-
-    this.bumpEpoch(key);
-    this.abortPendingConnect(key, "Module unpaired");
-    const handle = this.handles.get(key);
-    this.stopWatching(key);
-    this.handles.delete(key);
-    this.patch(key, { pairing: null, link: offline() });
-
-    this.sessions.unbind(slot.module);
-    this.sessions.close(slot.module);
-
-    if (handle) await this.releaseHandle(handle);
-
-    await this.repository.clearLastDevice(key);
-  }
-
-  async reconnect(key: ModuleKey): Promise<void> {
-    const slot = this.slotOf(key);
-    if (!slot.pairing || slot.link.status !== "offline") return;
-
-    await this.connect(key);
-  }
-
-  dispose(): void {
-    this.disposed = true;
-    for (const abort of [...this.pendingConnects.values()])
-      abort("Registry disposed");
-    this.pendingConnects.clear();
-    for (const slot of this.slots.getValue()) {
-      this.stopWatching(slot.module.key);
-      if (slot.pairing) this.sessions.close(slot.module);
-    }
-    this.handles.clear();
-    this.slots.destroy();
-  }
-
-  private async connect(key: ModuleKey): Promise<void> {
-    if (this.disposed) return;
-
-    const slot = this.slotOf(key);
-    const pairing = slot.pairing;
-    if (!pairing || slot.link.status !== "offline") return;
-
-    const lastContactAt = lastContactOf(slot.link);
-    const epoch = this.epochOf(key);
-    this.patch(key, { link: { status: "connecting" } });
-
-    let device: DeviceHandle;
-    try {
-      device = await this.connectWithTimeout(key, pairing.id);
-    } catch {
-      if (this.isStale(key, epoch, pairing)) return;
-      this.patch(key, { link: offline(lastContactAt) });
-      return;
-    }
-
-    if (this.isStale(key, epoch, pairing)) {
-      await this.releaseHandle(device);
-      return;
-    }
-
-    this.attachLink(key, slot.module, device);
-  }
-
-  private connectWithTimeout(
-    key: ModuleKey,
-    deviceId: string,
-  ): Promise<DeviceHandle> {
-    this.abortPendingConnect(key, "Superseded by a newer connect");
-    return new Promise<DeviceHandle>((resolve, reject) => {
-      let pending = true;
-      const settle = () => {
-        pending = false;
-        clearTimeout(timer);
-        if (this.pendingConnects.get(key) === abort)
-          this.pendingConnects.delete(key);
-      };
-      const abort: AbortConnect = (reason) => {
-        if (!pending) return;
-        settle();
-        reject(new Error(reason));
-      };
-      const timer = setTimeout(
-        () => abort("Connection timeout"),
-        this.connectTimeoutMs,
-      );
-      this.pendingConnects.set(key, abort);
-
-      this.connector.connect(deviceId).then(
-        (device) => {
-          if (!pending) {
-            void this.releaseHandle(device);
-            return;
-          }
-          settle();
-          resolve(device);
-        },
-        (error: unknown) => {
-          if (!pending) return;
-          settle();
-          reject(error);
-        },
-      );
+      name: device.name || controller.module.displayName,
     });
   }
 
-  private attachLink(
-    key: ModuleKey,
-    module: ModuleDescriptor,
-    device: DeviceHandle,
-  ): void {
-    this.stopWatching(key);
-    this.handles.set(key, device);
-    this.sessions.bind(module, device);
-    this.patch(key, { link: { status: "online", since: this.now() } });
-    this.watchLink(key, device);
+  async unpair(key: ModuleKey): Promise<void> {
+    await this.controllerOf(key).release();
   }
 
-  private watchLink(key: ModuleKey, device: DeviceHandle): void {
-    const stop = this.connector.onDisconnected(device, () =>
-      this.dropLink(key),
+  async reconnect(key: ModuleKey): Promise<void> {
+    await this.controllerOf(key).reconnect();
+  }
+
+  dispose(): void {
+    for (const controller of this.controllers) controller.dispose();
+    this.slots.destroy();
+  }
+
+  private async storedPairings(): Promise<StoredPairing[]> {
+    const reads = await Promise.allSettled(
+      this.controllers.map((controller) => this.storedPairing(controller)),
     );
-    if (this.handles.get(key) === device) this.linkWatchers.set(key, stop);
-    else stop();
-  }
-
-  private async releaseHandle(device: DeviceHandle): Promise<void> {
-    // a handle is device-id-keyed, so releasing it would tear down the live link
-    if (this.isAttached(device)) return;
-    try {
-      await this.connector.disconnect(device);
-    } catch {
-      // the radio link may already be down
-    }
-  }
-
-  private isAttached(device: DeviceHandle): boolean {
-    for (const attached of this.handles.values())
-      if (attached.id === device.id) return true;
-    return false;
-  }
-
-  private abortPendingConnect(key: ModuleKey, reason: string): void {
-    this.pendingConnects.get(key)?.(reason);
-  }
-
-  private async restorePairings(): Promise<PairedEntry[]> {
-    const restored = await Promise.allSettled(
-      ALL_MODULES.map((module) => this.storedPairing(module)),
-    );
-    return restored.flatMap((entry) =>
-      entry.status === "fulfilled" && entry.value ? [entry.value] : [],
+    return reads.flatMap((read) =>
+      read.status === "fulfilled" && read.value ? [read.value] : [],
     );
   }
 
   private async storedPairing(
-    module: ModuleDescriptor,
-  ): Promise<PairedEntry | null> {
-    const pairing = await this.repository.getLastDevice(module.key);
-    return pairing ? { module, pairing } : null;
+    controller: ModuleSlotController,
+  ): Promise<StoredPairing | null> {
+    const pairing = await this.repository.getLastDevice(controller.module.key);
+    return pairing ? { controller, pairing } : null;
   }
 
-  private isFree(key: ModuleKey): boolean {
-    return this.slotOf(key).pairing === null;
-  }
-
-  private claimSlot(key: ModuleKey, pairing: DeviceInfo): void {
-    this.bumpEpoch(key);
-    this.patch(key, { pairing });
-  }
-
-  private restoreSlot(key: ModuleKey, previous: ModuleSlot): void {
-    this.bumpEpoch(key);
-    this.patch(key, { pairing: previous.pairing, link: previous.link });
-  }
-
-  private isStale(key: ModuleKey, epoch: number, pairing: DeviceInfo): boolean {
-    return (
-      this.disposed ||
-      this.epochOf(key) !== epoch ||
-      this.slotOf(key).pairing?.id !== pairing.id
+  private controllerOf(key: ModuleKey): ModuleSlotController {
+    const controller = this.controllers.find(
+      (candidate) => candidate.module.key === key,
     );
+    if (!controller) throw new Error(`Unknown module "${key}"`);
+    return controller;
   }
 
-  private epochOf(key: ModuleKey): number {
-    return this.epochs.get(key) ?? 0;
+  private snapshot(): readonly ModuleSlot[] {
+    return this.controllers.map((controller) => controller.snapshot());
   }
 
-  private bumpEpoch(key: ModuleKey): void {
-    this.epochs.set(key, this.epochOf(key) + 1);
-  }
-
-  private dropLink(key: ModuleKey): void {
-    const slot = this.slotOf(key);
-    this.stopWatching(key);
-    this.handles.delete(key);
-    this.sessions.unbind(slot.module);
-    this.patch(key, { link: offline(this.now()) });
-  }
-
-  private stopWatching(key: ModuleKey): void {
-    this.linkWatchers.get(key)?.();
-    this.linkWatchers.delete(key);
-  }
-
-  private patch(key: ModuleKey, change: Partial<ModuleSlot>): void {
-    this.slots.update((slots) =>
-      slots.map((slot) =>
-        slot.module.key === key ? { ...slot, ...change } : slot,
-      ),
-    );
+  private publish(): void {
+    this.slots.setValue(this.snapshot());
   }
 }

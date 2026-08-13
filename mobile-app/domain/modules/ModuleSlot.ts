@@ -6,7 +6,6 @@ export type LinkState =
   | { status: "connecting" }
   | { status: "online"; since: number };
 
-/** A typed place in the van. `pairing === null` is the dashed placeholder. */
 export type ModuleSlot = {
   module: ModuleDescriptor;
   pairing: DeviceInfo | null;
