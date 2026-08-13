@@ -142,7 +142,7 @@ export class ModuleSlotController {
       this.setLink(offline(target.lastContactAt));
       return;
     }
-    this.attach(outcome.device);
+    this.attach(outcome.device, target.lastContactAt);
   }
 
   private connectTarget(): ConnectTarget | null {
@@ -185,10 +185,10 @@ export class ModuleSlotController {
     this.pendingAbort?.();
   }
 
-  private attach(device: DeviceHandle): void {
+  private attach(device: DeviceHandle, lastContactAt: number | null): void {
     this.handle = device;
     if (!this.bindSession(device)) {
-      this.failAttach(device);
+      this.failAttach(device, lastContactAt);
       return;
     }
 
@@ -206,10 +206,10 @@ export class ModuleSlotController {
   }
 
   /** A device that cannot carry a session is as good as never connected, and stays reconnectable. */
-  private failAttach(device: DeviceHandle): void {
+  private failAttach(device: DeviceHandle, lastContactAt: number | null): void {
     this.detach();
     this.sessions.unbind(this.module);
-    this.setLink(offline(this.now()));
+    this.setLink(offline(lastContactAt));
     void this.releaseHandle(device);
   }
 

@@ -1,13 +1,17 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   useModuleRegistry,
   useModuleSlots,
 } from "@/composition/ModuleRegistryProvider";
-import type { StatusBadgeProps } from "@/design-system";
-import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
+import {
+  aggregateLinkStatus,
+  type ModulesLinkStatus,
+  reconnectableKeys,
+} from "@/domain/modules/ModulesLink";
 
 type ModulesLink = {
-  status: StatusBadgeProps["status"];
+  status: ModulesLinkStatus;
+  canReconnect: boolean;
   reconnectAll: () => void;
 };
 
@@ -15,26 +19,15 @@ type ModulesLink = {
 export function useModulesLink(): ModulesLink {
   const slots = useModuleSlots();
   const { reconnect } = useModuleRegistry();
+  const reconnectable = useMemo(() => reconnectableKeys(slots), [slots]);
 
   const reconnectAll = useCallback(() => {
-    for (const slot of slots) {
-      if (slot.pairing && slot.link.status === "offline") {
-        void reconnect(slot.module.key);
-      }
-    }
-  }, [slots, reconnect]);
+    for (const key of reconnectable) void reconnect(key);
+  }, [reconnectable, reconnect]);
 
-  return { status: aggregateStatus(slots), reconnectAll };
-}
-
-function aggregateStatus(
-  slots: readonly ModuleSlot[],
-): StatusBadgeProps["status"] {
-  const paired = slots.filter((slot) => slot.pairing !== null);
-  if (paired.some((slot) => slot.link.status === "connecting"))
-    return "loading";
-
-  const online = paired.filter((slot) => slot.link.status === "online").length;
-  if (paired.length > 0 && online === paired.length) return "connected";
-  return online > 0 ? "partial" : "disconnected";
+  return {
+    status: aggregateLinkStatus(slots),
+    canReconnect: reconnectable.length > 0,
+    reconnectAll,
+  };
 }

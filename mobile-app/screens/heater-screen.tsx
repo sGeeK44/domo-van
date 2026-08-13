@@ -82,6 +82,7 @@ export default function HeaterScreen() {
           onSettingsPress={() => router.push("/heater-settings")}
           onBluetoothPress={link.reconnectAll}
           bluetoothStatus={link.status}
+          bluetoothDisabled={!link.canReconnect}
         />
 
         {/* 2x2 Grid of Circular Dials */}

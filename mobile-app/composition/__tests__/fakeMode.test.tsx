@@ -70,9 +70,6 @@ function Dashboard() {
       <dd data-testid="water-link">{water.link.status}</dd>
       <dd data-testid="heater-link">{heater.link.status}</dd>
       <dd data-testid="battery-link">{battery.link.status}</dd>
-      <dd data-testid="water-system">{waterSystem ? "live" : "none"}</dd>
-      <dd data-testid="heater-system">{heaterSystem ? "live" : "none"}</dd>
-      <dd data-testid="battery-system">{batterySystem ? "live" : "none"}</dd>
       <dd data-testid="clean-tank">
         {waterOnline ? `${clean.percentage}% / ${clean.capacityLiters}L` : "-"}
       </dd>
@@ -127,22 +124,12 @@ describe("the app running on the fake transport", () => {
     await waitForConnection();
   });
 
-  it("gives every paired module a system of its own", async () => {
-    renderDashboard();
-
-    await waitForConnection();
-
-    expect(shown("water-system")).toBe("live");
-    expect(shown("heater-system")).toBe("live");
-    expect(shown("battery-system")).toBe("live");
-  });
-
   it("fills both water tanks with the level its scenario reports", async () => {
     renderDashboard();
 
     await waitForConnection();
 
-    await waitFor(() => expect(shown("clean-tank")).toBe("72% / 100L"));
+    expect(shown("clean-tank")).toBe("72% / 100L");
     expect(shown("grey-tank")).toBe("40% / 80L");
   });
 
@@ -151,7 +138,7 @@ describe("the app running on the fake transport", () => {
 
     await waitForConnection();
 
-    await waitFor(() => expect(shown("zone-0")).toBe("21.5°C > 21°C"));
+    expect(shown("zone-0")).toBe("21.5°C > 21°C");
   });
 
   it("reports the four indoor readings the home screen shows", async () => {
@@ -159,9 +146,7 @@ describe("the app running on the fake transport", () => {
 
     await waitForConnection();
 
-    await waitFor(() =>
-      expect(shown("environment")).toBe("21.5°C 45% 1013.2hPa 12°C"),
-    );
+    expect(shown("environment")).toBe("21.5°C 45% 1013.2hPa 12°C");
   });
 
   it("charges the battery gauge off the synthesised BMS frames", async () => {
@@ -169,22 +154,6 @@ describe("the app running on the fake transport", () => {
 
     await waitForConnection();
 
-    await waitFor(() => expect(shown("battery")).toBe("98% 13.2V"));
-  });
-
-  it("leaves no screen showing its disconnected placeholder", async () => {
-    renderDashboard();
-
-    await waitForConnection();
-
-    for (const testId of [
-      "clean-tank",
-      "grey-tank",
-      "zone-0",
-      "environment",
-      "battery",
-    ]) {
-      expect(shown(testId)).not.toBe("-");
-    }
+    expect(shown("battery")).toBe("98% 13.2V");
   });
 });

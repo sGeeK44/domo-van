@@ -34,6 +34,7 @@ export function IconCircleButton({
             height: size,
             borderRadius: size / 2,
           },
+          props.disabled === true && styles.inert,
         ]}
       >
         <IconSymbol name={icon} size={iconSize} color={resolvedIconColor} />
@@ -53,5 +54,8 @@ const getStyles = (colors: ThemeColors) =>
       justifyContent: "center",
       alignItems: "center",
       position: "relative",
+    },
+    inert: {
+      opacity: 0.4,
     },
   });
