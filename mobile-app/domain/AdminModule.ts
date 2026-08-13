@@ -43,12 +43,12 @@ export class AdminModule implements Observable<AdminSnapshot> {
     });
   };
 
-  setName(name: string) {
-    this.channel.send(`NAME:${name}`);
+  setName(name: string): Promise<void> {
+    return this.channel.send(`NAME:${name}`);
   }
 
-  setPin(pin: string) {
-    this.channel.send(`PIN:${pin}`);
+  setPin(pin: string): Promise<void> {
+    return this.channel.send(`PIN:${pin}`);
   }
 
   dispose = () => {
