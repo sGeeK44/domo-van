@@ -13,6 +13,10 @@ export type ModuleDescriptor = {
   serviceId: string | null;
   /** Service UUID advertised by the device, used to filter a BLE scan. */
   scanServiceUuid: string;
+  /** Label of the tab the module gets once it is paired. */
+  tabTitle: string;
+  /** Icon name, a plain string so the catalogue names no icon set. */
+  tabIcon: string;
 };
 
 export const WATER_MODULE: ModuleDescriptor = {
@@ -20,6 +24,8 @@ export const WATER_MODULE: ModuleDescriptor = {
   displayName: "Water Module",
   serviceId: "0001",
   scanServiceUuid: buildServiceUuid("0001"),
+  tabTitle: "Eau",
+  tabIcon: "water-drop",
 };
 
 export const HEATER_MODULE: ModuleDescriptor = {
@@ -27,6 +33,8 @@ export const HEATER_MODULE: ModuleDescriptor = {
   displayName: "Heater Module",
   serviceId: "0002",
   scanServiceUuid: buildServiceUuid("0002"),
+  tabTitle: "Chauff",
+  tabIcon: "local-fire-department",
 };
 
 export const BATTERY_MODULE: ModuleDescriptor = {
@@ -34,12 +42,15 @@ export const BATTERY_MODULE: ModuleDescriptor = {
   displayName: "JK BMS",
   serviceId: null,
   scanServiceUuid: JK_BMS_SERVICE_UUID,
+  tabTitle: "Batt",
+  tabIcon: "battery-full",
 };
 
+/** Catalogue order is display order: it drives the tab bar and the dashboard. */
 export const ALL_MODULES: readonly ModuleDescriptor[] = [
+  BATTERY_MODULE,
   WATER_MODULE,
   HEATER_MODULE,
-  BATTERY_MODULE,
 ];
 
 /** Every service worth listening to, so one scan finds all module types. */

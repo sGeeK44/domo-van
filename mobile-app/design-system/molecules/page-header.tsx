@@ -11,8 +11,9 @@ import { Spacing } from "@/design-system/tokens";
 export type PageHeaderProps = {
   title: string;
   onSettingsPress: () => void;
-  onBluetoothPress: () => void;
-  bluetoothStatus: StatusBadgeProps["status"];
+  /** A page whose modules each show their own status has no global button. */
+  onBluetoothPress?: () => void;
+  bluetoothStatus?: StatusBadgeProps["status"];
   bluetoothDisabled?: boolean;
 };
 
@@ -33,13 +34,15 @@ export function PageHeader({
           icon={colorScheme === "dark" ? "light-mode" : "dark-mode"}
           onPress={toggleTheme}
         />
-        <IconCircleButton
-          icon="bluetooth"
-          onPress={onBluetoothPress}
-          disabled={bluetoothDisabled}
-        >
-          <StatusBadge status={bluetoothStatus} />
-        </IconCircleButton>
+        {onBluetoothPress && bluetoothStatus && (
+          <IconCircleButton
+            icon="bluetooth"
+            onPress={onBluetoothPress}
+            disabled={bluetoothDisabled}
+          >
+            <StatusBadge status={bluetoothStatus} />
+          </IconCircleButton>
+        )}
         <IconCircleButton icon="settings" onPress={onSettingsPress} />
       </View>
     </View>

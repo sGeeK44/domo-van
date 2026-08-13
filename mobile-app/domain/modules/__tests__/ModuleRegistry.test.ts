@@ -311,9 +311,9 @@ describe("ModuleRegistry", () => {
     const { registry } = setup();
 
     expect(registry.getValue().map((slot) => slot.module.key)).toEqual([
+      "battery",
       "water",
       "heater",
-      "battery",
     ]);
   });
 
