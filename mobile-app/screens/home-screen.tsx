@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BatteryGauge } from "@/components/home/battery-gauge";
 import { EmptySlotCard } from "@/components/home/empty-slot-card";
 import { EnvironmentCard } from "@/components/home/environment-card";
+import { environmentReadings } from "@/components/home/environment-view";
 import { ModuleCard } from "@/components/home/module-card";
 import { StatusCard } from "@/components/home/status-card";
 import {
@@ -76,6 +77,7 @@ export default function HomeScreen() {
   const heat = useHeaterSummary();
 
   const batteryOnline = batterySlot.link.status === "online";
+  const heaterOnline = heaterSlot.link.status === "online";
   const heaterPaired = heaterSlot.pairing !== null;
 
   const remainingTime = useMemo(() => {
@@ -152,22 +154,7 @@ export default function HomeScreen() {
 
           {heaterPaired && (
             <EnvironmentCard
-              topLeft={{
-                icon: "home",
-                value: `${environment.temperatureCelsius.toFixed(1)}°C`,
-              }}
-              topRight={{
-                icon: "water-drop",
-                value: `${environment.humidity.toFixed(0)}%`,
-              }}
-              bottomLeft={{
-                icon: "park",
-                value: `${environment.exteriorTemperatureCelsius.toFixed(1)}°C`,
-              }}
-              bottomRight={{
-                icon: "speed",
-                value: `${environment.pressureHPa.toFixed(0)} hPa`,
-              }}
+              {...environmentReadings(environment, heaterOnline)}
               backgroundColor={colors.background.secondary}
             />
           )}

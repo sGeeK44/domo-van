@@ -2,6 +2,7 @@ import type { PropsWithChildren } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { LinkBadge } from "@/components/home/link-badge";
 import { linkSubtitle, reconnectAction } from "@/components/home/link-view";
+import { useLinkClock } from "@/components/home/use-link-clock";
 import {
   Button,
   FontSize,
@@ -19,7 +20,8 @@ export type ModuleCardProps = PropsWithChildren<{
 export function ModuleCard({ link, onReconnect, children }: ModuleCardProps) {
   const colors = useThemeColor();
   const styles = getStyles(colors);
-  const subtitle = linkSubtitle(link, Date.now());
+  const now = useLinkClock(link);
+  const subtitle = linkSubtitle(link, now);
   const action = reconnectAction(link);
 
   return (

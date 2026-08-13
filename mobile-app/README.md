@@ -20,9 +20,10 @@
    EXPO_PUBLIC_FAKE_BLE=1 npm start
    ```
 
-   Every screen renders real data served by the fakes in
+   Every screen but *Batt* renders real data served by the fakes in
    `infrastructure/fake/` — Bord included, which no longer holds a hardcoded
-   constant. The install boots already paired, so the tab bar shows
+   constant; *Batt* still reads "Écran batterie à venir." The install boots
+   already paired, so the tab bar shows
    *Bord / Batt / Eau / Chauff* straight away. See
    [docs/architecture.md](docs/architecture.md#running-without-hardware) for
    what each module serves and how to add a scenario.

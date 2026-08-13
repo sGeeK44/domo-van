@@ -28,6 +28,11 @@ export function dashboardRedirect(
   return open && !open.visible ? DASHBOARD_ROUTE : null;
 }
 
+/** `href: null` hides the button and keeps the route registered, so nothing remounts on pairing. */
+export function hrefOption(tab: ModuleTab): { href?: null } {
+  return tab.visible ? {} : { href: null };
+}
+
 /** Every tab the bar registers: the dashboard, then one per module, hidden until paired. */
 export function moduleTabs(slots: readonly ModuleSlot[]): readonly ModuleTab[] {
   return [

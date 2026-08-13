@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { useEffect } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   linkSubtitle,
   linkTone,
@@ -9,6 +9,7 @@ import {
 } from "@/components/home/link-view";
 import type { ModuleKey } from "@/domain/modules/ModuleDescriptor";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
+import type { DeviceRepository } from "@/domain/ports/DeviceRepository";
 
 // The container is built when ContainerProvider is imported, so the switch has
 // to be flipped before that import — hence the dynamic imports below.
@@ -20,8 +21,13 @@ const { ContainerProvider, useContainer } = await import(
 const { ModuleRegistryProvider, useModuleRegistry, useModuleSlot } =
   await import("@/composition/ModuleRegistryProvider");
 const { WATER_MODULE } = await import("@/domain/modules/ModuleDescriptor");
-const { FakeBluetooth } = await import("@/infrastructure/fake/FakeBluetooth");
+const { FakeBluetooth, fakePairedDevices } = await import(
+  "@/infrastructure/fake/FakeBluetooth"
+);
 const { useModuleTabs } = await import("@/screens/hooks/useModuleTabs");
+
+// The container is a module singleton, so a test that unpairs leaks into the next one.
+let sharedPairings: DeviceRepository | null = null;
 
 type Radio = InstanceType<typeof FakeBluetooth>;
 
@@ -41,6 +47,7 @@ function TabBar({ harness }: { harness: Harness }) {
 
   useEffect(() => {
     harness.radio = fakeRadio(container);
+    sharedPairings = container.deviceRepository;
     harness.deviceId = water.pairing?.id ?? null;
     harness.pair = pair;
     harness.unpair = unpair;
@@ -127,6 +134,12 @@ const ALL_TABS = "Bord Batt Eau Chauff";
 describe("the tab bar a module registry feeds", () => {
   afterEach(cleanup);
 
+  beforeEach(async () => {
+    for (const [key, device] of fakePairedDevices()) {
+      await sharedPairings?.setLastDevice(device, key);
+    }
+  });
+
   it("gives every stored pairing its tab and connects with no further action", async () => {
     renderTabBar();
 
@@ -173,7 +186,6 @@ describe("the tab bar a module registry feeds", () => {
     expect(shown("water-action")).toBe("");
   });
 
-  // Last: it leaves the shared fake container with the heater and battery unpaired.
   it("shows the dashboard alone until a module is paired", async () => {
     const harness = renderTabBar();
     await waitFor(() => expect(shown("visible")).toBe(ALL_TABS));

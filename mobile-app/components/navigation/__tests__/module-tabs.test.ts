@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   dashboardRedirect,
+  hrefOption,
   moduleTabs,
 } from "@/components/navigation/module-tabs";
 import {
@@ -68,6 +69,13 @@ describe("the tabs a module registry asks for", () => {
       "index",
       ...ALL_MODULES.map((module) => module.key),
     ]);
+  });
+
+  it("hides a tab with `href: null` and never by dropping its screen", () => {
+    const [dashboard, battery] = moduleTabs([slot(ALL_MODULES[0], false)]);
+
+    expect(hrefOption(dashboard)).not.toHaveProperty("href");
+    expect(hrefOption(battery)).toEqual({ href: null });
   });
 
   it("sends back to the dashboard the user whose open tab was just unpaired", () => {
