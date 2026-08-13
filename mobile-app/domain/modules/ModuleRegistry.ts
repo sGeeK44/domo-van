@@ -61,7 +61,7 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
   private readonly handles = new Map<ModuleKey, DeviceHandle>();
   private readonly linkWatchers = new Map<ModuleKey, Unsubscribe>();
   private readonly epochs = new Map<ModuleKey, number>();
-  private readonly pendingConnects = new Set<AbortConnect>();
+  private readonly pendingConnects = new Map<ModuleKey, AbortConnect>();
   private disposed = false;
 
   constructor(deps: ModuleRegistryDeps) {
@@ -92,15 +92,8 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
   }
 
   async start(): Promise<void> {
-    const restored = await Promise.all(
-      ALL_MODULES.map(async (module) => ({
-        module,
-        pairing: await this.repository.getLastDevice(module.key),
-      })),
-    );
-    const paired = restored.filter(
-      (entry): entry is PairedEntry => entry.pairing !== null,
-    );
+    const restored = await this.restorePairings();
+    const paired = restored.filter((entry) => this.isFree(entry.module.key));
 
     for (const entry of paired) {
       this.patch(entry.module.key, { pairing: entry.pairing });
@@ -121,6 +114,7 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
       name: device.name || slot.module.displayName,
     };
     this.claimSlot(key, pairing);
+    const epoch = this.epochOf(key);
 
     try {
       await this.repository.setLastDevice(pairing, key);
@@ -128,6 +122,8 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
       this.restoreSlot(key, slot);
       throw error;
     }
+
+    if (this.isStale(key, epoch, pairing)) return;
 
     this.sessions.open(slot.module, pairing);
 
@@ -139,16 +135,18 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
     if (!slot.pairing) return;
 
     this.bumpEpoch(key);
+    this.abortPendingConnect(key, "Module unpaired");
     const handle = this.handles.get(key);
     this.stopWatching(key);
     this.handles.delete(key);
+    this.patch(key, { pairing: null, link: offline() });
+
     this.sessions.unbind(slot.module);
     this.sessions.close(slot.module);
 
     if (handle) await this.releaseHandle(handle);
 
     await this.repository.clearLastDevice(key);
-    this.patch(key, { pairing: null, link: offline() });
   }
 
   async reconnect(key: ModuleKey): Promise<void> {
@@ -160,7 +158,8 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
 
   dispose(): void {
     this.disposed = true;
-    for (const abort of [...this.pendingConnects]) abort("Registry disposed");
+    for (const abort of [...this.pendingConnects.values()])
+      abort("Registry disposed");
     this.pendingConnects.clear();
     for (const slot of this.slots.getValue()) {
       this.stopWatching(slot.module.key);
@@ -171,8 +170,11 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
   }
 
   private async connect(key: ModuleKey): Promise<void> {
+    if (this.disposed) return;
+
     const slot = this.slotOf(key);
-    if (!slot.pairing) return;
+    const pairing = slot.pairing;
+    if (!pairing || slot.link.status !== "offline") return;
 
     const lastContactAt = lastContactOf(slot.link);
     const epoch = this.epochOf(key);
@@ -180,29 +182,33 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
 
     let device: DeviceHandle;
     try {
-      device = await this.connectWithTimeout(slot.pairing.id);
+      device = await this.connectWithTimeout(key, pairing.id);
     } catch {
-      if (this.isStale(key, epoch)) return;
+      if (this.isStale(key, epoch, pairing)) return;
       this.patch(key, { link: offline(lastContactAt) });
       return;
     }
 
-    if (this.isStale(key, epoch)) {
+    if (this.isStale(key, epoch, pairing)) {
       await this.releaseHandle(device);
       return;
     }
 
     this.attachLink(key, slot.module, device);
-    this.patch(key, { link: { status: "online", since: this.now() } });
   }
 
-  private connectWithTimeout(deviceId: string): Promise<DeviceHandle> {
+  private connectWithTimeout(
+    key: ModuleKey,
+    deviceId: string,
+  ): Promise<DeviceHandle> {
+    this.abortPendingConnect(key, "Superseded by a newer connect");
     return new Promise<DeviceHandle>((resolve, reject) => {
       let pending = true;
       const settle = () => {
         pending = false;
         clearTimeout(timer);
-        this.pendingConnects.delete(abort);
+        if (this.pendingConnects.get(key) === abort)
+          this.pendingConnects.delete(key);
       };
       const abort: AbortConnect = (reason) => {
         if (!pending) return;
@@ -213,7 +219,7 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
         () => abort("Connection timeout"),
         this.connectTimeoutMs,
       );
-      this.pendingConnects.add(abort);
+      this.pendingConnects.set(key, abort);
 
       this.connector.connect(deviceId).then(
         (device) => {
@@ -240,19 +246,57 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
   ): void {
     this.stopWatching(key);
     this.handles.set(key, device);
-    this.linkWatchers.set(
-      key,
-      this.connector.onDisconnected(device, () => this.dropLink(key)),
-    );
     this.sessions.bind(module, device);
+    this.patch(key, { link: { status: "online", since: this.now() } });
+    this.watchLink(key, device);
+  }
+
+  private watchLink(key: ModuleKey, device: DeviceHandle): void {
+    const stop = this.connector.onDisconnected(device, () =>
+      this.dropLink(key),
+    );
+    if (this.handles.get(key) === device) this.linkWatchers.set(key, stop);
+    else stop();
   }
 
   private async releaseHandle(device: DeviceHandle): Promise<void> {
+    // a handle is device-id-keyed, so releasing it would tear down the live link
+    if (this.isAttached(device)) return;
     try {
       await this.connector.disconnect(device);
     } catch {
       // the radio link may already be down
     }
+  }
+
+  private isAttached(device: DeviceHandle): boolean {
+    for (const attached of this.handles.values())
+      if (attached.id === device.id) return true;
+    return false;
+  }
+
+  private abortPendingConnect(key: ModuleKey, reason: string): void {
+    this.pendingConnects.get(key)?.(reason);
+  }
+
+  private async restorePairings(): Promise<PairedEntry[]> {
+    const restored = await Promise.allSettled(
+      ALL_MODULES.map((module) => this.storedPairing(module)),
+    );
+    return restored.flatMap((entry) =>
+      entry.status === "fulfilled" && entry.value ? [entry.value] : [],
+    );
+  }
+
+  private async storedPairing(
+    module: ModuleDescriptor,
+  ): Promise<PairedEntry | null> {
+    const pairing = await this.repository.getLastDevice(module.key);
+    return pairing ? { module, pairing } : null;
+  }
+
+  private isFree(key: ModuleKey): boolean {
+    return this.slotOf(key).pairing === null;
   }
 
   private claimSlot(key: ModuleKey, pairing: DeviceInfo): void {
@@ -265,8 +309,12 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
     this.patch(key, { pairing: previous.pairing, link: previous.link });
   }
 
-  private isStale(key: ModuleKey, epoch: number): boolean {
-    return this.disposed || this.epochOf(key) !== epoch;
+  private isStale(key: ModuleKey, epoch: number, pairing: DeviceInfo): boolean {
+    return (
+      this.disposed ||
+      this.epochOf(key) !== epoch ||
+      this.slotOf(key).pairing?.id !== pairing.id
+    );
   }
 
   private epochOf(key: ModuleKey): number {
