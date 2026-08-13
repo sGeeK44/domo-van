@@ -10,7 +10,10 @@ import {
   ScanSection,
 } from "@/components/module-settings";
 import { useContainer } from "@/composition/ContainerProvider";
-import { useHeaterDevice } from "@/composition/connection/useModuleDevice";
+import {
+  useModuleRegistry,
+  useModuleSlot,
+} from "@/composition/ModuleRegistryProvider";
 import { useHeaterSystem } from "@/composition/ModuleSystemsProvider";
 import {
   Button,
@@ -33,9 +36,9 @@ export default function HeaterSettingsScreen() {
   // Bluetooth for scanning and connecting
   const { bluetooth } = useContainer();
 
-  // Connection state from heater device hook
-  const { device, setDevice, isConnected, lastDevice, forgetDevice } =
-    useHeaterDevice();
+  // Pairing and link state, owned by the registry
+  const { pairing, link } = useModuleSlot(HEATER_MODULE.key);
+  const { pair, unpair, reconnect } = useModuleRegistry();
 
   // Local scanning state
   const [isScanning, setIsScanning] = useState(false);
@@ -44,7 +47,7 @@ export default function HeaterSettingsScreen() {
   >([]);
   const [lastError, setLastError] = useState<string | null>(null);
 
-  const isModuleConnected = isConnected && device != null;
+  const isModuleConnected = link.status === "online";
 
   const heaterSystem = useHeaterSystem();
 
@@ -83,7 +86,7 @@ export default function HeaterSettingsScreen() {
 
   // Auto scan only when no saved device; stop after 30s
   useAutoScanWithTimeout({
-    enabled: !lastDevice,
+    enabled: !pairing,
     isScanning,
     startScan,
     stopScan,
@@ -95,26 +98,34 @@ export default function HeaterSettingsScreen() {
     else void startScan();
   };
 
-  // Connect using Bluetooth, store in context
-  const connect = useCallback(
+  // Pairing hands the device to the registry, which connects it from then on
+  const pairDevice = useCallback(
     async (deviceId: string) => {
       await stopScan();
+      const found = discoveredDevices.find(
+        (candidate) => candidate.id === deviceId,
+      );
+      if (!found) return;
       try {
-        setDevice(await bluetooth.connect(deviceId));
+        await pair(HEATER_MODULE.key, found);
       } catch (e) {
-        setLastError(e instanceof Error ? e.message : "Connection failed");
+        setLastError(e instanceof Error ? e.message : "Pairing failed");
       }
     },
-    [bluetooth, setDevice, stopScan],
+    [discoveredDevices, pair, stopScan],
   );
 
-  // Disconnect
+  const reconnectModule = useCallback(
+    () => reconnect(HEATER_MODULE.key),
+    [reconnect],
+  );
+
+  // Dropping the radio link leaves the pairing in place; the registry sees it go offline
   const disconnect = useCallback(async () => {
-    if (device) {
-      await bluetooth.disconnect(device);
-      setDevice(null);
-    }
-  }, [bluetooth, device, setDevice]);
+    if (pairing) await bluetooth.disconnect(pairing);
+  }, [bluetooth, pairing]);
+
+  const forget = useCallback(() => unpair(HEATER_MODULE.key), [unpair]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -123,20 +134,20 @@ export default function HeaterSettingsScreen() {
         onBackPress={() => router.back()}
       />
 
-      {lastDevice ? (
+      {pairing ? (
         <ScrollView>
           <SavedDeviceSection
-            device={lastDevice}
+            device={pairing}
             isConnected={isModuleConnected}
-            onConnect={connect}
+            onConnect={reconnectModule}
             onDisconnect={disconnect}
-            onForget={forgetDevice}
+            onForget={forget}
           />
-          {isModuleConnected && device && heaterSystem && (
+          {isModuleConnected && heaterSystem && (
             <>
               <AdminSection
                 adminModule={heaterSystem.admin}
-                deviceName={device.name}
+                deviceName={pairing.name}
               />
               {heaterSystem.zones.map((zone, index) => (
                 <HeaterPidSection
@@ -155,7 +166,7 @@ export default function HeaterSettingsScreen() {
           <DiscoveredDevicesList
             isScanning={isScanning}
             discoveredDevices={discoveredDevices}
-            onConnect={connect}
+            onConnect={pairDevice}
           />
 
           <View style={styles.bottomButtonContainer}>

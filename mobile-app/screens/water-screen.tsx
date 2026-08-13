@@ -3,13 +3,13 @@ import { StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DrainSlider } from "@/components/water/drain-slider";
 import { WaterTank } from "@/components/water/water-tank";
-import { useWaterDevice } from "@/composition/connection/useModuleDevice";
-import { useMultiModuleConnection } from "@/composition/connection/useMultiModuleConnection";
+import { useModuleSlot } from "@/composition/ModuleRegistryProvider";
 import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import { Colors, PageHeader, useThemeColor } from "@/design-system";
 import { ValveState } from "@/domain/water/DrainValve";
 import { TankLevelSnapshot } from "@/domain/water/TankLevelSensor";
+import { useModulesLink } from "@/screens/hooks/useModulesLink";
 
 const DEFAULT_TANK_STATE: TankLevelSnapshot = {
   capacityLiters: 0,
@@ -31,21 +31,9 @@ export default function WaterScreen() {
   const styles = getStyles(colors);
   const router = useRouter();
 
-  const { isConnected } = useWaterDevice();
+  const isConnected = useModuleSlot("water").link.status === "online";
   const waterSystem = useWaterSystem();
-  const { globalStatus, connectAll, disconnectAll } =
-    useMultiModuleConnection();
-
-  const handleBluetoothPress = () => {
-    if (globalStatus === "connected" || globalStatus === "partial") {
-      void disconnectAll();
-    } else {
-      void connectAll();
-    }
-  };
-
-  const bluetoothStatus =
-    globalStatus === "connecting" ? "loading" : globalStatus;
+  const link = useModulesLink();
 
   const clean = useObservable(
     waterSystem?.cleanTank ?? null,
@@ -81,8 +69,8 @@ export default function WaterScreen() {
         <PageHeader
           title="Niveaux d'Eau"
           onSettingsPress={() => router.push("/water-settings")}
-          onBluetoothPress={handleBluetoothPress}
-          bluetoothStatus={bluetoothStatus}
+          onBluetoothPress={link.reconnectAll}
+          bluetoothStatus={link.status}
         />
         <View style={styles.content}>
           <View style={styles.tanksRow}>

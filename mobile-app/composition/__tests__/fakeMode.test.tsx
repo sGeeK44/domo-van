@@ -7,22 +7,12 @@ import { afterEach, describe, expect, it } from "vitest";
 process.env.EXPO_PUBLIC_FAKE_BLE = "1";
 
 const { ContainerProvider } = await import("@/composition/ContainerProvider");
-const {
-  BatteryDeviceProviderV2,
-  HeaterDeviceProviderV2,
-  useBatteryDevice,
-  useHeaterDevice,
-  useWaterDevice,
-  WaterDeviceProviderV2,
-} = await import("@/composition/connection/useModuleDevice");
-const { MultiModuleConnectionProvider, useMultiModuleConnection } =
-  await import("@/composition/connection/useMultiModuleConnection");
-const {
-  ModuleSystemsProvider,
-  useBatterySystem,
-  useHeaterSystem,
-  useWaterSystem,
-} = await import("@/composition/ModuleSystemsProvider");
+const { ModuleRegistryProvider, useModuleSlot } = await import(
+  "@/composition/ModuleRegistryProvider"
+);
+const { useBatterySystem, useHeaterSystem, useWaterSystem } = await import(
+  "@/composition/ModuleSystemsProvider"
+);
 const { useObservable } = await import("@/core/react/useObservable");
 const { DEFAULT_BATTERY_SNAPSHOT } = await import(
   "@/domain/battery/BatteryTelemetry"
@@ -54,10 +44,9 @@ const NO_ZONE = {
 
 /** Reads exactly what the four screens read, and shows it as they would. */
 function Dashboard() {
-  const { globalStatus } = useMultiModuleConnection();
-  const water = useWaterDevice();
-  const heater = useHeaterDevice();
-  const battery = useBatteryDevice();
+  const water = useModuleSlot("water");
+  const heater = useModuleSlot("heater");
+  const battery = useModuleSlot("battery");
 
   const waterSystem = useWaterSystem();
   const heaterSystem = useHeaterSystem();
@@ -72,34 +61,36 @@ function Dashboard() {
   );
   const pack = useObservable(batterySystem, DEFAULT_BATTERY_SNAPSHOT);
 
+  const waterOnline = water.link.status === "online";
+  const heaterOnline = heater.link.status === "online";
+  const batteryOnline = battery.link.status === "online";
+
   return (
     <dl>
-      <dd data-testid="global-status">{globalStatus}</dd>
-      <dd data-testid="water-connected">{String(water.isConnected)}</dd>
-      <dd data-testid="heater-connected">{String(heater.isConnected)}</dd>
-      <dd data-testid="battery-connected">{String(battery.isConnected)}</dd>
+      <dd data-testid="water-link">{water.link.status}</dd>
+      <dd data-testid="heater-link">{heater.link.status}</dd>
+      <dd data-testid="battery-link">{battery.link.status}</dd>
+      <dd data-testid="water-system">{waterSystem ? "live" : "none"}</dd>
+      <dd data-testid="heater-system">{heaterSystem ? "live" : "none"}</dd>
+      <dd data-testid="battery-system">{batterySystem ? "live" : "none"}</dd>
       <dd data-testid="clean-tank">
-        {water.isConnected
-          ? `${clean.percentage}% / ${clean.capacityLiters}L`
-          : "-"}
+        {waterOnline ? `${clean.percentage}% / ${clean.capacityLiters}L` : "-"}
       </dd>
       <dd data-testid="grey-tank">
-        {water.isConnected
-          ? `${grey.percentage}% / ${grey.capacityLiters}L`
-          : "-"}
+        {waterOnline ? `${grey.percentage}% / ${grey.capacityLiters}L` : "-"}
       </dd>
       <dd data-testid="zone-0">
-        {heater.isConnected
+        {heaterOnline
           ? `${zone.temperatureCelsius}°C > ${zone.setpointCelsius}°C`
           : "-"}
       </dd>
       <dd data-testid="environment">
-        {heater.isConnected
+        {heaterOnline
           ? `${environment.temperatureCelsius}°C ${environment.humidity}% ${environment.pressureHPa}hPa ${environment.exteriorTemperatureCelsius}°C`
           : "-"}
       </dd>
       <dd data-testid="battery">
-        {battery.isConnected ? `${pack.percentage}% ${pack.voltage}V` : "-"}
+        {batteryOnline ? `${pack.percentage}% ${pack.voltage}V` : "-"}
       </dd>
     </dl>
   );
@@ -108,17 +99,9 @@ function Dashboard() {
 function renderDashboard() {
   return render(
     <ContainerProvider>
-      <WaterDeviceProviderV2>
-        <HeaterDeviceProviderV2>
-          <BatteryDeviceProviderV2>
-            <MultiModuleConnectionProvider>
-              <ModuleSystemsProvider>
-                <Dashboard />
-              </ModuleSystemsProvider>
-            </MultiModuleConnectionProvider>
-          </BatteryDeviceProviderV2>
-        </HeaterDeviceProviderV2>
-      </WaterDeviceProviderV2>
+      <ModuleRegistryProvider>
+        <Dashboard />
+      </ModuleRegistryProvider>
     </ContainerProvider>,
   );
 }
@@ -128,20 +111,30 @@ function shown(testId: string): string {
 }
 
 async function waitForConnection(): Promise<void> {
-  await waitFor(() => expect(shown("global-status")).toBe("connected"));
+  await waitFor(() => {
+    expect(shown("water-link")).toBe("online");
+    expect(shown("heater-link")).toBe("online");
+    expect(shown("battery-link")).toBe("online");
+  });
 }
 
 describe("the app running on the fake transport", () => {
   afterEach(cleanup);
 
-  it("reaches connected on every module without a device in the room", async () => {
+  it("brings every module online without a device in the room", async () => {
+    renderDashboard();
+
+    await waitForConnection();
+  });
+
+  it("gives every paired module a system of its own", async () => {
     renderDashboard();
 
     await waitForConnection();
 
-    expect(shown("water-connected")).toBe("true");
-    expect(shown("heater-connected")).toBe("true");
-    expect(shown("battery-connected")).toBe("true");
+    expect(shown("water-system")).toBe("live");
+    expect(shown("heater-system")).toBe("live");
+    expect(shown("battery-system")).toBe("live");
   });
 
   it("fills both water tanks with the level its scenario reports", async () => {
@@ -149,7 +142,7 @@ describe("the app running on the fake transport", () => {
 
     await waitForConnection();
 
-    expect(shown("clean-tank")).toBe("72% / 100L");
+    await waitFor(() => expect(shown("clean-tank")).toBe("72% / 100L"));
     expect(shown("grey-tank")).toBe("40% / 80L");
   });
 
@@ -158,7 +151,7 @@ describe("the app running on the fake transport", () => {
 
     await waitForConnection();
 
-    expect(shown("zone-0")).toBe("21.5°C > 21°C");
+    await waitFor(() => expect(shown("zone-0")).toBe("21.5°C > 21°C"));
   });
 
   it("reports the four indoor readings the home screen shows", async () => {
@@ -166,7 +159,9 @@ describe("the app running on the fake transport", () => {
 
     await waitForConnection();
 
-    expect(shown("environment")).toBe("21.5°C 45% 1013.2hPa 12°C");
+    await waitFor(() =>
+      expect(shown("environment")).toBe("21.5°C 45% 1013.2hPa 12°C"),
+    );
   });
 
   it("charges the battery gauge off the synthesised BMS frames", async () => {
@@ -174,7 +169,7 @@ describe("the app running on the fake transport", () => {
 
     await waitForConnection();
 
-    expect(shown("battery")).toBe("98% 13.2V");
+    await waitFor(() => expect(shown("battery")).toBe("98% 13.2V"));
   });
 
   it("leaves no screen showing its disconnected placeholder", async () => {

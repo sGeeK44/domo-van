@@ -52,13 +52,22 @@ sees a connected device through the `DeviceHandle` port and asks
 - **Nothing outside `composition/createContainer.ts` constructs an adapter.**
   Screens get their systems from `useWaterSystem()` / `useHeaterSystem()` /
   `useBatterySystem()`, never from `new`.
-- **`ModuleSystemsProvider` owns system lifetimes**: one instance per connected
-  device, disposed on device change or unmount. It carries no policy — no
-  retry, no timeout, no reconnection.
-- **Provider ordering in `composition/AppProviders.tsx` is load-bearing** and
-  nothing type-checks it: `ModuleSystemsProvider` and
-  `MultiModuleConnectionProvider` both call `useWaterDevice()`, which throws
-  outside the three device providers.
+- **`ModuleRegistry` owns the slots.** One slot per module type holds the
+  pairing and the link state, and `composition/ModuleRegistryProvider.tsx`
+  builds the registry once, starts it on mount and disposes it on unmount.
+  Screens read a slot with `useModuleSlot(key)` and act through
+  `useModuleRegistry()` — they never connect a device themselves.
+- **`composition/ModuleSessions.ts` owns system lifetime**: one instance per
+  **pairing**, not per connection. It is opened when the module is paired and
+  disposed when it is unpaired, and it is the only file naming `WaterSystem` /
+  `HeaterSystem` / `BatterySystem`.
+- **A system outlives a link drop.** A drop only unbinds the persistent
+  transport, so the domain objects — and the last values they hold — survive
+  it; a reconnection rebinds those same objects and calls `resync()`. That is
+  what lets a screen show the last known reading while the module is offline.
+- **Connection is automatic**: the registry connects at startup and at
+  pairing. There is no retry and no backoff — after a drop, the user asks for
+  the reconnection.
 - **Import the design system through its barrel** from outside
   `design-system/`, and always through concrete files from inside it — the
   barrel would close a cycle.
@@ -74,7 +83,7 @@ EXPO_PUBLIC_FAKE_BLE=1 npm start
 ```
 
 The app then runs with Bluetooth switched off. It boots already paired: the
-three modules reach *connected* on their own, so nothing has to be scanned or
+three modules reach *online* on their own, so nothing has to be scanned or
 tapped. Every value on Eau and Chauffage, and Bord's battery and environment
 cards, comes from a fake. Bord's water and heater `StatusCard`s are still wired
 to the `MOCK_WATER` / `MOCK_HEATER` constants in `screens/home-screen.tsx`, so
@@ -126,8 +135,6 @@ firmware answers one command with, exactly as they come off the radio. A
 
 ## Known gaps
 
-- `composition/connection/` holds React state machines, not wiring. It is a
-  temporary tenant until connection/pairing is rewritten.
 - `no-orphans` is deliberately off: it would flag
   `design-system/atoms/icon-symbol.ios.tsx`, a platform variant no import
   resolves to. That file is therefore **not** covered by the arch check.
