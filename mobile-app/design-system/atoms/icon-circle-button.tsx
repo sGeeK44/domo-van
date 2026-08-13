@@ -34,10 +34,12 @@ export function IconCircleButton({
             height: size,
             borderRadius: size / 2,
           },
-          props.disabled === true && styles.inert,
         ]}
       >
-        <IconSymbol name={icon} size={iconSize} color={resolvedIconColor} />
+        {/* only the affordance dims; children carry status, which stays legible */}
+        <View style={props.disabled === true && styles.inert}>
+          <IconSymbol name={icon} size={iconSize} color={resolvedIconColor} />
+        </View>
         {children}
       </View>
     </Pressable>
