@@ -20,11 +20,16 @@
    EXPO_PUBLIC_FAKE_BLE=1 npm start
    ```
 
-   Eau, Chauffage and the battery and environment cards on Bord render real
-   data served by the fakes in `infrastructure/fake/`. Bord's water and heater
-   cards still read hardcoded constants, so ignore the 75 % they show. See
+   Every screen renders real data served by the fakes in
+   `infrastructure/fake/` — Bord included, which no longer holds a hardcoded
+   constant. The install boots already paired, so the tab bar shows
+   *Bord / Batt / Eau / Chauff* straight away. See
    [docs/architecture.md](docs/architecture.md#running-without-hardware) for
    what each module serves and how to add a scenario.
+
+   Pairing is central: the gear on *Bord* opens *Modules*, which is where a
+   module is paired, unpaired and reconnected. Unpair one there to watch its
+   tab disappear and its dashed slot come back on the dashboard.
 
 ## Déploiement
 

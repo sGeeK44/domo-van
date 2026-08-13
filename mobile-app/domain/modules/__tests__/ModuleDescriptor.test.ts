@@ -17,8 +17,15 @@ describe("ModuleDescriptor", () => {
     expect(new Set(keys).size).toBe(ALL_MODULES.length);
   });
 
-  it("lists every module the app knows how to talk to", () => {
-    expect(ALL_MODULES).toEqual([WATER_MODULE, HEATER_MODULE, BATTERY_MODULE]);
+  it("lists every module the app knows how to talk to, in display order", () => {
+    expect(ALL_MODULES).toEqual([BATTERY_MODULE, WATER_MODULE, HEATER_MODULE]);
+  });
+
+  it("gives every module a tab label and an icon", () => {
+    for (const module of ALL_MODULES) {
+      expect(module.tabTitle).not.toBe("");
+      expect(module.tabIcon).not.toBe("");
+    }
   });
 
   it("scans a van module on the service its own id builds", () => {

@@ -1,34 +1,37 @@
 import { useRouter } from "expo-router";
-import { useMemo } from "react";
+import { type PropsWithChildren, useMemo } from "react";
 import { StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BatteryGauge } from "@/components/home/battery-gauge";
+import { EmptySlotCard } from "@/components/home/empty-slot-card";
 import { EnvironmentCard } from "@/components/home/environment-card";
+import { ModuleCard } from "@/components/home/module-card";
 import { StatusCard } from "@/components/home/status-card";
-import { useModuleSlot } from "@/composition/ModuleRegistryProvider";
+import {
+  useModuleRegistry,
+  useModuleSlot,
+} from "@/composition/ModuleRegistryProvider";
 import {
   useBatterySystem,
   useHeaterSystem,
+  useWaterSystem,
 } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
-import { Colors, PageHeader, useThemeColor } from "@/design-system";
+import {
+  Button,
+  PageHeader,
+  type ThemeColors,
+  useThemeColor,
+} from "@/design-system";
 import {
   calculateRemainingTime,
   DEFAULT_BATTERY_SNAPSHOT,
   formatRemainingTime,
 } from "@/domain/battery/BatteryTelemetry";
 import { EnvironmentSnapshot } from "@/domain/heater/EnvironmentData";
-import { useModulesLink } from "@/screens/hooks/useModulesLink";
-
-// Mocked data for modules not yet connected to real data
-const MOCK_WATER = {
-  percentage: 75,
-};
-
-const MOCK_HEATER = {
-  isActive: true,
-  setpoint: 20,
-};
+import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
+import { TankLevelSnapshot } from "@/domain/water/TankLevelSensor";
+import { useHeaterSummary } from "@/screens/hooks/useHeaterSummary";
 
 const DEFAULT_ENVIRONMENT: EnvironmentSnapshot = {
   temperatureCelsius: 0,
@@ -38,28 +41,43 @@ const DEFAULT_ENVIRONMENT: EnvironmentSnapshot = {
   lastMessage: null,
 };
 
+const DEFAULT_TANK: TankLevelSnapshot = {
+  capacityLiters: 0,
+  heightMm: 0,
+  percentage: 0,
+  lastDistanceMm: null,
+  lastMessage: null,
+};
+
 export default function HomeScreen() {
   const colors = useThemeColor();
   const styles = getStyles(colors);
   const router = useRouter();
+  const openModules = () => router.push("/modules");
 
-  const link = useModulesLink();
-  const waterOnline = useModuleSlot("water").link.status === "online";
-  const heaterOnline = useModuleSlot("heater").link.status === "online";
-  const batteryOnline = useModuleSlot("battery").link.status === "online";
+  const { reconnect } = useModuleRegistry();
+  const batterySlot = useModuleSlot("battery");
+  const waterSlot = useModuleSlot("water");
+  const heaterSlot = useModuleSlot("heater");
+  const nothingPaired = [batterySlot, waterSlot, heaterSlot].every(
+    (slot) => slot.pairing === null,
+  );
+
   const batterySystem = useBatterySystem();
+  const waterSystem = useWaterSystem();
   const heaterSystem = useHeaterSystem();
 
-  // Subscribe to battery data
   const battery = useObservable(batterySystem, DEFAULT_BATTERY_SNAPSHOT);
-
-  // Subscribe to environment data
+  const cleanTank = useObservable(waterSystem?.cleanTank ?? null, DEFAULT_TANK);
   const environment = useObservable(
     heaterSystem?.environment ?? null,
     DEFAULT_ENVIRONMENT,
   );
+  const heat = useHeaterSummary();
 
-  // Calculate remaining time based on current flow
+  const batteryOnline = batterySlot.link.status === "online";
+  const heaterPaired = heaterSlot.pairing !== null;
+
   const remainingTime = useMemo(() => {
     if (!batteryOnline) return "-";
     const hours = calculateRemainingTime(
@@ -72,88 +90,116 @@ export default function HomeScreen() {
     return `${formatRemainingTime(hours)} ${suffix}`;
   }, [battery, batteryOnline]);
 
-  // Calculate consumption in watts (negative = consuming, positive = charging)
   const consumption = batteryOnline ? Math.round(battery.power) : 0;
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={styles.safeArea}>
-        <PageHeader
-          title="Home"
-          onSettingsPress={() => router.push("/battery-settings")}
-          onBluetoothPress={link.reconnectAll}
-          bluetoothStatus={link.status}
-          bluetoothDisabled={!link.canReconnect}
-        />
+        <PageHeader title="Bord" onSettingsPress={openModules} />
 
-        {/* Content */}
         <View style={styles.content}>
-          {/* Battery Gauge */}
           <View style={styles.gaugeSection}>
-            <BatteryGauge
-              percentage={battery.percentage}
-              remainingTime={remainingTime}
-              voltage={battery.voltage}
-              consumption={consumption}
-              isConnected={batteryOnline}
-            />
+            <Slot
+              slot={batterySlot}
+              onAdd={openModules}
+              onReconnect={() => void reconnect("battery")}
+            >
+              <BatteryGauge
+                percentage={battery.percentage}
+                remainingTime={remainingTime}
+                voltage={battery.voltage}
+                consumption={consumption}
+                isConnected={batteryOnline}
+              />
+            </Slot>
           </View>
 
-          {/* Status Cards Row */}
           <View style={styles.cardsRow}>
-            <StatusCard
-              icon="water-drop"
-              value={waterOnline ? `${MOCK_WATER.percentage}%` : "-"}
-              backgroundColor={
-                waterOnline ? colors.water.clean : colors.neutral["500"]
-              }
-              onPress={() => router.push("/water")}
-            />
-            <StatusCard
-              icon="local-fire-department"
-              value={heaterOnline ? "Chauffe" : "-"}
-              label={heaterOnline ? `> ${MOCK_HEATER.setpoint}°C` : "-"}
-              backgroundColor={
-                heaterOnline ? colors.heater.warm : colors.neutral["500"]
-              }
-              onPress={() => router.push("/heater")}
-            />
+            <Slot
+              slot={waterSlot}
+              onAdd={openModules}
+              onReconnect={() => void reconnect("water")}
+            >
+              <StatusCard
+                icon="water-drop"
+                value={`${Math.round(cleanTank.percentage)}%`}
+                label="Eau propre"
+                backgroundColor={colors.water.clean}
+                onPress={() => router.push("/water")}
+              />
+            </Slot>
+            <Slot
+              slot={heaterSlot}
+              onAdd={openModules}
+              onReconnect={() => void reconnect("heater")}
+            >
+              <StatusCard
+                icon="local-fire-department"
+                value={heat.isRunning ? "Chauffe" : "Arrêt"}
+                label={
+                  heat.isRunning
+                    ? `> ${heat.setpointCelsius.toFixed(0)}°C`
+                    : "-"
+                }
+                backgroundColor={
+                  heat.isRunning ? colors.heater.warm : colors.neutral["500"]
+                }
+                onPress={() => router.push("/heater")}
+              />
+            </Slot>
           </View>
 
-          {/* Environment Card - Quadrant Layout */}
-          <EnvironmentCard
-            topLeft={{
-              icon: "home",
-              value: heaterOnline
-                ? `${environment.temperatureCelsius.toFixed(1)}°C`
-                : "-",
-            }}
-            topRight={{
-              icon: "water-drop",
-              value: heaterOnline ? `${environment.humidity.toFixed(0)}%` : "-",
-            }}
-            bottomLeft={{
-              icon: "park",
-              value: heaterOnline
-                ? `${environment.exteriorTemperatureCelsius.toFixed(1)}°C`
-                : "-",
-            }}
-            bottomRight={{
-              icon: "speed",
-              value: heaterOnline
-                ? `${environment.pressureHPa.toFixed(0)} hPa`
-                : "-",
-            }}
-            backgroundColor={colors.background.secondary}
-          />
+          {heaterPaired && (
+            <EnvironmentCard
+              topLeft={{
+                icon: "home",
+                value: `${environment.temperatureCelsius.toFixed(1)}°C`,
+              }}
+              topRight={{
+                icon: "water-drop",
+                value: `${environment.humidity.toFixed(0)}%`,
+              }}
+              bottomLeft={{
+                icon: "park",
+                value: `${environment.exteriorTemperatureCelsius.toFixed(1)}°C`,
+              }}
+              bottomRight={{
+                icon: "speed",
+                value: `${environment.pressureHPa.toFixed(0)} hPa`,
+              }}
+              backgroundColor={colors.background.secondary}
+            />
+          )}
+
+          {nothingPaired && (
+            <Button onPress={openModules}>Ajouter un module</Button>
+          )}
         </View>
       </SafeAreaView>
     </View>
   );
 }
 
-const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
+type SlotProps = PropsWithChildren<{
+  slot: ModuleSlot;
+  onAdd: () => void;
+  onReconnect: () => void;
+}>;
+
+function Slot({ slot, onAdd, onReconnect, children }: SlotProps) {
+  if (!slot.pairing) {
+    return <EmptySlotCard title={slot.module.tabTitle} onPress={onAdd} />;
+  }
+
+  return (
+    <ModuleCard link={slot.link} onReconnect={onReconnect}>
+      {children}
+    </ModuleCard>
+  );
+}
+
+const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,

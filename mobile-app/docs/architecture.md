@@ -61,9 +61,12 @@ sees a connected device through the `DeviceHandle` port and asks
   the registry inside its mount effect and disposes it on unmount; disposal is
   terminal, so a remount builds a fresh one rather than restarting a corpse.
   Screens read a slot with `useModuleSlot(key)` and act through
-  `useModuleRegistry()`. `screens/add-module-screen.tsx` is the exception: it
-  still takes `bluetooth` from the container to run the pairing scan, which no
-  slot owns.
+  `useModuleRegistry()`. On the dashboard a free slot is a dashed
+  `EmptySlotCard` towards `/modules`, and an offline one carries the time of
+  its last contact and a *Reconnecter* action — `reconnect(key)` is already a
+  no-op while connecting, so the button only mirrors that state.
+  `screens/add-module-screen.tsx` is the exception: it still takes `bluetooth`
+  from the container to run the pairing scan, which no slot owns.
 - **`composition/ModuleSessions.ts` owns system lifetime**: one instance per
   **pairing**, not per connection. It is opened when the module is paired and
   disposed when it is unpaired, and it is the only file that constructs
@@ -75,13 +78,43 @@ sees a connected device through the `DeviceHandle` port and asks
 - **Connection is automatic**: the registry connects at startup and at
   pairing. There is no retry and no backoff — after a drop, the user asks for
   the reconnection.
+- **One vocabulary for a link, everywhere.** `components/home/link-view.ts`
+  turns a `LinkState` into the tone of its dot, the line naming the time of
+  last contact and the reconnection offer; `LinkBadge` draws the dot. The tab
+  icon, the dashboard card and the *Modules* row all go through them, so the
+  four surfaces cannot drift apart.
 - **Import the design system through its barrel** from outside
   `design-system/`, and always through concrete files from inside it — the
   barrel would close a cycle.
 - **A route under `app/` is two lines**: import a screen, default-export it.
-  Everything under `app/` is a route, so put no helper there. Both
-  `_layout.tsx` stay real files: `app/_layout.tsx` exports
-  `unstable_settings`, which expo-router reads off the route module.
+  Everything under `app/` is a route, so put no helper there. `app/_layout.tsx`
+  stays a real file: it exports `unstable_settings`, which expo-router reads
+  off the route module. `app/(tabs)/_layout.tsx` is a two-liner over
+  `screens/tabs-layout.tsx`, because the bar it draws reads the slots and the
+  catalogue, which `app/` may not import.
+
+## The tab bar
+
+`screens/tabs-layout.tsx` renders one `<Tabs.Screen>` per entry of
+`moduleTabs(slots)`: the dashboard, then one per module in catalogue order —
+*Bord / Batt / Eau / Chauff*, never more.
+
+- **A module tab appears with its pairing.** An unpaired module gets
+  `href: null`, which hides the button and **keeps the route registered**, so
+  pairing or unpairing a module remounts no navigator and resets no state.
+  `NativeTabs`' `hidden` prop does remount it, hence the `href` route.
+- **The route file is named after the module key**, which is what lets the
+  layout loop instead of hardcoding a block per module.
+- **The dot on the icon is the slot's own link**, drawn by the same
+  `LinkBadge` as the dashboard card.
+
+### Adding a module
+
+1. Add a `ModuleDescriptor` to `ALL_MODULES` — `tabTitle` and `tabIcon`
+   included, since the bar reads them off the catalogue.
+2. Add `app/(tabs)/<key>.tsx`, a two-line route over its screen.
+3. Give it a session in `composition/ModuleSessions.ts` and, for a fake
+   install, a scenario in `infrastructure/fake/`.
 
 ## Running without hardware
 
@@ -91,10 +124,9 @@ EXPO_PUBLIC_FAKE_BLE=1 npm start
 
 The app then runs with Bluetooth switched off. It boots already paired: the
 three modules reach *online* on their own, so nothing has to be scanned or
-tapped. Every value on Eau and Chauffage, and Bord's battery and environment
-cards, comes from a fake. Bord's water and heater `StatusCard`s are still wired
-to the `MOCK_WATER` / `MOCK_HEATER` constants in `screens/home-screen.tsx`, so
-they disagree with Eau and Chauffage on purpose until #3 rewrites them.
+tapped, and the bar shows all four tabs. Every value on the screens, Bord's
+water and heater cards included, comes from a fake — no screen holds a
+hardcoded reading any more.
 
 `EXPO_PUBLIC_FAKE_BLE` is read **once**, by `createContainer()`, and it is the
 only branch in the app. Expo inlines `EXPO_PUBLIC_*` at build time, so this is
