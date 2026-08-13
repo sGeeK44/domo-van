@@ -62,7 +62,9 @@ export class BatterySystem implements Observable<BatterySnapshot> {
     await this.transport.send(buildReadAllCommand());
   }
 
+  /** A reconnect starts from a clean parser: the dropped session may have left half a frame. */
   resync = (): void => {
+    this.frameReader.reset();
     void this.refresh().catch(() => {});
   };
 

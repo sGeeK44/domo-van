@@ -153,6 +153,20 @@ describe("PersistentBinaryTransport", () => {
     );
   });
 
+  it("reads the next session's frames after a drop mid-frame", () => {
+    const { transport, sessions } = persistentTransport();
+    const battery = new BatterySystem(transport);
+    transport.bind(DEVICE);
+    sessions[0].emit(FRAME.slice(0, 4));
+
+    transport.unbind();
+    transport.bind(DEVICE);
+    battery.resync();
+
+    sessions[1].emit(HALF_CHARGED);
+    expect(battery.getValue().percentage).toBe(50);
+  });
+
   it("releases the underlying subscription when disposed", () => {
     const { transport, sessions } = persistentTransport();
     transport.bind(DEVICE);
@@ -168,14 +182,39 @@ describe("PersistentBinaryTransport", () => {
     transport.bind(DEVICE);
     transport.dispose();
 
-    expect(() => transport.bind(DEVICE)).toThrow(TransportDisposedError);
+    transport.bind(DEVICE);
+
     expect(sessions).toHaveLength(1);
   });
 
-  it("refuses a new listener once disposed", () => {
+  it("swallows a late unbind once disposed", () => {
     const { transport } = persistentTransport();
+    transport.bind(DEVICE);
     transport.dispose();
 
-    expect(() => transport.listen(() => {})).toThrow(TransportDisposedError);
+    expect(() => transport.unbind()).not.toThrow();
+  });
+
+  it("hands out a listener that never fires once disposed", () => {
+    const { transport, sessions } = persistentTransport();
+    transport.bind(DEVICE);
+    transport.dispose();
+
+    const chunks: Uint8Array[] = [];
+    transport.listen((chunk) => chunks.push(chunk));
+    sessions[0].emit(FRAME);
+
+    expect(chunks).toEqual([]);
+  });
+
+  it("rejects a write once disposed, so a caller retrying on a drop stops", async () => {
+    const { transport } = persistentTransport();
+    transport.bind(DEVICE);
+
+    transport.dispose();
+
+    await expect(transport.send(buildReadAllCommand())).rejects.toThrow(
+      TransportDisposedError,
+    );
   });
 });
