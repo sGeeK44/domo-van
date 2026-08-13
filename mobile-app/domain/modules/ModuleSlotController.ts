@@ -1,4 +1,5 @@
 import type { Unsubscribe } from "@/core/observable";
+import { callAsync } from "@/domain/modules/callAsync";
 import type { ModuleDescriptor } from "@/domain/modules/ModuleDescriptor";
 import type { LinkState, ModuleSlot } from "@/domain/modules/ModuleSlot";
 import { SerialQueue } from "@/domain/modules/SerialQueue";
@@ -32,7 +33,7 @@ function offline(lastContactAt: number | null = null): LinkState {
   return { status: "offline", lastContactAt };
 }
 
-/** Owns one slot end to end: every lifecycle step runs alone on its own queue. */
+/** Owns one slot end to end: slot state is written only from a queued step, or from the pre-emptive dispose. */
 export class ModuleSlotController {
   readonly module: ModuleDescriptor;
   private readonly repository: DeviceRepository;
@@ -152,6 +153,8 @@ export class ModuleSlotController {
   }
 
   private awaitConnect(deviceId: string): Promise<ConnectOutcome> {
+    const connecting = callAsync(() => this.connector.connect(deviceId));
+
     return new Promise<ConnectOutcome>((resolve) => {
       let pending = true;
       const settle = (outcome: ConnectOutcome) => {
@@ -166,7 +169,7 @@ export class ModuleSlotController {
       );
       this.pendingAbort = () => settle({ kind: "aborted" });
 
-      this.connector.connect(deviceId).then(
+      connecting.then(
         (device) => {
           if (pending) settle({ kind: "connected", device });
           else void this.releaseHandle(device);
@@ -193,12 +196,16 @@ export class ModuleSlotController {
     const stop = this.connector.onDisconnected(device, () =>
       this.dropLink(device),
     );
-    // the listener can fire during registration, leaving nothing to watch
+    // a dispose landing during registration leaves nothing to watch
     if (this.handle === device) this.watcher = stop;
     else stop();
   }
 
   private dropLink(device: DeviceHandle): void {
+    void this.queue.run(async () => this.dropLinkNow(device));
+  }
+
+  private dropLinkNow(device: DeviceHandle): void {
     if (this.handle !== device) return;
 
     this.detach();

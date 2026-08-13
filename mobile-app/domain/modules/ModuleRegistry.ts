@@ -37,6 +37,7 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
 
   constructor(deps: ModuleRegistryDeps) {
     this.repository = deps.repository;
+    this.slots = createObservable<readonly ModuleSlot[]>([]);
     this.controllers = ALL_MODULES.map(
       (module) =>
         new ModuleSlotController({
@@ -49,7 +50,7 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
           onChange: () => this.publish(),
         }),
     );
-    this.slots = createObservable<readonly ModuleSlot[]>(this.snapshot());
+    this.publish();
   }
 
   getValue(): readonly ModuleSlot[] {

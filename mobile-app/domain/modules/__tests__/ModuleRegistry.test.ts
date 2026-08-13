@@ -418,6 +418,7 @@ describe("ModuleRegistry", () => {
     const { connector, registry } = setup();
     await registry.pair("water", WATER_DEVICE);
     connector.dropLink("water-1");
+    await flushMicrotasks();
     connector.hangForever();
 
     const connectsBefore = connector.connectCalls.length;
@@ -444,6 +445,7 @@ describe("ModuleRegistry", () => {
     await registry.pair("water", WATER_DEVICE);
     const droppedAt = tick(5_000);
     connector.dropLink("water-1");
+    await flushMicrotasks();
     connector.hangForever();
 
     void registry.reconnect("water");
@@ -575,6 +577,7 @@ describe("ModuleRegistry", () => {
     await registry.pair("water", WATER_DEVICE);
     tick(5_000);
     connector.dropLink("water-1");
+    await flushMicrotasks();
     repository.blockClears();
 
     const unpairing = registry.unpair("water");
@@ -800,6 +803,125 @@ describe("ModuleRegistry", () => {
     expect(registry.slotOf("water").link.status).not.toBe("online");
     expect(connector.disconnectCalls).toEqual(["water-1"]);
     expect(connector.watcherCount("water-1")).toBe(0);
+  });
+
+  it("keeps a pairing undone when a subscriber unpairs on the first notify of the pair", async () => {
+    const { connector, repository, sessions, registry } = setup();
+    const unpairs: Promise<void>[] = [];
+    let armed = true;
+    registry.subscribe(() => {
+      if (!armed) return;
+      armed = false;
+      unpairs.push(registry.unpair("water"));
+    });
+
+    await registry.pair("water", WATER_DEVICE);
+    await Promise.all(unpairs);
+    await flushMicrotasks();
+
+    expect(await repository.getLastDevice("water")).toBeNull();
+    expect(repository.clears).toEqual(["water"]);
+    expect(sessions.actionsOn("water")).toEqual([
+      "open",
+      "bind",
+      "unbind",
+      "close",
+    ]);
+    expect(registry.slotOf("water")).toMatchObject({
+      pairing: null,
+      link: { status: "offline", lastContactAt: null },
+    });
+    expect(connector.watcherCount("water-1")).toBe(0);
+  });
+
+  it("frees the slot for good when a subscriber unpairs on the connecting notify of a reconnect", async () => {
+    const { connector, sessions, registry, tick } = setup();
+    await registry.pair("water", WATER_DEVICE);
+    tick(5_000);
+    connector.dropLink("water-1");
+
+    const unpairs: Promise<void>[] = [];
+    let armed = true;
+    registry.subscribe((slots) => {
+      const water = slots.find((slot) => slot.module.key === "water");
+      if (!armed || water?.link.status !== "connecting") return;
+      armed = false;
+      unpairs.push(registry.unpair("water"));
+    });
+
+    await registry.reconnect("water");
+    await Promise.all(unpairs);
+    await flushMicrotasks();
+
+    expect(sessions.actionsOn("water")).toEqual([
+      "open",
+      "bind",
+      "unbind",
+      "bind",
+      "unbind",
+      "close",
+    ]);
+    expect(registry.slotOf("water")).toMatchObject({
+      pairing: null,
+      link: { status: "offline", lastContactAt: null },
+    });
+    expect(connector.watcherCount("water-1")).toBe(0);
+    expect(connector.disconnectCalls).toEqual(["water-1"]);
+  });
+
+  it("applies a link drop that fires while the reconnect still holds the queue", async () => {
+    const { connector, sessions, registry, tick } = setup();
+    await registry.pair("water", WATER_DEVICE);
+    tick(5_000);
+    connector.dropLink("water-1");
+
+    const watch = connector.onDisconnected.bind(connector);
+    connector.onDisconnected = (device: DeviceHandle, listener: () => void) => {
+      connector.onDisconnected = watch;
+      const stop = watch(device, listener);
+      listener();
+      return stop;
+    };
+    const droppedAt = tick(1_000);
+
+    await registry.reconnect("water");
+    await flushMicrotasks();
+
+    expect(registry.slotOf("water")).toMatchObject({
+      pairing: { id: "water-1" },
+      link: { status: "offline", lastContactAt: droppedAt },
+    });
+    expect(sessions.actionsOn("water")).toEqual([
+      "open",
+      "bind",
+      "unbind",
+      "bind",
+      "unbind",
+    ]);
+    expect(connector.watcherCount("water-1")).toBe(0);
+
+    await registry.reconnect("water");
+
+    expect(registry.slotOf("water").link.status).toBe("online");
+  });
+
+  it("marks the slot offline when the connector throws synchronously", async () => {
+    vi.useFakeTimers();
+    const { connector, registry, tick } = setup();
+    await registry.pair("water", WATER_DEVICE);
+    const droppedAt = tick(5_000);
+    connector.dropLink("water-1");
+    connector.connect = () => {
+      throw new Error("radio is off");
+    };
+
+    await registry.reconnect("water");
+
+    expect(registry.slotOf("water").link).toEqual({
+      status: "offline",
+      lastContactAt: droppedAt,
+    });
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("closes every open session and drops every link watcher on dispose", async () => {
