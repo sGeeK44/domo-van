@@ -8,16 +8,14 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// The container is built when ContainerProvider is imported, so the switch has
-// to be flipped before that import — hence the dynamic imports below.
+// The container is built when ContainerProvider is imported, so the switch is flipped before it.
 process.env.EXPO_PUBLIC_FAKE_BLE = "1";
 
 const { pairOnly, renderModuleScreen } = await import("./moduleScreenHarness");
 const { default: ModulesScreen } = await import("@/screens/modules-screen");
 const { ModuleRegistry } = await import("@/domain/modules/ModuleRegistry");
-const { resetNavigation, routerHistory, setOpenTab } = await import(
-  "@/__mocks__/expo-router"
-);
+const { resetNavigation, routerHistory, routerStack, setOpenTab } =
+  await import("@/__mocks__/expo-router");
 
 async function openUnpairSheet(key: string): Promise<void> {
   fireEvent.click(screen.getByTestId(`unpair-${key}`));
@@ -76,8 +74,9 @@ describe("the Modules screen", () => {
     expect(screen.queryByTestId("free-slot-heater")).toBeNull();
   });
 
-  it("returns to the dashboard when the unpaired module owns the open tab", async () => {
+  it("returns to the one mounted dashboard when the unpaired module owns the open tab", async () => {
     setOpenTab("heater");
+    routerStack.push("/modules");
     const harness = renderModuleScreen(<ModulesScreen />);
     await pairOnly(harness, ["heater"]);
 
@@ -85,15 +84,13 @@ describe("the Modules screen", () => {
     await confirmUnpair();
 
     await waitFor(() => {
-      expect(routerHistory).toContainEqual({
-        method: "replace",
-        href: "/(tabs)",
-      });
+      expect(routerStack).toEqual(["/(tabs)"]);
     });
   });
 
   it("stays on the screen when another module owns the open tab", async () => {
     setOpenTab("water");
+    routerStack.push("/modules");
     const harness = renderModuleScreen(<ModulesScreen />);
     await pairOnly(harness, ["water", "heater"]);
 
@@ -103,10 +100,7 @@ describe("the Modules screen", () => {
     await waitFor(() => {
       expect(screen.getByTestId("free-slot-heater")).toBeTruthy();
     });
-    expect(routerHistory).not.toContainEqual({
-      method: "replace",
-      href: "/(tabs)",
-    });
+    expect(routerStack).toEqual(["/(tabs)", "/modules"]);
   });
 
   it("opens the module's own settings from its row", async () => {

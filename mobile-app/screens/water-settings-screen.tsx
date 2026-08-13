@@ -3,9 +3,13 @@ import { useMemo } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AdminSection } from "@/components/module-settings";
+import { ModuleLinkNotice } from "@/components/modules";
 import { TankSettingsSection } from "@/components/water-settings/TankSettingsSection";
 import { ValveSettingsSection } from "@/components/water-settings/ValveSettingsSection";
-import { useModuleSlot } from "@/composition/ModuleRegistryProvider";
+import {
+  useModuleRegistry,
+  useModuleSlot,
+} from "@/composition/ModuleRegistryProvider";
 import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
 import {
   SettingsHeader,
@@ -20,6 +24,7 @@ export default function WaterSettingsScreen() {
   const router = useRouter();
 
   const { pairing, link } = useModuleSlot(WATER_MODULE.key);
+  const { reconnect } = useModuleRegistry();
   const waterSystem = useWaterSystem();
 
   const isOnline = link.status === "online";
@@ -29,22 +34,30 @@ export default function WaterSettingsScreen() {
       <SettingsHeader title="Eau" onBackPress={() => router.back()} />
 
       <ScrollView>
-        {isOnline && waterSystem && (
-          <>
-            <AdminSection
-              adminModule={waterSystem.admin}
-              deviceName={pairing?.name ?? null}
-            />
-            <TankSettingsSection
-              tank={waterSystem.cleanTank}
-              label="Eau Propre"
-            />
-            <TankSettingsSection
-              tank={waterSystem.greyTank}
-              label="Eau Grise"
-            />
-            <ValveSettingsSection valve={waterSystem.greyDrainValve} />
-          </>
+        {isOnline ? (
+          waterSystem && (
+            <>
+              <AdminSection
+                adminModule={waterSystem.admin}
+                deviceName={pairing?.name ?? null}
+              />
+              <TankSettingsSection
+                tank={waterSystem.cleanTank}
+                label="Eau Propre"
+              />
+              <TankSettingsSection
+                tank={waterSystem.greyTank}
+                label="Eau Grise"
+              />
+              <ValveSettingsSection valve={waterSystem.greyDrainValve} />
+            </>
+          )
+        ) : (
+          <ModuleLinkNotice
+            deviceName={pairing?.name ?? null}
+            isConnecting={link.status === "connecting"}
+            onReconnect={() => void reconnect(WATER_MODULE.key)}
+          />
         )}
       </ScrollView>
     </SafeAreaView>

@@ -20,6 +20,7 @@ import {
 import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
+import type { FakeBluetooth } from "@/infrastructure/fake/FakeBluetooth";
 
 export type ModulesHarness = {
   pair: (key: ModuleKey, device: DiscoveredBluetoothDevice) => Promise<void>;
@@ -27,6 +28,7 @@ export type ModulesHarness = {
   advertised: () => Promise<readonly DiscoveredBluetoothDevice[]>;
   stored: (key: ModuleKey) => Promise<DeviceInfo | null>;
   slots: () => readonly ModuleSlot[];
+  dropLink: (deviceId: string) => void;
 };
 
 function unavailable(): never {
@@ -43,6 +45,8 @@ function Probe({ harness }: { harness: ModulesHarness }) {
     harness.unpair = unpair;
     harness.slots = () => slots;
     harness.stored = (key) => deviceRepository.getLastDevice(key);
+    harness.dropLink = (deviceId) =>
+      (bluetooth as FakeBluetooth).dropLink(deviceId);
     harness.advertised = async () => {
       const found: DiscoveredBluetoothDevice[] = [];
       await bluetooth.startScan(ALL_SCAN_SERVICE_UUIDS, (device) =>
@@ -63,6 +67,7 @@ export function renderModuleScreen(screen: ReactNode): ModulesHarness {
     advertised: unavailable,
     stored: unavailable,
     slots: unavailable,
+    dropLink: unavailable,
   };
 
   render(

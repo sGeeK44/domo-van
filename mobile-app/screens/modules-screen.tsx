@@ -46,8 +46,9 @@ export default function ModulesScreen() {
     setIsUnpairing(true);
     try {
       await unpair(key);
+      // replace would stack a second tabs navigator over the first; dismissTo pops back to it
       if (openTabName(navigationState) === key) {
-        router.replace(DASHBOARD_ROUTE);
+        router.dismissTo(DASHBOARD_ROUTE);
       }
     } finally {
       setIsUnpairing(false);

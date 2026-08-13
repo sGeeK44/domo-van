@@ -4,14 +4,19 @@ import { afterEach, describe, expect, it } from "vitest";
 import { DiscoveredModuleRow } from "@/components/modules";
 import { ThemeProvider } from "@/design-system";
 import { WATER_MODULE } from "@/domain/modules/ModuleDescriptor";
+import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
+import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
 
-function renderRow(device: DiscoveredBluetoothDevice) {
+function renderRow(
+  device: DiscoveredBluetoothDevice,
+  slots: readonly ModuleSlot[] = [],
+) {
   render(
     <ThemeProvider>
       <DiscoveredModuleRow
         device={device}
-        occupiedKeys={[]}
+        slots={slots}
         isPairing={false}
         onPair={() => {}}
       />
@@ -19,15 +24,27 @@ function renderRow(device: DiscoveredBluetoothDevice) {
   );
 }
 
+function waterSlot(pairing: DeviceInfo | null): ModuleSlot {
+  return {
+    module: WATER_MODULE,
+    pairing,
+    link: { status: "offline", lastContactAt: null },
+  };
+}
+
+function waterDevice(id: string): DiscoveredBluetoothDevice {
+  return {
+    id,
+    name: "Cuve",
+    serviceUuids: [WATER_MODULE.scanServiceUuid.toUpperCase()],
+  };
+}
+
 describe("a scan result", () => {
   afterEach(cleanup);
 
   it("names the module type its advertisement resolves to", () => {
-    renderRow({
-      id: "AA:BB:CC",
-      name: "Cuve",
-      serviceUuids: [WATER_MODULE.scanServiceUuid.toUpperCase()],
-    });
+    renderRow(waterDevice("AA:BB:CC"));
 
     expect(screen.getByTestId("discovered-AA:BB:CC")).toBeTruthy();
     expect(screen.getByText(WATER_MODULE.displayName)).toBeTruthy();
@@ -38,5 +55,29 @@ describe("a scan result", () => {
     renderRow({ id: "AA:BB:CC", name: "Cuve", serviceUuids: [] });
 
     expect(screen.queryByTestId("discovered-AA:BB:CC")).toBeNull();
+  });
+
+  it("reads as already paired when it is the device holding the slot", () => {
+    renderRow(waterDevice("AA:BB:CC"), [
+      waterSlot({ id: "AA:BB:CC", name: "Cuve" }),
+    ]);
+
+    expect(screen.getByText("Déjà appairé")).toBeTruthy();
+    expect(screen.queryByTestId("pair-AA:BB:CC")).toBeNull();
+  });
+
+  it("reads as a taken slot when another device holds it", () => {
+    renderRow(waterDevice("DD:EE:FF"), [
+      waterSlot({ id: "AA:BB:CC", name: "Cuve" }),
+    ]);
+
+    expect(screen.getByText("Emplacement occupé")).toBeTruthy();
+    expect(screen.queryByTestId("pair-DD:EE:FF")).toBeNull();
+  });
+
+  it("stays pairable while its slot is free", () => {
+    renderRow(waterDevice("AA:BB:CC"), [waterSlot(null)]);
+
+    expect(screen.getByTestId("pair-AA:BB:CC")).toBeTruthy();
   });
 });
