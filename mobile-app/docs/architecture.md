@@ -74,7 +74,9 @@ sees a connected device through the `DeviceHandle` port and asks
 - **A system outlives a link drop.** A drop only unbinds the persistent
   transport, so the domain objects — and the last values they hold — survive
   it; a reconnection rebinds those same objects and calls `resync()`. That is
-  what lets a screen show the last known reading while the module is offline.
+  what lets a reconnection resume without a cold start. A screen still hides
+  the values while the module is offline — a last known reading is not a
+  measurement.
 - **Connection is automatic**: the registry connects at startup and at
   pairing. There is no retry and no backoff — after a drop, the user asks for
   the reconnection.
@@ -126,8 +128,9 @@ EXPO_PUBLIC_FAKE_BLE=1 npm start
 The app then runs with Bluetooth switched off. It boots already paired: the
 three modules reach *online* on their own, so nothing has to be scanned or
 tapped, and the bar shows all four tabs. Every value on the screens, Bord's
-water and heater cards included, comes from a fake — no screen holds a
-hardcoded reading any more.
+water and heater cards included, comes from a fake — Bord holds no hardcoded
+reading any more. The water and heater screens still substitute a zeroed
+default while their module is offline.
 
 `EXPO_PUBLIC_FAKE_BLE` is read **once**, by `createContainer()`, and it is the
 only branch in the app. Expo inlines `EXPO_PUBLIC_*` at build time, so this is
