@@ -1,4 +1,4 @@
-import { createFanout } from "@/core/fanout";
+import { createDetachedFanout } from "@/core/fanout";
 import type { Listener, Unsubscribe } from "@/core/observable";
 import type { Channel } from "@/domain/ports/Channel";
 import type { ChannelScenario } from "@/infrastructure/fake/scenarios/Scenario";
@@ -8,7 +8,7 @@ const SILENT: ChannelScenario = () => [];
 /** A channel whose peer is a scenario instead of a radio. */
 export class FakeChannel implements Channel {
   readonly commands: string[] = [];
-  private readonly frames = createFanout<string>(() => ({ remove: () => {} }));
+  private readonly frames = createDetachedFanout<string>();
 
   constructor(private readonly scenario: ChannelScenario = SILENT) {}
 

@@ -12,6 +12,11 @@ export type Fanout<T> = {
 /** One entry per add(), so the same function may subscribe twice and leave once. */
 type Registration<T> = { readonly notify: Listener<T> };
 
+/** A fanout that owns no upstream, for values pushed in by its owner. */
+export function createDetachedFanout<T>(): Fanout<T> {
+  return createFanout<T>(() => ({ remove: () => {} }));
+}
+
 /** Serves many listeners off one source, so a second one cannot orphan the first. */
 export function createFanout<T>(openSource: () => Source): Fanout<T> {
   const registrations: Registration<T>[] = [];

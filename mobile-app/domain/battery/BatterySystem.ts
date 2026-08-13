@@ -62,7 +62,6 @@ export class BatterySystem implements Observable<BatterySnapshot> {
     await this.transport.send(buildReadAllCommand());
   }
 
-  /** Re-issues the read-all the constructor sent, once a link is back. */
   resync = (): void => {
     void this.refresh().catch(() => {});
   };
