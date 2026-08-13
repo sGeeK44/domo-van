@@ -60,7 +60,7 @@ export default function BatterySettingsScreen() {
     setIsScanning(true);
     try {
       await bluetooth.startScan(
-        BATTERY_MODULE.scanServiceUuid,
+        [BATTERY_MODULE.scanServiceUuid],
         (foundDevice) => {
           setDiscoveredDevices((prev) => {
             if (prev.some((d) => d.id === foundDevice.id)) return prev;

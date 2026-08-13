@@ -3,8 +3,10 @@ import { JK_BMS_SERVICE_UUID } from "@/domain/battery/JkBmsUuids";
 import { buildServiceUuid } from "@/domain/modules/BleUuid";
 import {
   ALL_MODULES,
+  ALL_SCAN_SERVICE_UUIDS,
   BATTERY_MODULE,
   HEATER_MODULE,
+  moduleForAdvertisement,
   WATER_MODULE,
 } from "@/domain/modules/ModuleDescriptor";
 
@@ -37,5 +39,46 @@ describe("ModuleDescriptor", () => {
   it("scans the battery on the BMS vendor service, outside the van scheme", () => {
     expect(BATTERY_MODULE.serviceId).toBeNull();
     expect(BATTERY_MODULE.scanServiceUuid).toBe(JK_BMS_SERVICE_UUID);
+  });
+});
+
+describe("ALL_SCAN_SERVICE_UUIDS", () => {
+  it("covers the service of every module, so one scan finds them all", () => {
+    expect(ALL_SCAN_SERVICE_UUIDS).toEqual(
+      ALL_MODULES.map((module) => module.scanServiceUuid),
+    );
+  });
+});
+
+describe("moduleForAdvertisement", () => {
+  it("types an advertisement carrying the service of a module", () => {
+    expect(moduleForAdvertisement([HEATER_MODULE.scanServiceUuid])).toBe(
+      HEATER_MODULE,
+    );
+  });
+
+  it("types an advertisement whose service comes uppercased, as iOS reports it", () => {
+    const shouted = WATER_MODULE.scanServiceUuid.toUpperCase();
+
+    expect(moduleForAdvertisement([shouted])).toBe(WATER_MODULE);
+  });
+
+  it("types a device advertising a foreign service alongside a known one", () => {
+    const advertisement = [
+      "0000180a-0000-1000-8000-00805f9b34fb",
+      BATTERY_MODULE.scanServiceUuid,
+    ];
+
+    expect(moduleForAdvertisement(advertisement)).toBe(BATTERY_MODULE);
+  });
+
+  it("types nothing when no advertised service belongs to a module", () => {
+    expect(
+      moduleForAdvertisement(["0000ffff-0000-1000-8000-00805f9b34fb"]),
+    ).toBeNull();
+  });
+
+  it("types nothing when the advertisement carries no service at all", () => {
+    expect(moduleForAdvertisement([])).toBeNull();
   });
 });

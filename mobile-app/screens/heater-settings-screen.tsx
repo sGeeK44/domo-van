@@ -55,7 +55,7 @@ export default function HeaterSettingsScreen() {
     setIsScanning(true);
     try {
       await bluetooth.startScan(
-        HEATER_MODULE.scanServiceUuid,
+        [HEATER_MODULE.scanServiceUuid],
         (foundDevice) => {
           setDiscoveredDevices((prev) => {
             if (prev.some((d) => d.id === foundDevice.id)) return prev;

@@ -20,12 +20,19 @@ export class UnadvertisedDeviceError extends Error {
 }
 
 function fakeDeviceFor(module: ModuleDescriptor): DiscoveredBluetoothDevice {
-  return { id: `fake-${module.key}`, name: `${module.displayName} (fake)` };
+  return {
+    id: `fake-${module.key}`,
+    name: `${module.displayName} (fake)`,
+    serviceUuids: [module.scanServiceUuid],
+  };
 }
 
 /** The pairings a fake install starts from, so no screen waits on a scan. */
 export function fakePairedDevices(): [ModuleKey, DeviceInfo][] {
-  return ALL_MODULES.map((module) => [module.key, fakeDeviceFor(module)]);
+  return ALL_MODULES.map((module) => {
+    const { id, name } = fakeDeviceFor(module);
+    return [module.key, { id, name }];
+  });
 }
 
 /** A radio advertising the module catalogue, whose links never drop. */
@@ -38,11 +45,11 @@ export class FakeBluetooth implements BluetoothScanner, DeviceConnector {
   );
 
   async startScan(
-    serviceUuid: string,
+    serviceUuids: readonly string[],
     onDeviceFound: (device: DiscoveredBluetoothDevice) => void,
   ): Promise<void> {
     for (const { module, device } of this.advertised.values()) {
-      if (module.scanServiceUuid === serviceUuid) onDeviceFound(device);
+      if (serviceUuids.includes(module.scanServiceUuid)) onDeviceFound(device);
     }
   }
 

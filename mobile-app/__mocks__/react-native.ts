@@ -11,5 +11,8 @@ export const PermissionsAndroid = {
   },
   RESULTS: { GRANTED: "granted", DENIED: "denied" },
   request: async () => "granted",
-  requestMultiple: async () => ({}),
+  requestMultiple: async (permissions: string[]) =>
+    Object.fromEntries(
+      permissions.map((permission) => [permission, "granted"]),
+    ),
 };

@@ -41,3 +41,20 @@ export const ALL_MODULES: readonly ModuleDescriptor[] = [
   HEATER_MODULE,
   BATTERY_MODULE,
 ];
+
+/** Every service worth listening to, so one scan finds all module types. */
+export const ALL_SCAN_SERVICE_UUIDS: readonly string[] = ALL_MODULES.map(
+  (module) => module.scanServiceUuid,
+);
+
+// ble-plx lowercases UUIDs on Android and uppercases them on iOS.
+export function moduleForAdvertisement(
+  serviceUuids: readonly string[],
+): ModuleDescriptor | null {
+  const advertised = serviceUuids.map((uuid) => uuid.toLowerCase());
+  return (
+    ALL_MODULES.find((module) =>
+      advertised.includes(module.scanServiceUuid.toLowerCase()),
+    ) ?? null
+  );
+}
