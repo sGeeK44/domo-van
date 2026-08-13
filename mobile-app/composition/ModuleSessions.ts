@@ -38,14 +38,7 @@ type PersistentTransport = {
 
 type Session = { transport: PersistentTransport; system: ModuleSystem };
 
-export class MissingServiceIdError extends Error {
-  constructor(key: ModuleKey) {
-    super(`Module "${key}" has no service id to open a module transport on.`);
-    this.name = "MissingServiceIdError";
-  }
-}
-
-/** The only place naming the typed systems: it maps a pairing to one instance that outlives every link drop. */
+/** The only place constructing the typed systems: it maps a pairing to one instance that outlives every link drop. */
 export class ModuleSystemSessions implements ModuleSessions {
   private readonly sessions = new Map<ModuleKey, Session>();
   private readonly live: MutableObservable<LiveModuleSystems> =
@@ -81,24 +74,33 @@ export class ModuleSystemSessions implements ModuleSessions {
   }
 
   private createSession(module: ModuleDescriptor): Session {
-    if (module.key === "battery") {
-      const transport = new PersistentBinaryTransport((device) =>
-        this.transports.binaryTransport(device),
-      );
-      return { transport, system: new BatterySystem(transport) };
+    switch (module.key) {
+      case "battery": {
+        const transport = new PersistentBinaryTransport((device) =>
+          this.transports.binaryTransport(device),
+        );
+        return { transport, system: new BatterySystem(transport) };
+      }
+      case "water": {
+        const transport = this.moduleTransportFor(module);
+        return { transport, system: new WaterSystem(transport) };
+      }
+      case "heater": {
+        const transport = this.moduleTransportFor(module);
+        return { transport, system: new HeaterSystem(transport) };
+      }
+      default: {
+        const unhandled: never = module.key;
+        throw new Error(`Module "${unhandled}" has no system to open.`);
+      }
     }
-
-    const transport = this.moduleTransportFor(module);
-    return module.key === "water"
-      ? { transport, system: new WaterSystem(transport) }
-      : { transport, system: new HeaterSystem(transport) };
   }
 
-  private moduleTransportFor(
-    module: ModuleDescriptor,
-  ): PersistentModuleTransport {
-    const { serviceId } = module;
-    if (!serviceId) throw new MissingServiceIdError(module.key);
+  private moduleTransportFor({
+    key,
+    serviceId,
+  }: ModuleDescriptor): PersistentModuleTransport {
+    if (!serviceId) throw new Error(`Module "${key}" has no service id.`);
     return new PersistentModuleTransport((device) =>
       this.transports.moduleTransport(device, serviceId),
     );
