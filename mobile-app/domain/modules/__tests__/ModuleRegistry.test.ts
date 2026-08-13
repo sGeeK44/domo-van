@@ -1,12 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type {
-  ModuleDescriptor,
-  ModuleKey,
+import {
+  HEATER_MODULE,
+  type ModuleDescriptor,
+  type ModuleKey,
+  WATER_MODULE,
 } from "@/domain/modules/ModuleDescriptor";
 import {
   ModuleRegistry,
   SlotOccupiedError,
 } from "@/domain/modules/ModuleRegistry";
+import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 import type { DeviceConnector } from "@/domain/ports/DeviceConnector";
 import type { DeviceHandle } from "@/domain/ports/DeviceHandle";
 import type {
@@ -17,6 +20,16 @@ import type { ModuleSessions } from "@/domain/ports/ModuleSessions";
 
 const WATER_DEVICE = { id: "water-1", name: "Water Module" };
 const HEATER_DEVICE = { id: "heater-1", name: "Heater Module" };
+
+function discovered(
+  device: DeviceInfo,
+  module: ModuleDescriptor,
+): DiscoveredBluetoothDevice {
+  return { ...device, serviceUuids: [module.scanServiceUuid] };
+}
+
+const WATER_SCAN = discovered(WATER_DEVICE, WATER_MODULE);
+const HEATER_SCAN = discovered(HEATER_DEVICE, HEATER_MODULE);
 
 type DeferredConnect = {
   resolve: (handle: DeviceHandle) => void;
@@ -297,7 +310,10 @@ describe("ModuleRegistry", () => {
   it("persists, opens and connects a newly paired device", async () => {
     const { repository, connector, sessions, registry, at } = setup();
 
-    await registry.pair("water", { id: "water-9", name: "New Water" });
+    await registry.pair(
+      "water",
+      discovered({ id: "water-9", name: "New Water" }, WATER_MODULE),
+    );
 
     expect(repository.writes).toEqual([
       { key: "water", device: { id: "water-9", name: "New Water" } },
@@ -325,18 +341,24 @@ describe("ModuleRegistry", () => {
       if (water) seen.push(water.link.status);
     });
 
-    await registry.pair("water", { id: "water-9", name: "New Water" });
+    await registry.pair(
+      "water",
+      discovered({ id: "water-9", name: "New Water" }, WATER_MODULE),
+    );
 
     expect(seen).toEqual(["offline", "connecting", "online"]);
   });
 
   it("refuses a second device on an occupied slot and changes nothing", async () => {
     const { repository, connector, sessions, registry } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     const slotBefore = registry.slotOf("water");
 
     await expect(
-      registry.pair("water", { id: "water-2", name: "Another Water" }),
+      registry.pair(
+        "water",
+        discovered({ id: "water-2", name: "Another Water" }, WATER_MODULE),
+      ),
     ).rejects.toBeInstanceOf(SlotOccupiedError);
 
     expect(repository.writes).toHaveLength(1);
@@ -347,10 +369,13 @@ describe("ModuleRegistry", () => {
 
   it("names the occupied slot on the refusal", async () => {
     const { registry } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
 
     const refusal = await registry
-      .pair("water", { id: "water-2", name: "Another Water" })
+      .pair(
+        "water",
+        discovered({ id: "water-2", name: "Another Water" }, WATER_MODULE),
+      )
       .catch((error: unknown) => error);
 
     expect(refusal).toBeInstanceOf(SlotOccupiedError);
@@ -367,7 +392,7 @@ describe("ModuleRegistry", () => {
 
   it("closes the session, clears storage and frees the slot on unpair", async () => {
     const { repository, connector, sessions, registry } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
 
     await registry.unpair("water");
 
@@ -388,7 +413,7 @@ describe("ModuleRegistry", () => {
 
   it("unpairs even when the disconnect fails", async () => {
     const { repository, connector, registry } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     connector.disconnect = async () => {
       throw new Error("radio is gone");
     };
@@ -401,7 +426,7 @@ describe("ModuleRegistry", () => {
 
   it("marks a slot offline on a link drop, unbinding the session without closing it", async () => {
     const { connector, sessions, registry, tick } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     const droppedAt = tick(5_000);
 
     connector.dropLink("water-1");
@@ -416,7 +441,7 @@ describe("ModuleRegistry", () => {
 
   it("issues a single connect when reconnect is called twice while connecting", async () => {
     const { connector, registry } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     connector.dropLink("water-1");
     await flushMicrotasks();
     connector.hangForever();
@@ -432,7 +457,7 @@ describe("ModuleRegistry", () => {
 
   it("ignores reconnect while the slot is online", async () => {
     const { connector, registry } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
 
     await registry.reconnect("water");
 
@@ -442,7 +467,7 @@ describe("ModuleRegistry", () => {
   it("falls back to offline after the connect timeout, keeping the last contact", async () => {
     vi.useFakeTimers();
     const { connector, registry, tick } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     const droppedAt = tick(5_000);
     connector.dropLink("water-1");
     await flushMicrotasks();
@@ -463,7 +488,7 @@ describe("ModuleRegistry", () => {
     const { connector, sessions, registry } = setup();
     connector.failWith(new Error("out of range"));
 
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
 
     expect(registry.slotOf("water")).toMatchObject({
       pairing: { id: "water-1" },
@@ -476,7 +501,7 @@ describe("ModuleRegistry", () => {
     const { connector, sessions, registry } = setup();
     connector.deferConnects();
 
-    const pairing = registry.pair("water", WATER_DEVICE);
+    const pairing = registry.pair("water", WATER_SCAN);
     await connector.whenConnectRequested("water-1");
     await registry.unpair("water");
 
@@ -495,7 +520,7 @@ describe("ModuleRegistry", () => {
 
   it("keeps the freed slot untouched when a late connect fails after unpair", async () => {
     const { connector, registry, tick } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     tick(5_000);
     connector.dropLink("water-1");
     connector.deferConnects();
@@ -516,11 +541,11 @@ describe("ModuleRegistry", () => {
   it("refuses a second pairing issued in the same tick as the first", async () => {
     const { repository, connector, sessions, registry } = setup();
 
-    const first = registry.pair("water", WATER_DEVICE);
-    const second = registry.pair("water", {
-      id: "water-2",
-      name: "Another Water",
-    });
+    const first = registry.pair("water", WATER_SCAN);
+    const second = registry.pair(
+      "water",
+      discovered({ id: "water-2", name: "Another Water" }, WATER_MODULE),
+    );
 
     await expect(second).rejects.toBeInstanceOf(SlotOccupiedError);
     await first;
@@ -539,7 +564,7 @@ describe("ModuleRegistry", () => {
     const { connector, sessions, registry } = setup();
     connector.deferConnects();
 
-    const pairing = registry.pair("water", WATER_DEVICE);
+    const pairing = registry.pair("water", WATER_SCAN);
     await connector.whenConnectRequested("water-1");
     await vi.advanceTimersByTimeAsync(15_000);
     await pairing;
@@ -561,7 +586,7 @@ describe("ModuleRegistry", () => {
     const { connector, registry } = setup();
     connector.hangForever();
 
-    const pairing = registry.pair("water", WATER_DEVICE);
+    const pairing = registry.pair("water", WATER_SCAN);
     await vi.advanceTimersByTimeAsync(0);
     expect(registry.slotOf("water").link.status).toBe("connecting");
     expect(vi.getTimerCount()).toBe(1);
@@ -574,7 +599,7 @@ describe("ModuleRegistry", () => {
 
   it("ignores a reconnect racing the storage clear of an unpair", async () => {
     const { repository, connector, sessions, registry, tick } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     tick(5_000);
     connector.dropLink("water-1");
     await flushMicrotasks();
@@ -603,11 +628,14 @@ describe("ModuleRegistry", () => {
   it("keeps the replacement paired when it lands during the storage clear of an unpair", async () => {
     const { repository, sessions, registry } = setup();
     const replacement = { id: "water-2", name: "Replacement Water" };
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     repository.blockClears();
 
     const unpairing = registry.unpair("water");
-    const repairing = registry.pair("water", replacement);
+    const repairing = registry.pair(
+      "water",
+      discovered(replacement, WATER_MODULE),
+    );
     repository.releaseClears();
     await Promise.all([unpairing, repairing]);
 
@@ -632,7 +660,7 @@ describe("ModuleRegistry", () => {
     const { connector, sessions, registry } = setup();
     connector.deferConnects();
 
-    const pairing = registry.pair("water", WATER_DEVICE);
+    const pairing = registry.pair("water", WATER_SCAN);
     await connector.whenConnectRequested("water-1");
     await vi.advanceTimersByTimeAsync(15_000);
     await pairing;
@@ -691,7 +719,7 @@ describe("ModuleRegistry", () => {
       throw new Error("storage is full");
     };
 
-    await expect(registry.pair("water", WATER_DEVICE)).rejects.toThrow(
+    await expect(registry.pair("water", WATER_SCAN)).rejects.toThrow(
       "storage is full",
     );
 
@@ -705,7 +733,7 @@ describe("ModuleRegistry", () => {
 
   it("binds the handle obtained by a reconnect", async () => {
     const { connector, sessions, registry, tick } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     tick(5_000);
     connector.dropLink("water-1");
 
@@ -732,7 +760,7 @@ describe("ModuleRegistry", () => {
       return stop;
     };
 
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
 
     expect(registry.slotOf("water").link).toEqual({
       status: "offline",
@@ -744,7 +772,7 @@ describe("ModuleRegistry", () => {
 
   it("keeps the last contact when a reconnect fails outside any timeout", async () => {
     const { connector, registry, tick } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     const droppedAt = tick(5_000);
     connector.dropLink("water-1");
     connector.failWith(new Error("out of range"));
@@ -776,7 +804,7 @@ describe("ModuleRegistry", () => {
     const { connector, registry } = setup();
     connector.deferConnects();
 
-    const pairing = registry.pair("water", WATER_DEVICE);
+    const pairing = registry.pair("water", WATER_SCAN);
     await connector.whenConnectRequested("water-1");
     expect(vi.getTimerCount()).toBe(1);
 
@@ -791,7 +819,7 @@ describe("ModuleRegistry", () => {
     const { connector, sessions, registry } = setup();
     connector.deferConnects();
 
-    const pairing = registry.pair("water", WATER_DEVICE);
+    const pairing = registry.pair("water", WATER_SCAN);
     await connector.whenConnectRequested("water-1");
 
     registry.dispose();
@@ -815,7 +843,7 @@ describe("ModuleRegistry", () => {
       unpairs.push(registry.unpair("water"));
     });
 
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     await Promise.all(unpairs);
     await flushMicrotasks();
 
@@ -836,7 +864,7 @@ describe("ModuleRegistry", () => {
 
   it("frees the slot for good when a subscriber unpairs on the connecting notify of a reconnect", async () => {
     const { connector, sessions, registry, tick } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     tick(5_000);
     connector.dropLink("water-1");
 
@@ -871,7 +899,7 @@ describe("ModuleRegistry", () => {
 
   it("applies a link drop that fires while the reconnect still holds the queue", async () => {
     const { connector, sessions, registry, tick } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     tick(5_000);
     connector.dropLink("water-1");
 
@@ -908,7 +936,7 @@ describe("ModuleRegistry", () => {
   it("marks the slot offline when the connector throws synchronously", async () => {
     vi.useFakeTimers();
     const { connector, registry, tick } = setup();
-    await registry.pair("water", WATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
     const droppedAt = tick(5_000);
     connector.dropLink("water-1");
     connector.connect = () => {
@@ -926,8 +954,8 @@ describe("ModuleRegistry", () => {
 
   it("closes every open session and drops every link watcher on dispose", async () => {
     const { connector, sessions, registry } = setup();
-    await registry.pair("water", WATER_DEVICE);
-    await registry.pair("heater", HEATER_DEVICE);
+    await registry.pair("water", WATER_SCAN);
+    await registry.pair("heater", HEATER_SCAN);
 
     registry.dispose();
 
