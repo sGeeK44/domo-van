@@ -6,6 +6,8 @@ import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
 export interface ModuleSessions {
   open(module: ModuleDescriptor, pairing: DeviceInfo): void;
   bind(module: ModuleDescriptor, device: DeviceHandle): void;
+  /** Tolerates arriving twice in a row, or without a matching `bind`. */
   unbind(module: ModuleDescriptor): void;
+  /** Tolerates arriving without a matching `open`. */
   close(module: ModuleDescriptor): void;
 }
