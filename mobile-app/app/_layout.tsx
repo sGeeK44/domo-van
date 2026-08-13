@@ -25,6 +25,8 @@ function AppContent() {
       <AppProviders>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modules" options={{ headerShown: false }} />
+          <Stack.Screen name="add-module" options={{ headerShown: false }} />
           <Stack.Screen
             name="water-settings"
             options={{ headerShown: false }}

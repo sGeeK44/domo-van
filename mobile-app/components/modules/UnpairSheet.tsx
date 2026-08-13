@@ -1,0 +1,88 @@
+import { Modal, StyleSheet, Text, View } from "react-native";
+import {
+  Button,
+  Card,
+  FontSize,
+  Spacing,
+  type ThemeColors,
+  useThemeColor,
+} from "@/design-system";
+
+export type UnpairSheetProps = {
+  visible: boolean;
+  moduleName: string;
+  deviceName: string;
+  isUnpairing: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+};
+
+export function UnpairSheet({
+  visible,
+  moduleName,
+  deviceName,
+  isUnpairing,
+  onCancel,
+  onConfirm,
+}: UnpairSheetProps) {
+  const colors = useThemeColor();
+  const styles = getStyles(colors);
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onCancel}
+    >
+      <View style={styles.backdrop}>
+        <View style={styles.sheet}>
+          <Card title={`Dissocier ${moduleName}`} subtitle={deviceName}>
+            <Text style={styles.warning}>
+              L'emplacement redevient libre. Les réglages restent dans le module
+              et reviennent s'il est appairé à nouveau.
+            </Text>
+
+            <View style={styles.actions}>
+              <Button
+                testID="unpair-confirm"
+                loading={isUnpairing}
+                onPress={onConfirm}
+              >
+                Dissocier
+              </Button>
+              <Button
+                testID="unpair-cancel"
+                variant="secondary"
+                disabled={isUnpairing}
+                onPress={onCancel}
+              >
+                Annuler
+              </Button>
+            </View>
+          </Card>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      justifyContent: "flex-end",
+      backgroundColor: colors.background.primary,
+    },
+    sheet: {
+      padding: Spacing.xxl,
+    },
+    warning: {
+      color: colors.text.secondary,
+      fontSize: FontSize.s,
+      paddingBottom: Spacing.l,
+    },
+    actions: {
+      gap: Spacing.m,
+    },
+  });

@@ -1,177 +1,52 @@
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { useMemo } from "react";
+import { ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  AdminSection,
-  DiscoveredDevicesList,
-  SavedDeviceSection,
-  ScanSection,
-} from "@/components/module-settings";
+import { AdminSection } from "@/components/module-settings";
 import { TankSettingsSection } from "@/components/water-settings/TankSettingsSection";
 import { ValveSettingsSection } from "@/components/water-settings/ValveSettingsSection";
-import { useContainer } from "@/composition/ContainerProvider";
-import {
-  useModuleRegistry,
-  useModuleSlot,
-} from "@/composition/ModuleRegistryProvider";
+import { useModuleSlot } from "@/composition/ModuleRegistryProvider";
 import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
 import {
-  Button,
   SettingsHeader,
-  Spacing,
   type ThemeColors,
   useThemeColor,
 } from "@/design-system";
 import { WATER_MODULE } from "@/domain/modules/ModuleDescriptor";
-import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
-import { useAutoScanWithTimeout } from "@/screens/hooks/useAutoScanWithTimeout";
 
 export default function WaterSettingsScreen() {
   const colors = useThemeColor();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
 
-  // Bluetooth for scanning and connecting
-  const { bluetooth } = useContainer();
-
   const { pairing, link } = useModuleSlot(WATER_MODULE.key);
-  const { pair, unpair, reconnect } = useModuleRegistry();
-
-  // Local scanning state
-  const [isScanning, setIsScanning] = useState(false);
-  const [discoveredDevices, setDiscoveredDevices] = useState<
-    DiscoveredBluetoothDevice[]
-  >([]);
-  const [lastError, setLastError] = useState<string | null>(null);
-
-  const isModuleConnected = link.status === "online";
-
   const waterSystem = useWaterSystem();
 
-  // Scanning functions
-  const startScan = useCallback(async () => {
-    setDiscoveredDevices([]);
-    setLastError(null);
-    setIsScanning(true);
-    try {
-      await bluetooth.startScan(
-        [WATER_MODULE.scanServiceUuid],
-        (foundDevice) => {
-          setDiscoveredDevices((prev) => {
-            if (prev.some((d) => d.id === foundDevice.id)) return prev;
-            return [...prev, foundDevice];
-          });
-        },
-      );
-    } catch (e) {
-      setLastError(e instanceof Error ? e.message : "Scan failed");
-      setIsScanning(false);
-    }
-  }, [bluetooth]);
-
-  const stopScan = useCallback(async () => {
-    await bluetooth.stopScan();
-    setIsScanning(false);
-  }, [bluetooth]);
-
-  // Ensure scanning stops when leaving the screen
-  useEffect(() => {
-    return () => {
-      void bluetooth.stopScan();
-    };
-  }, [bluetooth]);
-
-  // Auto scan only when no saved device; stop after 30s
-  useAutoScanWithTimeout({
-    enabled: !pairing,
-    isScanning,
-    startScan,
-    stopScan,
-    timeoutMs: 30_000,
-  });
-
-  const onToggleScan = () => {
-    if (isScanning) void stopScan();
-    else void startScan();
-  };
-
-  const pairDevice = useCallback(
-    async (deviceId: string) => {
-      await stopScan();
-      const found = discoveredDevices.find(
-        (candidate) => candidate.id === deviceId,
-      );
-      if (!found) return;
-      try {
-        await pair(WATER_MODULE.key, found);
-      } catch (e) {
-        setLastError(e instanceof Error ? e.message : "Pairing failed");
-      }
-    },
-    [discoveredDevices, pair, stopScan],
-  );
-
-  const reconnectModule = useCallback(
-    () => reconnect(WATER_MODULE.key),
-    [reconnect],
-  );
-
-  // Goes straight to the radio: the registry only ever connects, and sees the drop
-  const disconnect = useCallback(async () => {
-    if (pairing) await bluetooth.disconnect(pairing);
-  }, [bluetooth, pairing]);
-
-  const forget = useCallback(() => unpair(WATER_MODULE.key), [unpair]);
+  const isOnline = link.status === "online";
 
   return (
     <SafeAreaView style={styles.container}>
-      <SettingsHeader title="Bluetooth" onBackPress={() => router.back()} />
+      <SettingsHeader title="Eau" onBackPress={() => router.back()} />
 
-      {pairing ? (
-        <ScrollView>
-          <SavedDeviceSection
-            device={pairing}
-            isConnected={isModuleConnected}
-            onConnect={reconnectModule}
-            onDisconnect={disconnect}
-            onForget={forget}
-          />
-          {isModuleConnected && waterSystem && (
-            <>
-              <AdminSection
-                adminModule={waterSystem.admin}
-                deviceName={pairing.name}
-              />
-              <TankSettingsSection
-                tank={waterSystem.cleanTank}
-                label="Eau Propre"
-              />
-              <TankSettingsSection
-                tank={waterSystem.greyTank}
-                label="Eau Grise"
-              />
-              <ValveSettingsSection valve={waterSystem.greyDrainValve} />
-            </>
-          )}
-        </ScrollView>
-      ) : (
-        <View style={{ flex: 1 }}>
-          <ScanSection isScanning={isScanning} lastError={lastError} />
-
-          <DiscoveredDevicesList
-            isScanning={isScanning}
-            discoveredDevices={discoveredDevices}
-            onConnect={pairDevice}
-          />
-
-          <View style={styles.bottomButtonContainer}>
-            <Button onPress={onToggleScan}>
-              {isScanning ? "Arrêter la recherche" : "Rechercher"}
-            </Button>
-          </View>
-        </View>
-      )}
+      <ScrollView>
+        {isOnline && waterSystem && (
+          <>
+            <AdminSection
+              adminModule={waterSystem.admin}
+              deviceName={pairing?.name ?? null}
+            />
+            <TankSettingsSection
+              tank={waterSystem.cleanTank}
+              label="Eau Propre"
+            />
+            <TankSettingsSection
+              tank={waterSystem.greyTank}
+              label="Eau Grise"
+            />
+            <ValveSettingsSection valve={waterSystem.greyDrainValve} />
+          </>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -181,10 +56,5 @@ const createStyles = (colors: ThemeColors) =>
     container: {
       flex: 1,
       backgroundColor: colors.background.primary,
-    },
-    bottomButtonContainer: {
-      marginTop: "auto",
-      paddingHorizontal: Spacing.xxl,
-      paddingBottom: Spacing.xxl,
     },
   });
