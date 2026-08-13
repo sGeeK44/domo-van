@@ -19,7 +19,7 @@ const TRUNCATED_HEX = `
   79 0c 01 0ce4 02 0c
 `;
 
-/** The same reply with the last checksum byte flipped. */
+/** The same reply with the last checksum byte inverted, 0x19 to 0xe6. */
 const BAD_CHECKSUM_HEX = `
   4e57 002e 00000000 06 00 00
   79 0c 01 0ce4 02 0ce5 03 0ce3 04 0ce6

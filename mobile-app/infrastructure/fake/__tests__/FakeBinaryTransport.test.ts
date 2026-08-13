@@ -17,19 +17,30 @@ describe("FakeBinaryTransport", () => {
     vi.useRealTimers();
   });
 
-  it("replays the corpus to a listener that has just subscribed", () => {
+  it("stays silent until something asks it to replay", () => {
     const transport = new FakeBinaryTransport();
-
     const { chunks } = collect(transport);
+    expect(chunks).toHaveLength(0);
+
+    transport.replay();
 
     expect(chunks).toHaveLength(3);
     expect(chunks.at(-1)).toEqual(JK_BMS_NOMINAL_FRAME);
   });
 
+  it("leaves the listeners already subscribed untouched when another joins", () => {
+    const transport = new FakeBinaryTransport();
+    const first = collect(transport);
+    transport.replay();
+
+    collect(transport);
+
+    expect(first.chunks).toHaveLength(3);
+  });
+
   it("answers a read-all command with the corpus", () => {
     const transport = new FakeBinaryTransport();
     const { chunks } = collect(transport);
-    chunks.length = 0;
 
     void transport.send(buildReadAllCommand());
 
@@ -40,7 +51,6 @@ describe("FakeBinaryTransport", () => {
   it("stays silent on a command it does not recognise", () => {
     const transport = new FakeBinaryTransport();
     const { chunks } = collect(transport);
-    chunks.length = 0;
 
     void transport.send(new Uint8Array([0x4e, 0x57, 0x00]));
 
@@ -57,7 +67,7 @@ describe("FakeBinaryTransport", () => {
 
     vi.advanceTimersByTime(2000);
 
-    expect(chunks).toHaveLength(3);
+    expect(chunks).toHaveLength(2);
   });
 
   it("stops its cadence once the last listener leaves", () => {
@@ -71,7 +81,22 @@ describe("FakeBinaryTransport", () => {
     stop();
     vi.advanceTimersByTime(5000);
 
-    expect(chunks).toHaveLength(1);
+    expect(chunks).toHaveLength(0);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("stops its cadence on dispose, listener or no listener", () => {
+    vi.useFakeTimers();
+    const transport = new FakeBinaryTransport({
+      frames: [JK_BMS_NOMINAL_FRAME],
+      intervalMs: 1000,
+    });
+    collect(transport);
+
+    transport.dispose();
+    vi.advanceTimersByTime(5000);
+
+    expect(transport.listenerCount).toBe(0);
     expect(vi.getTimerCount()).toBe(0);
   });
 

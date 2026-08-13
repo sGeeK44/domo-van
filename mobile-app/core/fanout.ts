@@ -9,13 +9,22 @@ export type Fanout<T> = {
   emit: (value: T) => void;
 };
 
+/** One entry per add(), so the same function may subscribe twice and leave once. */
+type Registration<T> = { readonly notify: Listener<T> };
+
 /** Serves many listeners off one source, so a second one cannot orphan the first. */
 export function createFanout<T>(openSource: () => Source): Fanout<T> {
-  const listeners = new Set<Listener<T>>();
+  const registrations: Registration<T>[] = [];
   let source: Source | null = null;
 
+  function forget(registration: Registration<T>): void {
+    const index = registrations.indexOf(registration);
+    if (index < 0) return;
+    registrations.splice(index, 1);
+  }
+
   function closeWhenIdle(): void {
-    if (listeners.size > 0 || source === null) return;
+    if (registrations.length > 0 || source === null) return;
     const closing = source;
     source = null;
     try {
@@ -25,25 +34,36 @@ export function createFanout<T>(openSource: () => Source): Fanout<T> {
     }
   }
 
+  function openOnce(registration: Registration<T>): void {
+    if (source !== null) return;
+    try {
+      source = openSource();
+    } catch (error) {
+      forget(registration);
+      throw error;
+    }
+  }
+
   return {
     get size() {
-      return listeners.size;
+      return registrations.length;
     },
 
     add(listener: Listener<T>): Unsubscribe {
-      listeners.add(listener);
-      source ??= openSource();
+      const registration: Registration<T> = { notify: listener };
+      registrations.push(registration);
+      openOnce(registration);
 
       return () => {
-        listeners.delete(listener);
+        forget(registration);
         closeWhenIdle();
       };
     },
 
     emit(value: T): void {
-      for (const listener of [...listeners]) {
+      for (const registration of [...registrations]) {
         try {
-          listener(value);
+          registration.notify(value);
         } catch {
           // never crash callers
         }
