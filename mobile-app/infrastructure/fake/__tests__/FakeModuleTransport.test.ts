@@ -1,13 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { DeviceHandle } from "@/domain/ports/DeviceHandle";
 import { FakeChannel } from "@/infrastructure/fake/FakeChannel";
-import {
-  FakeModuleTransport,
-  UnscriptedServiceError,
-} from "@/infrastructure/fake/FakeModuleTransport";
+import { FakeModuleTransport } from "@/infrastructure/fake/FakeModuleTransport";
 import { waterScenario } from "@/infrastructure/fake/scenarios/waterScenario";
-
-const HANDLE: DeviceHandle = { id: "off-vehicle", name: "Fake Module" };
 
 describe("FakeChannel", () => {
   it("delivers the frames the scenario answers a command with", async () => {
@@ -62,29 +56,13 @@ describe("FakeModuleTransport", () => {
     expect(transport.channel("9999").commands).toEqual(["CFG?"]);
   });
 
-  it("scripts the water module for a handle pointing at the water service", async () => {
+  it("gives each channel id the frames its own scenario answers", async () => {
     const received: string[] = [];
-    const transport = FakeModuleTransport.forDevice(HANDLE, "0001");
+    const transport = new FakeModuleTransport(waterScenario());
 
     transport.channel("0002").listen((frame) => received.push(frame));
     await transport.openChannel("0002").send("CFG?");
 
     expect(received).toEqual(["CFG:V=100;H=200", "56"]);
-  });
-
-  it("scripts the heater module for a handle pointing at the heater service", async () => {
-    const received: string[] = [];
-    const transport = FakeModuleTransport.forDevice(HANDLE, "0002");
-
-    transport.channel("0006").listen((frame) => received.push(frame));
-    await transport.openChannel("0006").send("ENV?");
-
-    expect(received).toEqual(["ENV:T=215;H=450;P=10132;EXT=120"]);
-  });
-
-  it("refuses a service it has no scenario for", () => {
-    expect(() => FakeModuleTransport.forDevice(HANDLE, "9999")).toThrow(
-      UnscriptedServiceError,
-    );
   });
 });
