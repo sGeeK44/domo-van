@@ -21,9 +21,10 @@ describe("ModuleDescriptor", () => {
     expect(ALL_MODULES).toEqual([BATTERY_MODULE, WATER_MODULE, HEATER_MODULE]);
   });
 
-  it("gives every module a tab label and an icon", () => {
+  it("carries a translation key rather than copy it cannot read", () => {
     for (const module of ALL_MODULES) {
-      expect(module.tabTitle).not.toBe("");
+      expect(module.displayNameKey).toBe(`modules.${module.key}.name`);
+      expect(module.tabTitleKey).toBe(`modules.${module.key}.tab`);
       expect(module.tabIcon).not.toBe("");
     }
   });

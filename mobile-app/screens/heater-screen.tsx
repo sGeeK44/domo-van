@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CircularTemperatureDial } from "@/components/heater/circular-temperature-dial";
@@ -21,9 +22,15 @@ const DEFAULT_ZONE_STATE: HeaterZoneSnapshot = {
   lastMessage: null,
 };
 
-const ZONE_NAMES = ["Salon", "Chambre", "SdB", "Soute"];
+const ZONE_NAME_KEYS = [
+  "heater.zones.zone1",
+  "heater.zones.zone2",
+  "heater.zones.zone3",
+  "heater.zones.zone4",
+] as const;
 
 export default function HeaterScreen() {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = getStyles(colors);
   const router = useRouter();
@@ -82,7 +89,7 @@ export default function HeaterScreen() {
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={{ flex: 1 }}>
         <PageHeader
-          title="Chauffage"
+          title={t("heater.zones.title")}
           onSettingsPress={() => router.push("/heater-settings")}
           onBluetoothPress={() => void reconnect("heater")}
           bluetoothStatus={linkTone(link)}
@@ -94,7 +101,7 @@ export default function HeaterScreen() {
           <View style={styles.zonesRow}>
             <View style={styles.dialWrapper}>
               <CircularTemperatureDial
-                name={ZONE_NAMES[0]}
+                name={t(ZONE_NAME_KEYS[0])}
                 zoneState={isConnected ? zones[0] : DEFAULT_ZONE_STATE}
                 onSetpointChange={(newSetpoint) =>
                   handleSetpointChange(0, newSetpoint)
@@ -104,7 +111,7 @@ export default function HeaterScreen() {
             </View>
             <View style={styles.dialWrapper}>
               <CircularTemperatureDial
-                name={ZONE_NAMES[1]}
+                name={t(ZONE_NAME_KEYS[1])}
                 zoneState={isConnected ? zones[1] : DEFAULT_ZONE_STATE}
                 onSetpointChange={(newSetpoint) =>
                   handleSetpointChange(1, newSetpoint)
@@ -116,7 +123,7 @@ export default function HeaterScreen() {
           <View style={styles.zonesRow}>
             <View style={styles.dialWrapper}>
               <CircularTemperatureDial
-                name={ZONE_NAMES[2]}
+                name={t(ZONE_NAME_KEYS[2])}
                 zoneState={isConnected ? zones[2] : DEFAULT_ZONE_STATE}
                 onSetpointChange={(newSetpoint) =>
                   handleSetpointChange(2, newSetpoint)
@@ -126,7 +133,7 @@ export default function HeaterScreen() {
             </View>
             <View style={styles.dialWrapper}>
               <CircularTemperatureDial
-                name={ZONE_NAMES[3]}
+                name={t(ZONE_NAME_KEYS[3])}
                 zoneState={isConnected ? zones[3] : DEFAULT_ZONE_STATE}
                 onSetpointChange={(newSetpoint) =>
                   handleSetpointChange(3, newSetpoint)

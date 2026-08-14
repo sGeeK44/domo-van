@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Pressable,
   StyleSheet,
@@ -18,13 +19,13 @@ import {
   useThemeColor,
 } from "@/design-system";
 import type { TankLevelSensor } from "@/domain/water/TankLevelSensor";
+import type { TranslationKey } from "@/i18n/keys";
 
-function validatePositiveInt(label: string, value: string): string | null {
+function validatePositiveInt(value: string): TranslationKey | null {
   const trimmed = value.trim();
-  if (!/^\d+$/.test(trimmed))
-    return `${label} doit être un nombre entier positif.`;
+  if (!/^\d+$/.test(trimmed)) return "water.settings.positiveInteger";
   const n = Number(trimmed);
-  if (!Number.isFinite(n) || n <= 0) return `${label} doit être > 0.`;
+  if (!Number.isFinite(n) || n <= 0) return "water.settings.greaterThanZero";
   return null;
 }
 
@@ -38,6 +39,7 @@ const showToast = (message: string) => {
 };
 
 export function TankSettingsSection({ tank, label }: Props) {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -48,12 +50,11 @@ export function TankSettingsSection({ tank, label }: Props) {
       try {
         await tank.getConfig();
       } catch (e) {
-        const msg =
-          e instanceof Error ? e.message : "Erreur lors de la lecture.";
+        const msg = e instanceof Error ? e.message : t("common.errors.read");
         showToast(msg);
       }
     };
-  }, [tank]);
+  }, [tank, t]);
 
   useEffect(() => {
     const sub = tank.subscribe((snapshot) => {
@@ -75,7 +76,9 @@ export function TankSettingsSection({ tank, label }: Props) {
     <View style={styles.adminSection}>
       <View style={styles.field}>
         <View style={styles.fieldHeader}>
-          <Text style={styles.label}>Réservoir ({label})</Text>
+          <Text style={styles.label}>
+            {t("water.settings.tankSection", { tank: label })}
+          </Text>
           <Pressable
             onPress={() => void requestAllCfg()}
             style={styles.refreshButton}
@@ -88,7 +91,7 @@ export function TankSettingsSection({ tank, label }: Props) {
         <TextInput
           value={volumeLiters}
           onChangeText={setVolumeLiters}
-          placeholder="Volume (L)"
+          placeholder={t("water.settings.volumePlaceholder")}
           placeholderTextColor={colors.textMuted}
           keyboardType="number-pad"
           style={styles.input}
@@ -97,7 +100,7 @@ export function TankSettingsSection({ tank, label }: Props) {
         <TextInput
           value={heightMm}
           onChangeText={setHeightMm}
-          placeholder="Hauteur vide (mm)"
+          placeholder={t("water.settings.heightPlaceholder")}
           placeholderTextColor={colors.textMuted}
           keyboardType="number-pad"
           style={styles.input}
@@ -105,24 +108,30 @@ export function TankSettingsSection({ tank, label }: Props) {
 
         <Pressable
           onPress={async () => {
-            const vErr = validatePositiveInt("Volume", volumeLiters);
-            const hErr = validatePositiveInt("Hauteur", heightMm);
-            if (vErr || hErr) {
-              showToast(vErr ?? hErr ?? "Erreur de validation");
+            const vErr = validatePositiveInt(volumeLiters);
+            const hErr = validatePositiveInt(heightMm);
+            if (vErr) {
+              showToast(t(vErr, { field: t("water.settings.volume") }));
               return;
             }
-            showToast("Envoi configuration…");
+            if (hErr) {
+              showToast(t(hErr, { field: t("water.settings.height") }));
+              return;
+            }
+            showToast(t("water.settings.sending"));
             try {
               await tank.setConfig(volumeLiters.trim(), heightMm.trim());
             } catch (e) {
               showToast(
-                e instanceof Error ? e.message : "Erreur lors de l'envoi.",
+                e instanceof Error ? e.message : t("common.errors.send"),
               );
             }
           }}
           style={styles.primaryButton}
         >
-          <Text style={styles.primaryButtonText}>Enregistrer</Text>
+          <Text style={styles.primaryButtonText}>
+            {t("common.actions.save")}
+          </Text>
         </Pressable>
       </View>
     </View>

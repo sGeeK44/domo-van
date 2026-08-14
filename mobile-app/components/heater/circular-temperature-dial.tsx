@@ -1,5 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   LayoutChangeEvent,
   Pressable,
@@ -129,6 +130,7 @@ export function CircularTemperatureDial({
   onSetpointChange,
   onToggle,
 }: CircularTemperatureDialProps) {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = getStyles(colors);
 
@@ -404,7 +406,9 @@ export function CircularTemperatureDial({
                 {/* Target Temperature */}
                 {isRunning ? (
                   <Text style={styles.targetTemp}>
-                    Cible: {setpointCelsius.toFixed(1)}°C
+                    {t("heater.zone.target", {
+                      temperature: setpointCelsius.toFixed(1),
+                    })}
                   </Text>
                 ) : (
                   <Text style={styles.targetTemp}>---</Text>
@@ -450,7 +454,7 @@ export function CircularTemperatureDial({
             { color: isRunning ? colors.text : colors.textMuted },
           ]}
         >
-          {isRunning ? "ON" : "OFF"}
+          {t(isRunning ? "common.state.on" : "common.state.off")}
         </Text>
       </Pressable>
     </View>

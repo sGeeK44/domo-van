@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AdminSection } from "@/components/module-settings";
@@ -15,6 +16,7 @@ import { type Palette, SettingsHeader, useThemeColor } from "@/design-system";
 import { WATER_MODULE } from "@/domain/modules/ModuleDescriptor";
 
 export default function WaterSettingsScreen() {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
@@ -27,7 +29,10 @@ export default function WaterSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <SettingsHeader title="Eau" onBackPress={() => router.back()} />
+      <SettingsHeader
+        title={t("water.settings.title")}
+        onBackPress={() => router.back()}
+      />
 
       <ScrollView>
         {isOnline ? (
@@ -39,11 +44,11 @@ export default function WaterSettingsScreen() {
               />
               <TankSettingsSection
                 tank={waterSystem.cleanTank}
-                label="Eau Propre"
+                label={t("water.settings.cleanTank")}
               />
               <TankSettingsSection
                 tank={waterSystem.greyTank}
-                label="Eau Grise"
+                label={t("water.settings.greyTank")}
               />
               <ValveSettingsSection valve={waterSystem.greyDrainValve} />
             </>

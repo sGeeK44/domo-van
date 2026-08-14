@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DiscoveredModuleRow } from "@/components/modules";
@@ -27,6 +28,7 @@ import { message } from "@/screens/error-message";
 const SCAN_TIMEOUT_MS = 30_000;
 
 export default function AddModuleScreen() {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
@@ -68,7 +70,7 @@ export default function AddModuleScreen() {
       .catch((cause: unknown) => {
         if (cancelled) return;
         setIsScanning(false);
-        setError(message(cause, "La recherche a échoué."));
+        setError(message(cause, t("modules.add.scanFailed")));
       });
 
     // the radio only starts scanning once the permission round-trip resolves, which outlives both the timeout and the screen
@@ -86,7 +88,7 @@ export default function AddModuleScreen() {
       clearTimeout(timer);
       stopRadio();
     };
-  }, [bluetooth]);
+  }, [bluetooth, t]);
 
   useEffect(() => {
     scan();
@@ -108,7 +110,8 @@ export default function AddModuleScreen() {
       await pair(key, device);
       if (isMounted.current) router.back();
     } catch (cause: unknown) {
-      if (isMounted.current) setError(message(cause, "L'appairage a échoué."));
+      if (isMounted.current)
+        setError(message(cause, t("modules.add.pairFailed")));
     } finally {
       if (isMounted.current) setPairingId(null);
     }
@@ -116,11 +119,14 @@ export default function AddModuleScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <SettingsHeader title="Ajouter" onBackPress={() => router.back()} />
+      <SettingsHeader
+        title={t("modules.add.title")}
+        onBackPress={() => router.back()}
+      />
 
       <ScrollView contentContainerStyle={styles.list}>
         <Text style={styles.status}>
-          {isScanning ? "Recherche en cours…" : "Recherche terminée"}
+          {t(isScanning ? "modules.add.scanning" : "modules.add.scanned")}
         </Text>
         {error && <Text style={styles.error}>{error}</Text>}
 
@@ -135,12 +141,12 @@ export default function AddModuleScreen() {
         ))}
 
         {!isScanning && found.length === 0 && (
-          <Text style={styles.empty}>Aucun module trouvé.</Text>
+          <Text style={styles.empty}>{t("modules.add.empty")}</Text>
         )}
 
         {!isScanning && (
           <Button testID="rescan" variant="secondary" onPress={rescan}>
-            Relancer la recherche
+            {t("modules.add.rescan")}
           </Button>
         )}
       </ScrollView>

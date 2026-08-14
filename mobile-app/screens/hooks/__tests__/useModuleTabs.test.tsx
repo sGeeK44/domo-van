@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import type { TFunction } from "i18next";
 import { useEffect } from "react";
+import { I18nextProvider, useTranslation } from "react-i18next";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   linkSubtitle,
@@ -8,8 +10,10 @@ import {
   reconnectAction,
 } from "@/components/home/link-view";
 import type { ModuleKey } from "@/domain/modules/ModuleDescriptor";
+import type { LinkState } from "@/domain/modules/ModuleSlot";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 import type { DeviceRepository } from "@/domain/ports/DeviceRepository";
+import { createI18n } from "@/i18n/createI18n";
 
 // The container is built when ContainerProvider is imported, so the switch has
 // to be flipped before that import — hence the dynamic imports below.
@@ -40,6 +44,7 @@ type Harness = {
 };
 
 function TabBar({ harness }: { harness: Harness }) {
+  const { t } = useTranslation();
   const tabs = useModuleTabs();
   const water = useModuleSlot("water");
   const { pair, unpair, reconnect } = useModuleRegistry();
@@ -59,21 +64,27 @@ function TabBar({ harness }: { harness: Harness }) {
       <dd data-testid="visible">
         {tabs
           .filter((tab) => tab.visible)
-          .map((tab) => tab.title)
+          .map((tab) => t(tab.titleKey))
           .join(" ")}
       </dd>
       <dd data-testid="registered">{tabs.map((tab) => tab.name).join(" ")}</dd>
       <dd data-testid="tones">
         {tabs.map((tab) => (tab.link ? linkTone(tab.link) : "-")).join(" ")}
       </dd>
-      <dd data-testid="water-contact">
-        {linkSubtitle(water.link, Date.now()) ?? ""}
-      </dd>
-      <dd data-testid="water-action">
-        {reconnectAction(water.link)?.label ?? ""}
-      </dd>
+      <dd data-testid="water-contact">{contactLine(water.link, t)}</dd>
+      <dd data-testid="water-action">{actionLabel(water.link, t) ?? ""}</dd>
     </dl>
   );
+}
+
+function contactLine(link: LinkState, t: TFunction): string {
+  const copy = linkSubtitle(link, Date.now());
+  return copy ? t(copy.key, copy.params) : "";
+}
+
+function actionLabel(link: LinkState, t: TFunction): string | null {
+  const action = reconnectAction(link);
+  return action ? t(action.labelKey) : null;
 }
 
 function fakeRadio(container: { bluetooth: unknown }): Radio {
@@ -98,11 +109,13 @@ function renderTabBar(): Harness {
   };
 
   render(
-    <ContainerProvider>
-      <ModuleRegistryProvider>
-        <TabBar harness={harness} />
-      </ModuleRegistryProvider>
-    </ContainerProvider>,
+    <I18nextProvider i18n={createI18n("fr")}>
+      <ContainerProvider>
+        <ModuleRegistryProvider>
+          <TabBar harness={harness} />
+        </ModuleRegistryProvider>
+      </ContainerProvider>
+    </I18nextProvider>,
   );
 
   return harness;

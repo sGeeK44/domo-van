@@ -20,10 +20,17 @@ export class UnadvertisedDeviceError extends Error {
   }
 }
 
+/** What the fake radio advertises: a device name is data off the air, not app copy. */
+const FAKE_DEVICE_NAMES: Record<ModuleKey, string> = {
+  water: "Water Module",
+  heater: "Heater Module",
+  battery: "JK BMS",
+};
+
 function fakeDeviceFor(module: ModuleDescriptor): DiscoveredBluetoothDevice {
   return {
     id: `fake-${module.key}`,
-    name: `${module.displayName} (fake)`,
+    name: `${FAKE_DEVICE_NAMES[module.key]} (fake)`,
     serviceUuids: [module.scanServiceUuid],
   };
 }

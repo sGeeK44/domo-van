@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
 import Animated, {
   Easing,
@@ -120,6 +121,7 @@ export function BatteryGauge({
   consumption,
   isConnected = true,
 }: BatteryGaugeProps) {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = getStyles(colors);
 
@@ -283,7 +285,9 @@ export function BatteryGauge({
         </View>
         <View style={styles.indicator}>
           <IconSymbol name="bolt" size={18} color={colors.textMuted} />
-          <Text style={styles.indicatorLabel}>Conso:</Text>
+          <Text style={styles.indicatorLabel}>
+            {t("dashboard.battery.consumption")}
+          </Text>
           <Text style={styles.indicatorValue}>{consumptionText}</Text>
         </View>
       </View>

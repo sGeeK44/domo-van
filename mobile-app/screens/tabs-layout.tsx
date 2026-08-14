@@ -1,5 +1,7 @@
 import { Tabs, usePathname, useRouter } from "expo-router";
+import type { TFunction } from "i18next";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { ModuleTabIcon } from "@/components/navigation/module-tab-icon";
 import {
   dashboardRedirect,
@@ -10,6 +12,7 @@ import { useThemeColor } from "@/design-system";
 import { useModuleTabs } from "@/screens/hooks/useModuleTabs";
 
 export default function TabsLayout() {
+  const { t } = useTranslation();
   const themeColor = useThemeColor();
   const tabs = useModuleTabs();
   const router = useRouter();
@@ -32,15 +35,19 @@ export default function TabsLayout() {
       }}
     >
       {tabs.map((tab) => (
-        <Tabs.Screen key={tab.name} name={tab.name} options={optionsFor(tab)} />
+        <Tabs.Screen
+          key={tab.name}
+          name={tab.name}
+          options={optionsFor(tab, t)}
+        />
       ))}
     </Tabs>
   );
 }
 
-function optionsFor(tab: ModuleTab) {
+function optionsFor(tab: ModuleTab, t: TFunction) {
   return {
-    title: tab.title,
+    title: t(tab.titleKey),
     tabBarIcon: ({ color }: { color: string }) => (
       <ModuleTabIcon tab={tab} color={color} />
     ),

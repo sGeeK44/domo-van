@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HeaterPidSection } from "@/components/heater-settings";
@@ -13,9 +14,15 @@ import { useHeaterSystem } from "@/composition/ModuleSystemsProvider";
 import { type Palette, SettingsHeader, useThemeColor } from "@/design-system";
 import { HEATER_MODULE } from "@/domain/modules/ModuleDescriptor";
 
-const ZONE_NAMES = ["Cabine", "Cellule", "Soute", "Garage"];
+const ZONE_NAME_KEYS = [
+  "heater.settings.zone1",
+  "heater.settings.zone2",
+  "heater.settings.zone3",
+  "heater.settings.zone4",
+] as const;
 
 export default function HeaterSettingsScreen() {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
@@ -28,7 +35,10 @@ export default function HeaterSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <SettingsHeader title="Chauffage" onBackPress={() => router.back()} />
+      <SettingsHeader
+        title={t("heater.settings.title")}
+        onBackPress={() => router.back()}
+      />
 
       <ScrollView>
         {isOnline ? (
@@ -42,7 +52,7 @@ export default function HeaterSettingsScreen() {
                 <HeaterPidSection
                   key={index}
                   heaterZone={zone}
-                  zoneName={ZONE_NAMES[index]}
+                  zoneName={t(ZONE_NAME_KEYS[index])}
                 />
               ))}
             </>

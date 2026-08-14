@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  type LinkCopy,
   linkSubtitle,
   linkTone,
   reconnectAction,
@@ -24,27 +25,32 @@ describe("linkSubtitle", () => {
   });
 
   it("reports a pairing that never reached a link", () => {
-    expect(linkSubtitle({ status: "offline", lastContactAt: null }, NOW)).toBe(
-      "Jamais connecté",
-    );
+    expect(
+      linkSubtitle({ status: "offline", lastContactAt: null }, NOW),
+    ).toEqual({ key: "link.state.neverConnected" });
   });
 
   it("reports the time of last contact of a module that dropped", () => {
-    const cases: [number, string][] = [
-      [30_000, "Dernier contact à l'instant"],
-      [5 * MINUTE, "Dernier contact il y a 5 min"],
-      [3 * 60 * MINUTE, "Dernier contact il y a 3 h"],
-      [2 * 24 * 60 * MINUTE, "Dernier contact il y a 2 j"],
+    const cases: [number, LinkCopy][] = [
+      [30_000, { key: "link.contact.justNow" }],
+      [5 * MINUTE, { key: "link.contact.minutes", params: { value: 5 } }],
+      [3 * 60 * MINUTE, { key: "link.contact.hours", params: { value: 3 } }],
+      [
+        2 * 24 * 60 * MINUTE,
+        { key: "link.contact.days", params: { value: 2 } },
+      ],
     ];
 
     for (const [elapsed, expected] of cases) {
       const link = { status: "offline" as const, lastContactAt: NOW - elapsed };
-      expect(linkSubtitle(link, NOW)).toBe(expected);
+      expect(linkSubtitle(link, NOW)).toEqual(expected);
     }
   });
 
   it("reports a reconnection in progress", () => {
-    expect(linkSubtitle({ status: "connecting" }, NOW)).toBe("Connexion…");
+    expect(linkSubtitle({ status: "connecting" }, NOW)).toEqual({
+      key: "link.state.connecting",
+    });
   });
 });
 
@@ -55,14 +61,14 @@ describe("reconnectAction", () => {
 
   it("offers a reconnection to a module that dropped", () => {
     expect(reconnectAction({ status: "offline", lastContactAt: NOW })).toEqual({
-      label: "Reconnecter",
+      labelKey: "link.actions.reconnect",
       disabled: false,
     });
   });
 
   it("cannot be triggered twice: it is disabled while connecting", () => {
     expect(reconnectAction({ status: "connecting" })).toEqual({
-      label: "Reconnexion…",
+      labelKey: "link.actions.reconnecting",
       disabled: true,
     });
   });

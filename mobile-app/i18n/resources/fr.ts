@@ -1,0 +1,203 @@
+/** The source of truth: the mockups are written in French. Keys read `<area>.<screen>.<element>`. */
+export const fr = {
+  common: {
+    actions: {
+      save: "Enregistrer",
+      cancel: "Annuler",
+    },
+    state: {
+      on: "ON",
+      off: "OFF",
+      yes: "Oui",
+      no: "Non",
+    },
+    errors: {
+      send: "Erreur lors de l'envoi.",
+      read: "Erreur lors de la lecture.",
+      validation: "Erreur de validation",
+    },
+  },
+
+  link: {
+    state: {
+      online: "En ligne",
+      offline: "Hors ligne",
+      connecting: "Connexion…",
+      neverConnected: "Jamais connecté",
+      offlineAt: "Hors ligne · vu à {{time}}",
+    },
+    contact: {
+      justNow: "Dernier contact à l'instant",
+      minutes: "Dernier contact il y a {{value}} min",
+      hours: "Dernier contact il y a {{value}} h",
+      days: "Dernier contact il y a {{value}} j",
+    },
+    actions: {
+      reconnect: "Reconnecter",
+      reconnecting: "Reconnexion…",
+    },
+  },
+
+  modules: {
+    water: { name: "Module d'eau", tab: "Eau" },
+    heater: { name: "Module de chauffage", tab: "Chauff" },
+    battery: { name: "JK BMS", tab: "Batt" },
+    list: {
+      title: "Modules",
+      unpair: "Dissocier",
+      freeSlot: "Emplacement libre · appairer",
+      unpairFailed: "La dissociation a échoué.",
+    },
+    add: {
+      title: "Ajouter",
+      scanning: "Recherche en cours…",
+      scanned: "Recherche terminée",
+      empty: "Aucun module trouvé.",
+      rescan: "Relancer la recherche",
+      pair: "Appairer",
+      alreadyPaired: "Déjà appairé",
+      slotTaken: "Emplacement occupé",
+      scanFailed: "La recherche a échoué.",
+      pairFailed: "L'appairage a échoué.",
+    },
+    unpair: {
+      title: "Dissocier {{module}}",
+      confirm: "Dissocier",
+      warning:
+        "L'emplacement redevient libre. Les réglages restent dans le module et reviennent s'il est appairé à nouveau.",
+    },
+    notice: {
+      unpairedTitle: "Aucun module appairé",
+      unpairedSubtitle: "Emplacement libre",
+      unpairedBody:
+        "Appairez ce module depuis l'écran Modules pour accéder à ses réglages.",
+      offlineTitle: "Module hors ligne",
+      offlineBody: "Les réglages s'affichent une fois le module reconnecté.",
+    },
+    admin: {
+      section: "Administration",
+      namePlaceholder: "Nom du module",
+      saveName: "Enregistrer le nom",
+      pinLabel: "PIN (6 chiffres)",
+      savePin: "Enregistrer le PIN",
+      sendingName: "Envoi du nouveau nom…",
+      sendingPin: "Envoi du nouveau PIN…",
+      restarted: "OK. Le module va redémarrer. Reconnecte-toi.",
+      failed: "Erreur: {{message}}",
+      nameLength: "Le nom doit faire entre 1 et 20 caractères.",
+      nameCharset: "Caractères autorisés: A-Z, 0-9, espace, - et _.",
+      pinDigits: "Le PIN doit contenir exactement 6 chiffres.",
+    },
+  },
+
+  dashboard: {
+    tab: "Bord",
+    title: "Bord",
+    addModule: "Ajouter un module",
+    emptySlot: { hint: "Aucun module" },
+    water: { label: "Eau propre" },
+    heater: {
+      running: "Chauffe",
+      stopped: "Arrêt",
+      setpoint: "> {{temperature}}°C",
+    },
+    battery: {
+      consumption: "Conso:",
+      remaining: "{{duration}} restantes",
+      charging: "{{duration}} pour charger",
+    },
+  },
+
+  water: {
+    levels: {
+      title: "Niveaux d'Eau",
+      cleanTank: "EAU PROPRE",
+      greyTank: "EAU GRISE",
+    },
+    drain: {
+      zone: "ZONE DE VIDANGE",
+      slide: "GLISSER POUR VIDANGER",
+      autoClose: "Fermeture automatique dans",
+      closeNow: "FERMER IMMÉDIATEMENT",
+      valveState: "État vanne :",
+      open: "OUVERTE",
+      closed: "FERMÉE",
+    },
+    settings: {
+      title: "Eau",
+      cleanTank: "Eau Propre",
+      greyTank: "Eau Grise",
+      tankSection: "Réservoir ({{tank}})",
+      volume: "Volume",
+      volumePlaceholder: "Volume (L)",
+      height: "Hauteur",
+      heightPlaceholder: "Hauteur vide (mm)",
+      valveSection: "Vanne de Vidange",
+      duration: "Durée",
+      durationPlaceholder: "Durée (secondes)",
+      sending: "Envoi configuration…",
+      positiveInteger: "{{field}} doit être un nombre entier positif.",
+      greaterThanZero: "{{field}} doit être > 0.",
+      atMostFiveMinutes: "{{field}} doit être ≤ 300 secondes.",
+    },
+  },
+
+  heater: {
+    zones: {
+      title: "Chauffage",
+      zone1: "Salon",
+      zone2: "Chambre",
+      zone3: "SdB",
+      zone4: "Soute",
+    },
+    zone: {
+      current: "actuel",
+      setpoint: "consigne",
+      target: "Cible: {{temperature}}°C",
+      running: "Actif",
+      stopped: "Arrêté",
+    },
+    settings: {
+      title: "Chauffage",
+      zone1: "Cabine",
+      zone2: "Cellule",
+      zone3: "Soute",
+      zone4: "Garage",
+      pidSection: "Configuration PID - {{zone}}",
+      savePid: "Enregistrer PID",
+      sendingPid: "Envoi configuration PID…",
+      positiveNumber: "{{field}} doit être un nombre positif.",
+      range: "{{field}} doit être entre 0.01 et 100.",
+    },
+  },
+
+  battery: {
+    overview: {
+      title: "Batterie",
+      placeholder: "Écran batterie à venir.",
+    },
+    settings: {
+      title: "Batterie",
+      section: "Informations Batterie",
+      charge: "État de charge",
+      voltage: "Tension totale",
+      current: "Courant",
+      power: "Puissance",
+      mosTemperature: "Température MOS",
+      cell1Temperature: "Température cellule 1",
+      cell2Temperature: "Température cellule 2",
+      cellCount: "Nombre de cellules",
+      minCellVoltage: "Tension min cellule",
+      maxCellVoltage: "Tension max cellule",
+      cellDelta: "Delta cellules",
+      cycles: "Cycles",
+      capacity: "Capacité",
+      charging: "En charge",
+      discharging: "En décharge",
+      balancing: "Équilibrage",
+      balancingOn: "Actif",
+      balancingOff: "Inactif",
+      alarms: "Alarmes",
+    },
+  },
+};

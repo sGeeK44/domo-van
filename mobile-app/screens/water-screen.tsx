@@ -1,4 +1,5 @@
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { linkTone, reconnectAction } from "@/components/home/link-view";
@@ -30,6 +31,7 @@ const DEFAULT_VALVE_STATE: ValveState = {
 };
 
 export default function WaterScreen() {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = getStyles(colors);
   const router = useRouter();
@@ -71,7 +73,7 @@ export default function WaterScreen() {
       <StatusBar barStyle="default" />
       <SafeAreaView style={{ flex: 1 }}>
         <PageHeader
-          title="Niveaux d'Eau"
+          title={t("water.levels.title")}
           onSettingsPress={() => router.push("/water-settings")}
           onBluetoothPress={() => void reconnect("water")}
           bluetoothStatus={linkTone(link)}
@@ -80,13 +82,13 @@ export default function WaterScreen() {
         <View style={styles.content}>
           <View style={styles.tanksRow}>
             <WaterTank
-              name="EAU PROPRE"
+              name={t("water.levels.cleanTank")}
               capacity={cleanCapacity}
               percentage={cleanPercentage}
               color={colors.fill.cleanWater}
             />
             <WaterTank
-              name="EAU GRISE"
+              name={t("water.levels.greyTank")}
               capacity={greyCapacity}
               percentage={greyPercentage}
               color={colors.fill.greyWater}

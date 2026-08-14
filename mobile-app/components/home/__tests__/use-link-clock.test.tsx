@@ -24,17 +24,18 @@ describe("the clock that ages an offline card's last contact", () => {
 
   it("ages the line while nothing else on the screen re-renders", () => {
     const { result } = renderHook(() => useLinkClock(OFFLINE));
-    expect(linkSubtitle(OFFLINE, result.current)).toBe(
-      "Dernier contact à l'instant",
-    );
+    expect(linkSubtitle(OFFLINE, result.current)).toEqual({
+      key: "link.contact.justNow",
+    });
 
     act(() => {
       vi.advanceTimersByTime(45 * MINUTE);
     });
 
-    expect(linkSubtitle(OFFLINE, result.current)).toBe(
-      "Dernier contact il y a 45 min",
-    );
+    expect(linkSubtitle(OFFLINE, result.current)).toEqual({
+      key: "link.contact.minutes",
+      params: { value: 45 },
+    });
   });
 
   it("runs no ticker while the module is online", () => {

@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 import { type PropsWithChildren, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   StatusBar,
   type StyleProp,
@@ -48,6 +49,9 @@ const DEFAULT_ENVIRONMENT: EnvironmentSnapshot = {
   lastMessage: null,
 };
 
+/** A dash is not copy: it stands in for a measurement no module reported. */
+const NO_READING = "-";
+
 const DEFAULT_TANK: TankLevelSnapshot = {
   capacityLiters: 0,
   heightMm: 0,
@@ -57,6 +61,7 @@ const DEFAULT_TANK: TankLevelSnapshot = {
 };
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = getStyles(colors);
   const router = useRouter();
@@ -89,16 +94,19 @@ export default function HomeScreen() {
   const heating = heaterOnline && heat.isRunning;
 
   const remainingTime = useMemo(() => {
-    if (!batteryOnline) return "-";
+    if (!batteryOnline) return NO_READING;
     const hours = calculateRemainingTime(
       battery.percentage,
       battery.capacityAh,
       battery.current,
     );
-    if (hours === null) return "-";
-    const suffix = battery.current < 0 ? "restantes" : "pour charger";
-    return `${formatRemainingTime(hours)} ${suffix}`;
-  }, [battery, batteryOnline]);
+    if (hours === null) return NO_READING;
+    const key =
+      battery.current < 0
+        ? "dashboard.battery.remaining"
+        : "dashboard.battery.charging";
+    return t(key, { duration: formatRemainingTime(hours) });
+  }, [battery, batteryOnline, t]);
 
   const consumption = batteryOnline ? Math.round(battery.power) : 0;
 
@@ -106,7 +114,10 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={styles.safeArea}>
-        <PageHeader title="Bord" onSettingsPress={openModules} />
+        <PageHeader
+          title={t("dashboard.title")}
+          onSettingsPress={openModules}
+        />
 
         <View style={styles.content}>
           <View style={styles.gaugeSection}>
@@ -135,9 +146,11 @@ export default function HomeScreen() {
               <StatusCard
                 icon="water-drop"
                 value={
-                  waterOnline ? `${Math.round(cleanTank.percentage)}%` : "-"
+                  waterOnline
+                    ? `${Math.round(cleanTank.percentage)}%`
+                    : NO_READING
                 }
-                label="Eau propre"
+                label={t("dashboard.water.label")}
                 backgroundColor={colors.fill.cleanWater}
                 onPress={() => router.push("/water")}
               />
@@ -151,9 +164,21 @@ export default function HomeScreen() {
               <StatusCard
                 icon="local-fire-department"
                 value={
-                  heaterOnline ? (heat.isRunning ? "Chauffe" : "Arrêt") : "-"
+                  heaterOnline
+                    ? t(
+                        heat.isRunning
+                          ? "dashboard.heater.running"
+                          : "dashboard.heater.stopped",
+                      )
+                    : NO_READING
                 }
-                label={heating ? `> ${heat.setpointCelsius.toFixed(0)}°C` : "-"}
+                label={
+                  heating
+                    ? t("dashboard.heater.setpoint", {
+                        temperature: heat.setpointCelsius.toFixed(0),
+                      })
+                    : NO_READING
+                }
                 backgroundColor={heating ? colors.fill.heat : colors.off}
                 onPress={() => router.push("/heater")}
               />
@@ -168,7 +193,7 @@ export default function HomeScreen() {
           )}
 
           {nothingPaired && (
-            <Button onPress={openModules}>Ajouter un module</Button>
+            <Button onPress={openModules}>{t("dashboard.addModule")}</Button>
           )}
         </View>
       </SafeAreaView>
@@ -184,10 +209,12 @@ type SlotProps = PropsWithChildren<{
 }>;
 
 function Slot({ slot, onAdd, onReconnect, style, children }: SlotProps) {
+  const { t } = useTranslation();
+
   if (!slot.pairing) {
     return (
       <EmptySlotCard
-        title={slot.module.tabTitle}
+        title={t(slot.module.tabTitleKey)}
         onPress={onAdd}
         style={style}
       />

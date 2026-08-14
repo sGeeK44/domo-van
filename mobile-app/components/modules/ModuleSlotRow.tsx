@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   BorderRadius,
@@ -12,6 +13,7 @@ import {
   useThemeColor,
 } from "@/design-system";
 import type { LinkState, ModuleSlot } from "@/domain/modules/ModuleSlot";
+import type { TranslationKey } from "@/i18n/keys";
 
 export type ModuleSlotRowProps = {
   slot: ModuleSlot;
@@ -24,9 +26,11 @@ export function ModuleSlotRow({
   onOpenSettings,
   onUnpair,
 }: ModuleSlotRowProps) {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const { module, pairing, link } = slot;
+  const state = linkStateCopy(link);
 
   if (!pairing) return null;
 
@@ -38,10 +42,10 @@ export function ModuleSlotRow({
         onPress={onOpenSettings}
       >
         <View style={styles.text}>
-          <Text style={styles.title}>{module.displayName}</Text>
+          <Text style={styles.title}>{t(module.displayNameKey)}</Text>
           <Text style={styles.subtitle}>{pairing.name}</Text>
           <Text style={styles.subtitle}>{pairing.id}</Text>
-          <Text style={styles.link}>{linkLabel(link)}</Text>
+          <Text style={styles.link}>{t(state.key, state.params)}</Text>
         </View>
         <IconSymbol name="chevron-right" size={22} color={colors.text} />
       </Pressable>
@@ -51,17 +55,22 @@ export function ModuleSlotRow({
         variant="secondary"
         onPress={onUnpair}
       >
-        Dissocier
+        {t("modules.list.unpair")}
       </Button>
     </View>
   );
 }
 
-function linkLabel(link: LinkState): string {
-  if (link.status === "online") return "En ligne";
-  if (link.status === "connecting") return "Connexion…";
-  if (link.lastContactAt === null) return "Hors ligne";
-  return `Hors ligne · vu à ${clockTime(link.lastContactAt)}`;
+type LinkStateCopy = { key: TranslationKey; params?: { time: string } };
+
+function linkStateCopy(link: LinkState): LinkStateCopy {
+  if (link.status === "online") return { key: "link.state.online" };
+  if (link.status === "connecting") return { key: "link.state.connecting" };
+  if (link.lastContactAt === null) return { key: "link.state.offline" };
+  return {
+    key: "link.state.offlineAt",
+    params: { time: clockTime(link.lastContactAt) },
+  };
 }
 
 function clockTime(at: number): string {

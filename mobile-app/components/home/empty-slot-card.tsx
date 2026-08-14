@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   Pressable,
   type StyleProp,
@@ -25,6 +26,7 @@ export type EmptySlotCardProps = {
 };
 
 export function EmptySlotCard({ title, onPress, style }: EmptySlotCardProps) {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = getStyles(colors);
 
@@ -37,7 +39,7 @@ export function EmptySlotCard({ title, onPress, style }: EmptySlotCardProps) {
       <View style={styles.body}>
         <IconSymbol name="add" size={24} color={colors.textMuted} />
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.hint}>Aucun module</Text>
+        <Text style={styles.hint}>{t("dashboard.emptySlot.hint")}</Text>
       </View>
     </Pressable>
   );

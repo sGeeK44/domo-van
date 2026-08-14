@@ -28,7 +28,7 @@ describe("FakeBluetooth", () => {
     const found = await scan(WATER_MODULE.scanServiceUuid);
 
     expect(found).toHaveLength(1);
-    expect(found[0].name).toContain(WATER_MODULE.displayName);
+    expect(found[0].name).toBe("Water Module (fake)");
   });
 
   it("advertises a device for every module in the catalogue", async () => {

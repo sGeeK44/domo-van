@@ -17,6 +17,10 @@ export default defineConfig({
         __dirname,
         "__mocks__/expo-secure-store.ts",
       ),
+      "expo-localization": path.resolve(
+        __dirname,
+        "__mocks__/expo-localization.ts",
+      ),
       "expo-router": path.resolve(__dirname, "__mocks__/expo-router.ts"),
       "react-native-safe-area-context": path.resolve(
         __dirname,

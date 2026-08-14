@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Pressable,
   StyleSheet,
@@ -19,19 +20,20 @@ import {
 } from "@/design-system";
 import type { PidConfig } from "@/domain/heater/HeaterProtocol";
 import type { HeaterZone } from "@/domain/heater/HeaterZone";
+import type { TranslationKey } from "@/i18n/keys";
 
 const showToast = (message: string) => {
   ToastAndroid.show(message, ToastAndroid.SHORT);
 };
 
-function validatePidValue(label: string, value: string): string | null {
+function validatePidValue(value: string): TranslationKey | null {
   const trimmed = value.trim();
   if (!/^\d+(\.\d+)?$/.test(trimmed)) {
-    return `${label} doit etre un nombre positif.`;
+    return "heater.settings.positiveNumber";
   }
   const n = Number(trimmed);
   if (!Number.isFinite(n) || n < 0.01 || n > 100) {
-    return `${label} doit etre entre 0.01 et 100.`;
+    return "heater.settings.range";
   }
   return null;
 }
@@ -42,6 +44,7 @@ type Props = {
 };
 
 export function HeaterPidSection({ heaterZone, zoneName }: Props) {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -54,10 +57,10 @@ export function HeaterPidSection({ heaterZone, zoneName }: Props) {
     try {
       await heaterZone.getPidConfig();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Erreur lors de la lecture.";
+      const msg = e instanceof Error ? e.message : t("common.errors.read");
       showToast(msg);
     }
-  }, [heaterZone]);
+  }, [heaterZone, t]);
 
   useEffect(() => {
     const sub = heaterZone.subscribe((snapshot) => {
@@ -78,18 +81,22 @@ export function HeaterPidSection({ heaterZone, zoneName }: Props) {
     };
   }, [heaterZone, requestConfig]);
 
-  const handleSave = async () => {
-    const kpErr = validatePidValue("Kp", kp);
-    const kiErr = validatePidValue("Ki", ki);
-    const kdErr = validatePidValue("Kd", kd);
+  const gainError = (field: string, value: string): string | null => {
+    const error = validatePidValue(value);
+    return error ? t(error, { field }) : null;
+  };
 
-    if (kpErr || kiErr || kdErr) {
-      showToast(kpErr ?? kiErr ?? kdErr ?? "Erreur de validation");
+  const handleSave = async () => {
+    const invalid =
+      gainError("Kp", kp) ?? gainError("Ki", ki) ?? gainError("Kd", kd);
+
+    if (invalid) {
+      showToast(invalid);
       return;
     }
 
     setSending(true);
-    showToast("Envoi configuration PID...");
+    showToast(t("heater.settings.sendingPid"));
 
     try {
       const config: PidConfig = {
@@ -99,7 +106,7 @@ export function HeaterPidSection({ heaterZone, zoneName }: Props) {
       };
       await heaterZone.setPidConfig(config);
     } catch (e) {
-      showToast(e instanceof Error ? e.message : "Erreur lors de l'envoi.");
+      showToast(e instanceof Error ? e.message : t("common.errors.send"));
     } finally {
       setSending(false);
     }
@@ -109,7 +116,9 @@ export function HeaterPidSection({ heaterZone, zoneName }: Props) {
     <View style={styles.adminSection}>
       <View style={styles.field}>
         <View style={styles.fieldHeader}>
-          <Text style={styles.label}>Configuration PID - {zoneName}</Text>
+          <Text style={styles.label}>
+            {t("heater.settings.pidSection", { zone: zoneName })}
+          </Text>
           <Pressable
             onPress={() => void requestConfig()}
             style={styles.refreshButton}
@@ -162,7 +171,9 @@ export function HeaterPidSection({ heaterZone, zoneName }: Props) {
           style={[styles.primaryButton, sending && { opacity: Opacity.subtle }]}
           disabled={sending}
         >
-          <Text style={styles.primaryButtonText}>Enregistrer PID</Text>
+          <Text style={styles.primaryButtonText}>
+            {t("heater.settings.savePid")}
+          </Text>
         </Pressable>
       </View>
     </View>

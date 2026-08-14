@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Modal, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -28,6 +29,7 @@ export function UnpairSheet({
   onCancel,
   onConfirm,
 }: UnpairSheetProps) {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => getStyles(colors), [colors]);
   // the modal window spans the whole screen, so the sheet clears the navigation bar itself
@@ -49,11 +51,11 @@ export function UnpairSheet({
         <View
           style={[styles.sheet, { paddingBottom: Spacing.xxl + insets.bottom }]}
         >
-          <Card title={`Dissocier ${moduleName}`} subtitle={deviceName}>
-            <Text style={styles.warning}>
-              L'emplacement redevient libre. Les réglages restent dans le module
-              et reviennent s'il est appairé à nouveau.
-            </Text>
+          <Card
+            title={t("modules.unpair.title", { module: moduleName })}
+            subtitle={deviceName}
+          >
+            <Text style={styles.warning}>{t("modules.unpair.warning")}</Text>
 
             <View style={styles.actions}>
               <Button
@@ -61,7 +63,7 @@ export function UnpairSheet({
                 loading={isUnpairing}
                 onPress={onConfirm}
               >
-                Dissocier
+                {t("modules.unpair.confirm")}
               </Button>
               <Button
                 testID="unpair-cancel"
@@ -69,7 +71,7 @@ export function UnpairSheet({
                 disabled={isUnpairing}
                 onPress={onCancel}
               >
-                Annuler
+                {t("common.actions.cancel")}
               </Button>
             </View>
           </Card>

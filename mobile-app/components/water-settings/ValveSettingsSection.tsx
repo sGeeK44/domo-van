@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Pressable,
   StyleSheet,
@@ -18,14 +19,14 @@ import {
   useThemeColor,
 } from "@/design-system";
 import type { DrainValve } from "@/domain/water/DrainValve";
+import type { TranslationKey } from "@/i18n/keys";
 
-function validatePositiveInt(label: string, value: string): string | null {
+function validatePositiveInt(value: string): TranslationKey | null {
   const trimmed = value.trim();
-  if (!/^\d+$/.test(trimmed))
-    return `${label} doit être un nombre entier positif.`;
+  if (!/^\d+$/.test(trimmed)) return "water.settings.positiveInteger";
   const n = Number(trimmed);
-  if (!Number.isFinite(n) || n <= 0) return `${label} doit être > 0.`;
-  if (n > 300) return `${label} doit être ≤ 300 secondes.`;
+  if (!Number.isFinite(n) || n <= 0) return "water.settings.greaterThanZero";
+  if (n > 300) return "water.settings.atMostFiveMinutes";
   return null;
 }
 
@@ -38,6 +39,7 @@ const showToast = (message: string) => {
 };
 
 export function ValveSettingsSection({ valve }: Props) {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -47,12 +49,11 @@ export function ValveSettingsSection({ valve }: Props) {
       try {
         await valve.getConfig();
       } catch (e) {
-        const msg =
-          e instanceof Error ? e.message : "Erreur lors de la lecture.";
+        const msg = e instanceof Error ? e.message : t("common.errors.read");
         showToast(msg);
       }
     };
-  }, [valve]);
+  }, [valve, t]);
 
   useEffect(() => {
     const sub = valve.subscribe((snapshot) => {
@@ -73,7 +74,7 @@ export function ValveSettingsSection({ valve }: Props) {
     <View style={styles.adminSection}>
       <View style={styles.field}>
         <View style={styles.fieldHeader}>
-          <Text style={styles.label}>Vanne de Vidange</Text>
+          <Text style={styles.label}>{t("water.settings.valveSection")}</Text>
           <Pressable
             onPress={() => void requestConfig()}
             style={styles.refreshButton}
@@ -86,7 +87,7 @@ export function ValveSettingsSection({ valve }: Props) {
         <TextInput
           value={autoCloseSeconds}
           onChangeText={setAutoCloseSeconds}
-          placeholder="Durée (secondes)"
+          placeholder={t("water.settings.durationPlaceholder")}
           placeholderTextColor={colors.textMuted}
           keyboardType="number-pad"
           style={styles.input}
@@ -94,23 +95,25 @@ export function ValveSettingsSection({ valve }: Props) {
 
         <Pressable
           onPress={async () => {
-            const err = validatePositiveInt("Durée", autoCloseSeconds);
+            const err = validatePositiveInt(autoCloseSeconds);
             if (err) {
-              showToast(err);
+              showToast(t(err, { field: t("water.settings.duration") }));
               return;
             }
-            showToast("Envoi configuration…");
+            showToast(t("water.settings.sending"));
             try {
               await valve.setAutoCloseTime(Number(autoCloseSeconds.trim()));
             } catch (e) {
               showToast(
-                e instanceof Error ? e.message : "Erreur lors de l'envoi.",
+                e instanceof Error ? e.message : t("common.errors.send"),
               );
             }
           }}
           style={styles.primaryButton}
         >
-          <Text style={styles.primaryButtonText}>Enregistrer</Text>
+          <Text style={styles.primaryButtonText}>
+            {t("common.actions.save")}
+          </Text>
         </Pressable>
       </View>
     </View>

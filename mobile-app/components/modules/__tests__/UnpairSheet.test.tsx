@@ -1,23 +1,27 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { I18nextProvider } from "react-i18next";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { UnpairSheet } from "@/components/modules";
 import { ThemeProvider } from "@/design-system";
+import { createI18n } from "@/i18n/createI18n";
 
 function renderSheet(isUnpairing: boolean) {
   const onCancel = vi.fn();
 
   render(
-    <ThemeProvider>
-      <UnpairSheet
-        visible
-        moduleName="Eau"
-        deviceName="Cuve"
-        isUnpairing={isUnpairing}
-        onCancel={onCancel}
-        onConfirm={() => {}}
-      />
-    </ThemeProvider>,
+    <I18nextProvider i18n={createI18n("fr")}>
+      <ThemeProvider>
+        <UnpairSheet
+          visible
+          moduleName="Eau"
+          deviceName="Cuve"
+          isUnpairing={isUnpairing}
+          onCancel={onCancel}
+          onConfirm={() => {}}
+        />
+      </ThemeProvider>
+    </I18nextProvider>,
   );
 
   return onCancel;

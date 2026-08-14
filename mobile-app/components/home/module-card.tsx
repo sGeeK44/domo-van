@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from "react";
+import { useTranslation } from "react-i18next";
 import {
   type StyleProp,
   StyleSheet,
@@ -31,6 +32,7 @@ export function ModuleCard({
   style,
   children,
 }: ModuleCardProps) {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = getStyles(colors);
   const now = useLinkClock(link);
@@ -40,14 +42,16 @@ export function ModuleCard({
   return (
     <View style={[styles.card, style]}>
       <LinkBadge link={link}>{children}</LinkBadge>
-      {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+      {subtitle && (
+        <Text style={styles.subtitle}>{t(subtitle.key, subtitle.params)}</Text>
+      )}
       {action && (
         <Button
           variant="secondary"
           disabled={action.disabled}
           onPress={onReconnect}
         >
-          {action.label}
+          {t(action.labelKey)}
         </Button>
       )}
     </View>

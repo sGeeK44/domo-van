@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
 import {
   Button,
@@ -21,17 +22,18 @@ export function ModuleLinkNotice({
   isConnecting,
   onReconnect,
 }: ModuleLinkNoticeProps) {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   if (!deviceName) {
     return (
       <View testID="module-unpaired" style={styles.notice}>
-        <Card title="Aucun module appairé" subtitle="Emplacement libre">
-          <Text style={styles.text}>
-            Appairez ce module depuis l'écran Modules pour accéder à ses
-            réglages.
-          </Text>
+        <Card
+          title={t("modules.notice.unpairedTitle")}
+          subtitle={t("modules.notice.unpairedSubtitle")}
+        >
+          <Text style={styles.text}>{t("modules.notice.unpairedBody")}</Text>
         </Card>
       </View>
     );
@@ -39,12 +41,10 @@ export function ModuleLinkNotice({
 
   return (
     <View testID="module-offline" style={styles.notice}>
-      <Card title="Module hors ligne" subtitle={deviceName}>
-        <Text style={styles.text}>
-          Les réglages s'affichent une fois le module reconnecté.
-        </Text>
+      <Card title={t("modules.notice.offlineTitle")} subtitle={deviceName}>
+        <Text style={styles.text}>{t("modules.notice.offlineBody")}</Text>
         <Button testID="reconnect" loading={isConnecting} onPress={onReconnect}>
-          Reconnecter
+          {t("link.actions.reconnect")}
         </Button>
       </Card>
     </View>

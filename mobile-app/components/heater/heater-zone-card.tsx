@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   Card,
@@ -24,6 +25,7 @@ export function HeaterZoneCard({
   onSetpointChange,
   onToggle,
 }: HeaterZoneCardProps) {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = getStyles(colors);
 
@@ -46,7 +48,7 @@ export function HeaterZoneCard({
   return (
     <Card
       title={name}
-      subtitle={isRunning ? "Actif" : "Arrêté"}
+      subtitle={t(isRunning ? "heater.zone.running" : "heater.zone.stopped")}
       style={styles.card}
     >
       <View style={styles.content}>
@@ -55,7 +57,7 @@ export function HeaterZoneCard({
           <Text style={[styles.currentTemp, { color: tempColor }]}>
             {temperatureCelsius.toFixed(1)}°
           </Text>
-          <Text style={styles.tempLabel}>actuel</Text>
+          <Text style={styles.tempLabel}>{t("heater.zone.current")}</Text>
         </View>
 
         {/* Setpoint Controls */}
@@ -75,7 +77,9 @@ export function HeaterZoneCard({
             <Text style={styles.setpointValue}>
               {setpointCelsius.toFixed(1)}°
             </Text>
-            <Text style={styles.setpointLabel}>consigne</Text>
+            <Text style={styles.setpointLabel}>
+              {t("heater.zone.setpoint")}
+            </Text>
           </View>
 
           <Pressable
@@ -110,7 +114,7 @@ export function HeaterZoneCard({
               { color: isRunning ? colors.onFill : colors.text },
             ]}
           >
-            {isRunning ? "ON" : "OFF"}
+            {t(isRunning ? "common.state.on" : "common.state.off")}
           </Text>
         </Pressable>
       </View>
