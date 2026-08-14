@@ -126,9 +126,11 @@ sees a connected device through the `DeviceHandle` port and asks
   `colors.screen` background, the `flex: 1` filling the tab, and the content
   padding — `Spacing.s` on top, `Spacing.gutter` left and right, nothing at the
   bottom (`8 / 18 / 0`). A wrapped screen therefore returns a container carrying
-  its `gap` only, and none of that frame: no `SafeAreaView`, no `screen`
+  its `gap`, and none of that frame: no `SafeAreaView`, no `screen`
   background, no padding. Keeping the padding "because the container is needed
-  for its `gap`" double-pads the tab. The rule covers the **online branch**,
+  for its `gap`" double-pads the tab. The `flex: 1` the shell owns is the one
+  filling the tab; a wrapped screen still lays its own content out with `flex`,
+  which is how a tall `GaugeColumn` gets its height. The rule covers the **online branch**,
   which is the only one `children` render on: `ModuleLinkNotice` and the takeover
   sit outside `styles.content` and pad themselves, so a reader scanning
   `module-screen.tsx` meets those two counter-examples before the rule.
