@@ -1,6 +1,7 @@
 import { adminScenario } from "@/infrastructure/fake/scenarios/adminScenario";
 import type {
   ChannelScenario,
+  ChannelScript,
   ModuleScenario,
 } from "@/infrastructure/fake/scenarios/Scenario";
 
@@ -33,6 +34,9 @@ const GREY_TANK_AT_40_PERCENT: TankReading = {
 
 const AUTO_CLOSE_SECONDS = 45;
 
+/** The firmware pushes one COUNTDOWN a second while the valve is open. */
+const COUNTDOWN_INTERVAL_MS = 1000;
+
 function tankScenario(reading: TankReading): ChannelScenario {
   let volumeLiters = reading.volumeLiters;
   let heightMm = reading.heightMm;
@@ -54,10 +58,11 @@ function tankScenario(reading: TankReading): ChannelScenario {
   };
 }
 
-function drainValveScenario(): ChannelScenario {
+function drainValveScript(): ChannelScript {
   let autoCloseSeconds = AUTO_CLOSE_SECONDS;
+  let remainingSeconds = 0;
 
-  return (command) => {
+  const respond: ChannelScenario = (command) => {
     const written = VALVE_CONFIG_WRITE.exec(command);
     if (written) {
       const writtenSeconds = Number(written[1]);
@@ -69,13 +74,29 @@ function drainValveScenario(): ChannelScenario {
       case "CFG?":
         return [`CFG:T=${autoCloseSeconds}`];
       case "OPEN":
-        return [`COUNTDOWN:${autoCloseSeconds}`];
+        remainingSeconds = autoCloseSeconds;
+        return [`COUNTDOWN:${remainingSeconds}`];
       case "CLOSE":
+        remainingSeconds = 0;
         return ["CLOSED"];
       default:
         return [];
     }
   };
+
+  // The relay is the module's: it counts itself down and shuts itself, see TankValveListner.cpp.
+  const cadence = {
+    intervalMs: COUNTDOWN_INTERVAL_MS,
+    next: () => {
+      if (remainingSeconds <= 0) return [];
+      remainingSeconds -= 1;
+      return remainingSeconds > 0
+        ? [`COUNTDOWN:${remainingSeconds}`]
+        : ["AUTO_CLOSED"];
+    },
+  };
+
+  return { respond, cadence };
 }
 
 export function waterScenario(): ModuleScenario {
@@ -83,6 +104,6 @@ export function waterScenario(): ModuleScenario {
     "0001": adminScenario(),
     "0002": tankScenario(CLEAN_TANK_AT_72_PERCENT),
     "0003": tankScenario(GREY_TANK_AT_40_PERCENT),
-    "0004": drainValveScenario(),
+    "0004": drainValveScript(),
   };
 }

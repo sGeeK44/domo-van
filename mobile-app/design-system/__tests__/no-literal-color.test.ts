@@ -19,12 +19,8 @@ const COLOR_PERMANENT: Record<string, string> = {
 
 /** Each file a later issue rewrites onto tokens; the entry retires with it. */
 const COLOR_RETIRING: Record<string, string> = {
-  "components/water/water-tank.tsx":
-    "#6 rebuilds the water tank as a column gauge",
   "components/heater/temperature-colors.ts":
     "#6 rebuilds the heat dial; the temperature gradient is its domain logic",
-  "components/water/drain-slider.tsx":
-    "#6 rewrites the Eau screen's drain control",
   "components/modules/UnpairSheet.tsx":
     "#6 rewrites the module sheet; the scrim has no token",
 };
