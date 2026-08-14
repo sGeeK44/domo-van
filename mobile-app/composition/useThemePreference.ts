@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   PreferencesRepository,
   ThemeMode,
@@ -21,6 +21,7 @@ export function useThemePreference(
     hydrated: false,
     initialThemeMode: DEFAULT_THEME_MODE,
   });
+  const repositoryAtBoot = useRef(repository);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,7 +29,7 @@ export function useThemePreference(
       if (!cancelled) setStored({ hydrated: true, initialThemeMode });
     };
 
-    repository
+    repositoryAtBoot.current
       .load()
       .then(({ themeMode }) => hydrate(themeMode ?? DEFAULT_THEME_MODE))
       .catch((error) => {
@@ -39,7 +40,7 @@ export function useThemePreference(
     return () => {
       cancelled = true;
     };
-  }, [repository]);
+  }, []);
 
   const saveThemeMode = useCallback(
     (themeMode: ThemeMode) => {

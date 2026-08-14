@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import { IconCircleButton } from "@/design-system/atoms/icon-circle-button";
 import { PageTitle } from "@/design-system/atoms/page-title";
@@ -5,8 +6,25 @@ import {
   StatusBadge,
   type StatusBadgeProps,
 } from "@/design-system/atoms/status-badge";
-import { useTheme } from "@/design-system/theme/ThemeContext";
+import { type ThemeMode, useTheme } from "@/design-system/theme/ThemeContext";
 import { Spacing } from "@/design-system/tokens";
+
+/** Auto stays on the ring: a two-way flip would strand the user on a fixed scheme. */
+const NEXT_THEME_MODE: Record<ThemeMode, ThemeMode> = {
+  auto: "light",
+  light: "dark",
+  dark: "auto",
+};
+
+/** The icon names the mode, not the resolved scheme, so Auto reads as Auto. */
+const THEME_MODE_ICON: Record<
+  ThemeMode,
+  ComponentProps<typeof IconCircleButton>["icon"]
+> = {
+  auto: "brightness-auto",
+  light: "light-mode",
+  dark: "dark-mode",
+};
 
 export type PageHeaderProps = {
   title: string;
@@ -24,17 +42,16 @@ export function PageHeader({
   bluetoothStatus,
   bluetoothDisabled = false,
 }: PageHeaderProps) {
-  const { colorScheme, setThemeMode } = useTheme();
+  const { themeMode, setThemeMode } = useTheme();
 
   return (
     <View style={styles.header}>
       <PageTitle>{title}</PageTitle>
       <View style={styles.buttons}>
         <IconCircleButton
-          icon={colorScheme === "dark" ? "light-mode" : "dark-mode"}
-          onPress={() =>
-            setThemeMode(colorScheme === "dark" ? "light" : "dark")
-          }
+          testID="theme-mode"
+          icon={THEME_MODE_ICON[themeMode]}
+          onPress={() => setThemeMode(NEXT_THEME_MODE[themeMode])}
         />
         {onBluetoothPress && bluetoothStatus && (
           <IconCircleButton
