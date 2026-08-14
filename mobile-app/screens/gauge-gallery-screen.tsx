@@ -4,6 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   BorderRadius,
   Button,
+  GaugeBars,
+  GaugeHero,
   GaugeRow,
   GaugeSurface,
   PageHeader,
@@ -24,6 +26,14 @@ const RADII = [
 
 const LOW = 0.28;
 const HIGH = 0.72;
+
+/** The minimum cell is named by its label, the way a caller marks it. */
+const CELLS = [
+  { id: "c1", label: "C1", ratio: 0.78, value: "3.42" },
+  { id: "c2", label: "C2", ratio: 0.76, value: "3.41" },
+  { id: "c3", label: "C3", ratio: 0.84, value: "3.44" },
+  { id: "c4", label: "C4 min", ratio: 0.7, value: "3.39" },
+];
 
 export default function GaugeGalleryScreen() {
   const colors = useThemeColor();
@@ -179,6 +189,24 @@ export default function GaugeGalleryScreen() {
             {...heat}
           />
         </Section>
+
+        <Section title="Hero and bars">
+          <Text style={styles.caption}>Hero at 82 %</Text>
+          <GaugeHero
+            ratio={0.82}
+            fillColor={colors.fill.battery}
+            lineColor={colors.line.battery}
+            label="BATTERY"
+            value={{ amount: "82", unit: "%" }}
+            aside={{ value: "18 h", caption: "autonomy" }}
+          />
+          <Text style={styles.caption}>Cells at 78, 76, 84, 70 %</Text>
+          <GaugeBars
+            bars={CELLS}
+            fillColor={colors.fill.battery}
+            style={styles.cluster}
+          />
+        </Section>
       </ScrollView>
     </SafeAreaView>
   );
@@ -209,5 +237,8 @@ const makeStyles = (colors: Palette) =>
       flex: 1,
       height: 180,
       backgroundColor: colors.surface,
+    },
+    cluster: {
+      height: 96,
     },
   });
