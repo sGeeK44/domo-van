@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Modal, StyleSheet, Text, View } from "react-native";
 import {
+  BorderRadius,
   Button,
   Card,
   FontSize,
@@ -75,13 +76,17 @@ export function UnpairSheet({
 
 const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+    // a scrim, not a page: the Modules list stays visible behind the sheet
     backdrop: {
       flex: 1,
       justifyContent: "flex-end",
-      backgroundColor: colors.background.primary,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
     },
     sheet: {
       padding: Spacing.xxl,
+      backgroundColor: colors.background.primary,
+      borderTopLeftRadius: BorderRadius.l,
+      borderTopRightRadius: BorderRadius.l,
     },
     warning: {
       color: colors.text.secondary,
