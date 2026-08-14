@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
@@ -101,6 +101,9 @@ describe("the meniscus", () => {
  */
 const SOURCE = join(import.meta.dirname, "..", "gauge-geometry.ts");
 
+/** The one file allowed to hold worklets; the rest of the tree must stay off the UI runtime. */
+const DESIGN_SYSTEM = join(import.meta.dirname, "..", "..");
+
 /** Called at render time only; every other helper is reached from the UI runtime. */
 const RENDER_TIME_ONLY = new Set(["drawsMeniscus"]);
 
@@ -126,6 +129,29 @@ function hasWorkletDirective(body: ts.Block | undefined): boolean {
   return (
     ts.isStringLiteral(first.expression) && first.expression.text === "worklet"
   );
+}
+
+function otherSources(): string[] {
+  const walk = (path: string): string[] => {
+    if (statSync(path).isFile()) return /\.tsx?$/.test(path) ? [path] : [];
+    return readdirSync(path).flatMap((entry) => walk(join(path, entry)));
+  };
+  return walk(DESIGN_SYSTEM).filter(
+    (path) => path !== SOURCE && !path.includes("__tests__"),
+  );
+}
+
+function declaresWorklet(file: string): boolean {
+  const source = ts.createSourceFile(
+    file,
+    readFileSync(file, "utf8"),
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  const visit = (node: ts.Node): boolean =>
+    (ts.isBlock(node) && hasWorkletDirective(node)) ||
+    node.getChildren().some(visit);
+  return visit(source);
 }
 
 describe("the worklet directives", () => {
@@ -155,5 +181,19 @@ describe("the worklet directives", () => {
   it("keeps the render-time list honest: a listed helper carries no directive", () => {
     for (const entry of functions.filter((it) => RENDER_TIME_ONLY.has(it.name)))
       expect(entry.isWorklet, entry.name).toBe(false);
+  });
+
+  it("walks the whole design system, not just the atom it guards", () => {
+    const scanned = otherSources().map((file) => relative(DESIGN_SYSTEM, file));
+
+    expect(scanned).toContain(join("atoms", "gauge-surface.tsx"));
+  });
+
+  it("holds every worklet in gauge-geometry: elsewhere the UI runtime cannot reach it", () => {
+    const elsewhere = otherSources()
+      .filter(declaresWorklet)
+      .map((file) => relative(DESIGN_SYSTEM, file));
+
+    expect(elsewhere).toEqual([]);
   });
 });
