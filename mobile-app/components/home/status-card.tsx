@@ -38,14 +38,19 @@ export function StatusCard({
       onPress={onPress}
       disabled={!onPress}
     >
-      <IconSymbol name={icon} size={28} color="#FFFFFF" style={styles.icon} />
+      <IconSymbol
+        name={icon}
+        size={28}
+        color={colors.onFill}
+        style={styles.icon}
+      />
       <Text style={styles.value}>{value}</Text>
       {label && <Text style={styles.label}>{label}</Text>}
     </Pressable>
   );
 }
 
-const getStyles = (_colors: Palette) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     card: {
       borderRadius: BorderRadius.xl,
@@ -63,11 +68,11 @@ const getStyles = (_colors: Palette) =>
     value: {
       fontSize: FontSize.xxl,
       fontWeight: FontWeight.bold,
-      color: "#FFFFFF",
+      color: colors.onFill,
     },
     label: {
       fontSize: FontSize.xs,
-      color: "rgba(255, 255, 255, 0.8)",
+      color: colors.onFillMuted,
       marginTop: 2,
     },
   });

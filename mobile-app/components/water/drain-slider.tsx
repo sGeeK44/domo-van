@@ -151,7 +151,11 @@ export function DrainSlider({
               ]}
               onPress={handleStop}
             >
-              <IconSymbol name="stop-circle" size={24} color="#FFF" />
+              <IconSymbol
+                name="stop-circle"
+                size={24}
+                color={colors.onInverse}
+              />
               <Text style={styles.stopButtonText}>FERMER IMMÉDIATEMENT</Text>
             </Pressable>
           </Animated.View>
@@ -245,7 +249,7 @@ const getStyles = (colors: Palette) =>
       zIndex: 10,
     },
     stopButton: {
-      backgroundColor: colors.off,
+      backgroundColor: colors.inverse,
       height: 62,
       borderRadius: 31,
       flexDirection: "row",

@@ -20,14 +20,23 @@ describe("Colors", () => {
   });
 });
 
+const BUNDLED_FACES = new Set([
+  "Archivo_400Regular",
+  "Archivo_500Medium",
+  "Archivo_600SemiBold",
+  "Archivo_700Bold",
+  "Archivo_800ExtraBold",
+  "Archivo_900Black",
+  "SpaceMono_400Regular",
+  "SpaceMono_700Bold",
+]);
+
 describe("TextStyles", () => {
   const entries = Object.entries(TextStyles);
 
   it("names one of the bundled faces for every style", () => {
     for (const [name, style] of entries) {
-      expect(style.fontFamily, name).toMatch(
-        /^(Archivo|SpaceMono)_\d{3}[A-Za-z]+$/,
-      );
+      expect([...BUNDLED_FACES], name).toContain(style.fontFamily);
     }
   });
 
