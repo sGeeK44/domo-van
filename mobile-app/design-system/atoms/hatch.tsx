@@ -8,14 +8,15 @@ const STRIPE = 7;
 export type HatchProps = {
   /** The caller sizes it, usually with an absolute-fill style behind a gauge. */
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 };
 
-export function Hatch({ style }: HatchProps) {
+export function Hatch({ style, testID }: HatchProps) {
   const colors = useThemeColor();
   const patternId = useId().replace(/:/g, "");
 
   return (
-    <Svg width="100%" height="100%" style={style}>
+    <Svg width="100%" height="100%" style={style} testID={testID}>
       <Defs>
         <Pattern
           id={patternId}

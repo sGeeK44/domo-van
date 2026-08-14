@@ -14,8 +14,8 @@ describe("the dev gauge gallery", () => {
       </ThemeProvider>,
     );
 
-    expect(screen.getAllByTestId("gauge-fill").length).toBeGreaterThan(5);
-    expect(screen.getAllByTestId("gauge-hatch").length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId("gauge-fill").length).toBe(13);
+    expect(screen.getAllByTestId("gauge-hatch").length).toBe(2);
     expect(screen.getAllByTestId("gauge-marker").length).toBe(1);
     expect(screen.getAllByTestId("gauge-outline").length).toBe(2);
   });

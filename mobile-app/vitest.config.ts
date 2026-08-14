@@ -5,6 +5,8 @@ export default defineConfig({
   // Metro defines it for every bundle; expo packages read it at import time.
   // tsconfig says "react-native", which Metro compiles and esbuild preserves.
   esbuild: { jsx: "automatic" },
+  // Metro defines it for every bundle; a test runs the dev branch too.
+  define: { __DEV__: "true" },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),

@@ -67,9 +67,7 @@ export function GaugeSurface({
   return (
     <View style={[styles.surface, style, { borderRadius: radius }]}>
       {hatched ? (
-        <View testID="gauge-hatch" style={StyleSheet.absoluteFill}>
-          <Hatch />
-        </View>
+        <Hatch testID="gauge-hatch" style={StyleSheet.absoluteFill} />
       ) : (
         <Animated.View
           testID="gauge-fill"

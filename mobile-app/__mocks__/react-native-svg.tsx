@@ -2,8 +2,9 @@
 import type { PropsWithChildren } from "react";
 import { View } from "react-native-web";
 
-function Stub({ children }: PropsWithChildren) {
-  return <View>{children}</View>;
+// testID is the one prop a test reads back, so it is the one prop the stub keeps.
+function Stub({ children, testID }: PropsWithChildren<{ testID?: string }>) {
+  return <View testID={testID}>{children}</View>;
 }
 
 export default Stub;
