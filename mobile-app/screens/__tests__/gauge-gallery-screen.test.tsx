@@ -4,13 +4,16 @@ import { afterEach, describe, expect, it } from "vitest";
 import { ThemeProvider } from "@/design-system";
 import GaugeGalleryScreen from "@/screens/gauge-gallery-screen";
 
-/** Counts stay open-ended: every later gauge task appends its own section here. */
+/** A section that silently disappears takes an on-device check with it, so each is named. */
 const SEEDED_SECTIONS = [
   "Horizontal fill",
   "Vertical fill",
   "Marker and outline",
   "Corner clipping",
   "Level change",
+  "Gauge row",
+  "Hero and bars",
+  "Column gauge",
 ];
 
 describe("the dev gauge gallery", () => {
