@@ -259,16 +259,36 @@ family:
 | battery temps | 66 | 18 | 19 |
 | **absorbed** | **68** | **`BorderRadius.l`** | **`metricTile`** |
 
+### The knob-fit absorption
+
+The spec over-constrains `SlideToConfirm`: `height 80` + `borderWidth 1.5` +
+`padding Spacing.xs (6)` leaves a content box of `80 − 3 − 12 = 65`, **3 px too
+tight for its own 68 px knob** — with `overflow: "hidden"` the knob is clipped
+top and bottom and its corners read flattened. The outer geometry is what the
+mockup shows, so the padding absorbs the conflict:
+
+| | spec | absorbed |
+|---|---|---|
+| track padding | `Spacing.xs` (6) | `Spacing.xxs` (4) |
+| content box | 65 (knob 68 clipped) | **69** (knob 68 fits) |
+| travel | `width − 2 × Spacing.xs − 68` | `width − 2 × (1.5 + Spacing.xxs) − 68` |
+
+The travel counts the border too: the spec's formula ignored the 3 px of
+`borderWidth`, so the knob overhung the padding box at full travel.
+
 ### The slide gesture
 
 `SlideToConfirm` confirms past **68 %** of the knob's travel
-(`trackWidth − 2 × Spacing.xs − 68`) and springs back below it, so a tap fires
-nothing — the drain valve's rule, held by the control rather than by a screen.
+(`trackWidth − 2 × (TRACK_BORDER + TRACK_PADDING) − 68`) and springs back below
+it, so a tap fires nothing — the drain valve's rule, held by the control rather than by a screen.
 It measures its own track through `onLayout` and confirms nothing until it has,
 and it **never reads or writes a shared value during render**: doing so desyncs
-Reanimated from the Fabric commit (the fix commit `db70094` bought). Tests drive
-it through `__mocks__/react-native-gesture-handler.tsx`, which turns a mouse
-drag into the pan callbacks.
+Reanimated from the Fabric commit (the fix commit `db70094` bought). A pan RNGH
+**cancels** — the OS steals the touch, a takeover unmounts the content under the
+finger — ends with `onEnd(_, success: false)` and confirms nothing however far
+the knob travelled. Tests drive it through
+`__mocks__/react-native-gesture-handler.tsx`, which turns a mouse drag into the
+pan callbacks and a `pointercancel` into the cancelled pan.
 
 ## The barrel
 

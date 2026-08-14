@@ -29,6 +29,8 @@ export type SlideToConfirmProps = {
 
 const TRACK_HEIGHT = 80;
 const TRACK_BORDER = 1.5;
+/** The spec's Spacing.xs left the 68 px knob 3 px too tall for the track — see docs/design-system.md. */
+const TRACK_PADDING = Spacing.xxs;
 const KNOB_SIZE = 68;
 const KNOB_ICON_SIZE = 30;
 
@@ -52,7 +54,12 @@ export function SlideToConfirm({
 
   const measureTravel = (event: LayoutChangeEvent) =>
     setTravel(
-      Math.max(0, event.nativeEvent.layout.width - 2 * Spacing.xs - KNOB_SIZE),
+      Math.max(
+        0,
+        event.nativeEvent.layout.width -
+          2 * (TRACK_BORDER + TRACK_PADDING) -
+          KNOB_SIZE,
+      ),
     );
 
   const slide = Gesture.Pan()
@@ -65,10 +72,11 @@ export function SlideToConfirm({
         travel,
       );
     })
-    .onEnd(() => {
+    // success is false when the OS or a takeover cancels the pan: an aborted slide opens nothing.
+    .onEnd((_event, success) => {
       const confirmed = travel > 0 && offset.value > travel * CONFIRM_AT;
       offset.value = withSpring(0);
-      if (confirmed) runOnJS(onConfirm)();
+      if (success && confirmed) runOnJS(onConfirm)();
     });
 
   const knobStyle = useAnimatedStyle(() => ({
@@ -98,7 +106,7 @@ const makeStyles = (colors: Palette) =>
     track: {
       height: TRACK_HEIGHT,
       justifyContent: "center",
-      padding: Spacing.xs,
+      padding: TRACK_PADDING,
       borderRadius: BorderRadius.xxl,
       borderWidth: TRACK_BORDER,
       borderColor: colors.dangerBorder,
