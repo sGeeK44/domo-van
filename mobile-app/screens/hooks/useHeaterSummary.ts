@@ -1,3 +1,4 @@
+import type { HeaterReading } from "@/components/home/dashboard-cards";
 import { useHeaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import {
@@ -5,26 +6,21 @@ import {
   type HeaterZoneSnapshot,
 } from "@/domain/heater/HeaterZone";
 
-export type HeaterSummary = {
-  isRunning: boolean;
-  setpointCelsius: number;
-};
+/** Salon, the zone the dashboard quotes (planning decision 5). */
+const REFERENCE_ZONE_INDEX = 0;
 
-/** What the dashboard says about the heater: heating, and up to which setpoint. */
+/** What the dashboard says about the heater: whether it heats, and what its reference zone reads. */
 export function heaterSummary(
   zones: readonly HeaterZoneSnapshot[],
-): HeaterSummary {
-  const running = zones.filter((zone) => zone.isRunning);
+): HeaterReading {
   return {
-    isRunning: running.length > 0,
-    setpointCelsius: running.reduce(
-      (warmest, zone) => Math.max(warmest, zone.setpointCelsius),
-      0,
-    ),
+    isRunning: zones.some((zone) => zone.isRunning),
+    referenceIndex: REFERENCE_ZONE_INDEX,
+    reference: zones[REFERENCE_ZONE_INDEX] ?? DEFAULT_ZONE_SNAPSHOT,
   };
 }
 
-export function useHeaterSummary(): HeaterSummary {
+export function useHeaterSummary(): HeaterReading {
   const heater = useHeaterSystem();
   const zone0 = useObservable(heater?.zones[0] ?? null, DEFAULT_ZONE_SNAPSHOT);
   const zone1 = useObservable(heater?.zones[1] ?? null, DEFAULT_ZONE_SNAPSHOT);

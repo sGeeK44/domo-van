@@ -1,38 +1,40 @@
 import type { EnvironmentSnapshot } from "@/domain/heater/EnvironmentData";
+import type { TranslationKey } from "@/i18n/keys";
 
-export type EnvironmentReadings = {
-  topLeft: { icon: "home"; value: string };
-  topRight: { icon: "water-drop"; value: string };
-  bottomLeft: { icon: "park"; value: string };
-  bottomRight: { icon: "speed"; value: string };
+export type EnvironmentTile = {
+  labelKey: TranslationKey;
+  /** Already formatted, unit included: the strip computes nothing. */
+  value: string;
 };
 
 const NO_READING = "-";
+const DEGREE = "°";
+const PERCENT = "%";
 
 /** An offline heater holds constructor zeros, not measurements: never show them. */
-export function environmentReadings(
+export function environmentTiles(
   environment: EnvironmentSnapshot,
   online: boolean,
-): EnvironmentReadings {
+): readonly EnvironmentTile[] {
   const reading = (value: number, digits: number, unit: string) =>
     online ? `${value.toFixed(digits)}${unit}` : NO_READING;
 
-  return {
-    topLeft: {
-      icon: "home",
-      value: reading(environment.temperatureCelsius, 1, "°C"),
+  return [
+    {
+      labelKey: "dashboard.tiles.interior",
+      value: reading(environment.temperatureCelsius, 1, DEGREE),
     },
-    topRight: {
-      icon: "water-drop",
-      value: reading(environment.humidity, 0, "%"),
+    {
+      labelKey: "dashboard.tiles.exterior",
+      value: reading(environment.exteriorTemperatureCelsius, 1, DEGREE),
     },
-    bottomLeft: {
-      icon: "park",
-      value: reading(environment.exteriorTemperatureCelsius, 1, "°C"),
+    {
+      labelKey: "dashboard.tiles.humidity",
+      value: reading(environment.humidity, 0, PERCENT),
     },
-    bottomRight: {
-      icon: "speed",
-      value: reading(environment.pressureHPa, 0, " hPa"),
+    {
+      labelKey: "dashboard.tiles.pressure",
+      value: reading(environment.pressureHPa, 0, ""),
     },
-  };
+  ];
 }
