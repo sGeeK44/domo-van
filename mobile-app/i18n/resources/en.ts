@@ -16,7 +16,11 @@ export const en: typeof fr = {
     errors: {
       send: "Sending failed.",
       read: "Reading failed.",
-      validation: "Validation error",
+      notConnected: "Module not connected.",
+      disposed: "Module unavailable.",
+    },
+    feedback: {
+      saved: "Configuration saved",
     },
   },
 
@@ -142,6 +146,9 @@ export const en: typeof fr = {
       greaterThanZero: "{{field}} must be > 0.",
       atMostFiveMinutes: "{{field}} must be ≤ 300 seconds.",
     },
+    feedback: {
+      autoCloseFailed: "Failed to update the auto-close delay.",
+    },
   },
 
   heater: {
@@ -170,6 +177,12 @@ export const en: typeof fr = {
       sendingPid: "Sending PID configuration…",
       positiveNumber: "{{field}} must be a positive number.",
       range: "{{field}} must be between 0.01 and 100.",
+    },
+    feedback: {
+      setpointFailed: "Failed to update the setpoint.",
+      startFailed: "Failed to start heating.",
+      stopFailed: "Failed to stop heating.",
+      pidFailed: "Failed to save the PID configuration.",
     },
   },
 

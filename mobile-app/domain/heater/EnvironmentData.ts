@@ -5,6 +5,7 @@ import {
   Unsubscribe,
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
+import { ackFailure, type Feedback } from "@/domain/Feedback";
 import { parseEnvironmentMessage } from "@/domain/heater/HeaterProtocol";
 import { Channel } from "@/domain/ports/Channel";
 
@@ -13,7 +14,7 @@ export type EnvironmentSnapshot = {
   exteriorTemperatureCelsius: number; // Exterior temperature (e.g., 12.0)
   humidity: number; // Relative humidity percentage (e.g., 45.0)
   pressureHPa: number; // Atmospheric pressure in hPa (e.g., 1013.2)
-  lastMessage: string | null; // Last feedback message
+  lastFeedback: Feedback | null; // Last outcome to show
 };
 
 export class EnvironmentData implements Observable<EnvironmentSnapshot> {
@@ -22,7 +23,7 @@ export class EnvironmentData implements Observable<EnvironmentSnapshot> {
     exteriorTemperatureCelsius: 0,
     humidity: 0,
     pressureHPa: 1013.25,
-    lastMessage: null,
+    lastFeedback: null,
   });
   private channelUnsub: Unsubscribe | null = null;
 
@@ -62,7 +63,7 @@ export class EnvironmentData implements Observable<EnvironmentSnapshot> {
     if (ack?.type === "error") {
       this.state.update((prev) => ({
         ...prev,
-        lastMessage: `Erreur: ${ack.code}`,
+        lastFeedback: ackFailure(ack.code),
       }));
       return;
     }

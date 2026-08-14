@@ -23,7 +23,7 @@ const NO_ENVIRONMENT = {
   exteriorTemperatureCelsius: 0,
   humidity: 0,
   pressureHPa: 0,
-  lastMessage: null,
+  lastFeedback: null,
 };
 
 const NO_TANK = {
@@ -31,7 +31,7 @@ const NO_TANK = {
   heightMm: 0,
   percentage: 0,
   lastDistanceMm: null,
-  lastMessage: null,
+  lastFeedback: null,
 };
 
 const NO_ZONE = {
@@ -39,7 +39,7 @@ const NO_ZONE = {
   setpointCelsius: 0,
   isRunning: false,
   pidConfig: null,
-  lastMessage: null,
+  lastFeedback: null,
 };
 
 /** Reads exactly what the four screens read, and shows it as they would. */

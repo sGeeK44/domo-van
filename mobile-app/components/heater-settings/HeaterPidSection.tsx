@@ -8,6 +8,7 @@ import {
   ToastAndroid,
   View,
 } from "react-native";
+import { errorMessage } from "@/components/error-message";
 import {
   BorderRadius,
   FontSize,
@@ -57,8 +58,7 @@ export function HeaterPidSection({ heaterZone, zoneName }: Props) {
     try {
       await heaterZone.getPidConfig();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : t("common.errors.read");
-      showToast(msg);
+      showToast(errorMessage(e, t, "common.errors.read"));
     }
   }, [heaterZone, t]);
 
@@ -69,8 +69,9 @@ export function HeaterPidSection({ heaterZone, zoneName }: Props) {
         setKi(snapshot.pidConfig.ki.toFixed(2));
         setKd(snapshot.pidConfig.kd.toFixed(2));
       }
-      if (snapshot.lastMessage) {
-        showToast(snapshot.lastMessage);
+      if (snapshot.lastFeedback) {
+        const { key, params } = snapshot.lastFeedback;
+        showToast(t(key, params));
       }
     });
 
@@ -79,7 +80,7 @@ export function HeaterPidSection({ heaterZone, zoneName }: Props) {
     return () => {
       sub();
     };
-  }, [heaterZone, requestConfig]);
+  }, [heaterZone, requestConfig, t]);
 
   const gainError = (field: string, value: string): string | null => {
     const error = validatePidValue(value);
@@ -106,7 +107,7 @@ export function HeaterPidSection({ heaterZone, zoneName }: Props) {
       };
       await heaterZone.setPidConfig(config);
     } catch (e) {
-      showToast(e instanceof Error ? e.message : t("common.errors.send"));
+      showToast(errorMessage(e, t, "common.errors.send"));
     } finally {
       setSending(false);
     }

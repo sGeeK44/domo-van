@@ -14,7 +14,11 @@ export const fr = {
     errors: {
       send: "Erreur lors de l'envoi.",
       read: "Erreur lors de la lecture.",
-      validation: "Erreur de validation",
+      notConnected: "Module non connecté.",
+      disposed: "Module indisponible.",
+    },
+    feedback: {
+      saved: "Configuration enregistrée",
     },
   },
 
@@ -140,6 +144,10 @@ export const fr = {
       greaterThanZero: "{{field}} doit être > 0.",
       atMostFiveMinutes: "{{field}} doit être ≤ 300 secondes.",
     },
+    feedback: {
+      autoCloseFailed:
+        "Erreur lors de la mise à jour de la fermeture automatique.",
+    },
   },
 
   heater: {
@@ -168,6 +176,12 @@ export const fr = {
       sendingPid: "Envoi configuration PID…",
       positiveNumber: "{{field}} doit être un nombre positif.",
       range: "{{field}} doit être entre 0.01 et 100.",
+    },
+    feedback: {
+      setpointFailed: "Erreur lors de la mise à jour de la consigne.",
+      startFailed: "Erreur lors du démarrage du chauffage.",
+      stopFailed: "Erreur lors de l'arrêt du chauffage.",
+      pidFailed: "Erreur lors de la configuration PID.",
     },
   },
 

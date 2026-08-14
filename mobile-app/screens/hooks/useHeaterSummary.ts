@@ -12,7 +12,7 @@ const IDLE_ZONE: HeaterZoneSnapshot = {
   setpointCelsius: 0,
   isRunning: false,
   pidConfig: null,
-  lastMessage: null,
+  lastFeedback: null,
 };
 
 /** What the dashboard says about the heater: heating, and up to which setpoint. */

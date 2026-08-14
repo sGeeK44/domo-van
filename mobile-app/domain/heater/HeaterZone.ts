@@ -5,6 +5,7 @@ import {
   Unsubscribe,
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
+import { ackFailure, type Feedback, SAVED } from "@/domain/Feedback";
 import {
   PidConfig,
   parsePidConfigMessage,
@@ -19,7 +20,7 @@ export type HeaterZoneSnapshot = {
   setpointCelsius: number; // Target temperature (e.g., 25.0)
   isRunning: boolean; // Regulator active
   pidConfig: PidConfig | null; // PID configuration
-  lastMessage: string | null; // Last feedback message
+  lastFeedback: Feedback | null; // Last outcome to show
 };
 
 export class HeaterZone implements Observable<HeaterZoneSnapshot> {
@@ -28,7 +29,7 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
     setpointCelsius: 20,
     isRunning: false,
     pidConfig: null,
-    lastMessage: null,
+    lastFeedback: null,
   });
   private channelUnsub: Unsubscribe | null = null;
 
@@ -78,7 +79,7 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
     } catch {
       this.state.update((prev) => ({
         ...prev,
-        lastMessage: "Erreur lors de la mise à jour de la consigne",
+        lastFeedback: { key: "heater.feedback.setpointFailed" },
       }));
     }
   };
@@ -96,7 +97,7 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
       this.state.update((prev) => ({
         ...prev,
         isRunning: false,
-        lastMessage: "Erreur lors du démarrage",
+        lastFeedback: { key: "heater.feedback.startFailed" },
       }));
     }
   };
@@ -113,7 +114,7 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
     } catch {
       this.state.update((prev) => ({
         ...prev,
-        lastMessage: "Erreur lors de l'arrêt",
+        lastFeedback: { key: "heater.feedback.stopFailed" },
       }));
     }
   };
@@ -137,7 +138,7 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
     } catch {
       this.state.update((prev) => ({
         ...prev,
-        lastMessage: "Erreur lors de la configuration PID",
+        lastFeedback: { key: "heater.feedback.pidFailed" },
       }));
     }
   };
@@ -189,7 +190,7 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
     if (ack) {
       this.state.update((prev) => ({
         ...prev,
-        lastMessage: ack.type === "ok" ? "OK" : `Erreur: ${ack.code}`,
+        lastFeedback: ack.type === "ok" ? SAVED : ackFailure(ack.code),
       }));
       return;
     }

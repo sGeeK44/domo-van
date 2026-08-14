@@ -5,6 +5,7 @@ import {
   Unsubscribe,
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
+import { ackFailure, type Feedback, SAVED } from "@/domain/Feedback";
 import { Channel } from "@/domain/ports/Channel";
 import {
   parseCountdownMessage,
@@ -17,7 +18,7 @@ export type ValveState = {
   position: ValvePosition;
   autoCloseSeconds: number;
   remainingSeconds: number;
-  lastMessage: string | null;
+  lastFeedback: Feedback | null;
 };
 
 export class DrainValve implements Observable<ValveState> {
@@ -25,7 +26,7 @@ export class DrainValve implements Observable<ValveState> {
     position: "unknown",
     autoCloseSeconds: 30,
     remainingSeconds: 0,
-    lastMessage: null,
+    lastFeedback: null,
   });
   private channelUnsub: Unsubscribe | null = null;
 
@@ -57,7 +58,7 @@ export class DrainValve implements Observable<ValveState> {
       // Revert on failure
       this.state.update((prev) => ({
         ...prev,
-        lastMessage: "Erreur lors de la mise à jour",
+        lastFeedback: { key: "water.feedback.autoCloseFailed" },
       }));
     }
   };
@@ -131,10 +132,7 @@ export class DrainValve implements Observable<ValveState> {
     if (ack) {
       this.state.update((prev) => ({
         ...prev,
-        lastMessage:
-          ack.type === "ok"
-            ? "Configuration enregistrée"
-            : `Erreur: ${ack.code}`,
+        lastFeedback: ack.type === "ok" ? SAVED : ackFailure(ack.code),
       }));
       return;
     }

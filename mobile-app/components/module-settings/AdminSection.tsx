@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, ToastAndroid, View } from "react-native";
+import { errorMessage } from "@/components/error-message";
 import { FormField, Spacing } from "@/design-system";
 import type { AdminModule } from "@/domain/AdminModule";
 import type { TranslationKey } from "@/i18n/keys";
@@ -72,7 +73,7 @@ export function AdminSection({ adminModule, deviceName }: Props) {
     try {
       await adminModule.setName(adminName.trim());
     } catch (e) {
-      showToast(e instanceof Error ? e.message : t("common.errors.send"));
+      showToast(errorMessage(e, t, "common.errors.send"));
     } finally {
       setSendingName(false);
     }
@@ -89,7 +90,7 @@ export function AdminSection({ adminModule, deviceName }: Props) {
     try {
       await adminModule.setPin(adminPin);
     } catch (e) {
-      showToast(e instanceof Error ? e.message : t("common.errors.send"));
+      showToast(errorMessage(e, t, "common.errors.send"));
     } finally {
       setSendingPin(false);
     }

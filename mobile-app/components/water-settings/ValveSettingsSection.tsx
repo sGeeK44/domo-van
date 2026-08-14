@@ -8,6 +8,7 @@ import {
   ToastAndroid,
   View,
 } from "react-native";
+import { errorMessage } from "@/components/error-message";
 import {
   BorderRadius,
   FontSize,
@@ -49,8 +50,7 @@ export function ValveSettingsSection({ valve }: Props) {
       try {
         await valve.getConfig();
       } catch (e) {
-        const msg = e instanceof Error ? e.message : t("common.errors.read");
-        showToast(msg);
+        showToast(errorMessage(e, t, "common.errors.read"));
       }
     };
   }, [valve, t]);
@@ -58,8 +58,9 @@ export function ValveSettingsSection({ valve }: Props) {
   useEffect(() => {
     const sub = valve.subscribe((snapshot) => {
       setAutoCloseSeconds(String(snapshot.autoCloseSeconds));
-      if (snapshot.lastMessage) {
-        showToast(snapshot.lastMessage);
+      if (snapshot.lastFeedback) {
+        const { key, params } = snapshot.lastFeedback;
+        showToast(t(key, params));
       }
     });
 
@@ -68,7 +69,7 @@ export function ValveSettingsSection({ valve }: Props) {
     return () => {
       sub();
     };
-  }, [valve, requestConfig]);
+  }, [valve, requestConfig, t]);
 
   return (
     <View style={styles.adminSection}>
@@ -104,9 +105,7 @@ export function ValveSettingsSection({ valve }: Props) {
             try {
               await valve.setAutoCloseTime(Number(autoCloseSeconds.trim()));
             } catch (e) {
-              showToast(
-                e instanceof Error ? e.message : t("common.errors.send"),
-              );
+              showToast(errorMessage(e, t, "common.errors.send"));
             }
           }}
           style={styles.primaryButton}

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { errorMessage } from "@/components/error-message";
 import { DiscoveredModuleRow } from "@/components/modules";
 import { useContainer } from "@/composition/ContainerProvider";
 import {
@@ -23,7 +24,6 @@ import {
   moduleForAdvertisement,
 } from "@/domain/modules/ModuleDescriptor";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
-import { message } from "@/screens/error-message";
 
 const SCAN_TIMEOUT_MS = 30_000;
 
@@ -70,7 +70,7 @@ export default function AddModuleScreen() {
       .catch((cause: unknown) => {
         if (cancelled) return;
         setIsScanning(false);
-        setError(message(cause, t("modules.add.scanFailed")));
+        setError(errorMessage(cause, t, "modules.add.scanFailed"));
       });
 
     // the radio only starts scanning once the permission round-trip resolves, which outlives both the timeout and the screen
@@ -111,7 +111,7 @@ export default function AddModuleScreen() {
       if (isMounted.current) router.back();
     } catch (cause: unknown) {
       if (isMounted.current)
-        setError(message(cause, t("modules.add.pairFailed")));
+        setError(errorMessage(cause, t, "modules.add.pairFailed"));
     } finally {
       if (isMounted.current) setPairingId(null);
     }
