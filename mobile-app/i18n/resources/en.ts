@@ -136,7 +136,6 @@ export const en: typeof fr = {
 
   water: {
     levels: {
-      title: "Water Levels",
       cleanTank: "CLEAN",
       greyTank: "GREY",
       cleanCaption: "{{capacity}} L tank",
@@ -179,6 +178,8 @@ export const en: typeof fr = {
     },
     feedback: {
       autoCloseFailed: "Failed to update the auto-close delay.",
+      openFailed: "Failed to open the valve.",
+      closeFailed: "Failed to close the valve.",
     },
   },
 

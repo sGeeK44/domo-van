@@ -15,7 +15,6 @@ describe("the i18next instance", () => {
     const i18n = createI18n("en");
 
     expect(i18n.t("modules.list.title")).toBe("Modules");
-    expect(i18n.t("water.levels.title")).toBe("Water Levels");
     expect(i18n.t("heater.zones.title")).toBe("Heating");
     expect(i18n.t("battery.overview.title")).toBe("Battery");
     expect(i18n.t("modules.water.tab")).toBe("Water");

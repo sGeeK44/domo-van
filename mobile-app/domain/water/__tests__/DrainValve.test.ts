@@ -59,6 +59,7 @@ describe("DrainValve", () => {
     expect(valve.getValue()).toMatchObject({
       position: "unknown",
       lastClosure: null,
+      lastFeedback: { key: "water.feedback.closeFailed" },
     });
   });
 
@@ -85,6 +86,7 @@ describe("DrainValve", () => {
     expect(valve.getValue()).toMatchObject({
       position: "unknown",
       lastClosure: "auto",
+      lastFeedback: { key: "water.feedback.openFailed" },
     });
   });
 });

@@ -44,27 +44,26 @@ function WaterLevels({ system }: { system: WaterSystem }) {
   useFeedbackToast(valveDevice);
   useAutoClosedToast(valve.lastClosure);
 
-  // The module ticks at 1 Hz, so a COUNTDOWN can still be on the wire when the user closes:
-  // what the user last asked for wins until they ask for the opposite.
-  const [closeRequested, setCloseRequested] = useState(false);
-  const draining = valve.position === "open" && !closeRequested;
+  const [closeRequestedAt, setCloseRequestedAt] = useState<number | null>(null);
+  const draining =
+    valve.position === "open" && !withinOneTickOf(closeRequestedAt);
 
   const greyLiters = litersOf(grey);
   const start = useDrainStart(draining, greyLiters);
 
   const announce = async (write: Promise<void>, key: TranslationKey) => {
     await write;
-    // A write that fell through leaves the valve unknown; only one that landed is worth confirming.
+    // A rejected write leaves the valve unknown and reports itself: useFeedbackToast says so instead.
     if (valveDevice.getValue().position !== "unknown") toast.show(t(key));
   };
 
   const openValve = () => {
-    setCloseRequested(false);
+    setCloseRequestedAt(null);
     void announce(valveDevice.open(), "water.drain.toast.opened");
   };
 
   const closeValve = () => {
-    setCloseRequested(true);
+    setCloseRequestedAt(Date.now());
     void announce(valveDevice.close(), "water.drain.toast.closedNow");
   };
 
@@ -142,6 +141,14 @@ function useAutoClosedToast(lastClosure: ClosureCause | null): void {
       toast.show(t("water.drain.toast.autoClosed"));
     }
   }, [lastClosure, t, toast]);
+}
+
+/** The module pushes one COUNTDOWN a second, so a frame sent before the close lands within one. */
+const MODULE_CADENCE_MS = 1000;
+
+/** Past that one tick, a valve still counting down is genuinely open, and must say so again. */
+function withinOneTickOf(requestedAt: number | null): boolean {
+  return requestedAt !== null && Date.now() - requestedAt < MODULE_CADENCE_MS;
 }
 
 function useDrainStart(draining: boolean, liters: number): DrainStart | null {
