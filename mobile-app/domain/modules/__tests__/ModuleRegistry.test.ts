@@ -454,15 +454,20 @@ describe("ModuleRegistry", () => {
     await registry.pair("water", WATER_SCAN);
     connector.dropLink("water-1");
     await flushMicrotasks();
-    connector.hangForever();
+    // Settled by the test: a hanging connect cannot tell an ignored call from one queued behind it.
+    connector.deferConnects();
 
     const connectsBefore = connector.connectCalls.length;
 
     void registry.reconnect("water");
     void registry.reconnect("water");
-
     expect(registry.slotOf("water").link.status).toBe("connecting");
+
+    connector.rejectConnect("water-1", new Error("out of range"));
+    await flushMicrotasks();
+
     expect(connector.connectCalls.length - connectsBefore).toBe(1);
+    expect(registry.slotOf("water").link.status).toBe("offline");
   });
 
   it("ignores reconnect while the slot is online", async () => {

@@ -25,7 +25,7 @@ every pull request, so a violation blocks the merge.
 | `composition/` | the composition root: the one place binding concretes to ports, plus the app-shell wiring that sits above the React tree (`appContainer`, the boot gate) |
 | `design-system/` | tokens, atoms, molecules, theme |
 | `components/` | feature UI, renders domain objects with design-system primitives |
-| `screens/` | page components |
+| `screens/` | page components, plus the hooks they share (`screens/hooks/`) |
 | `app/` | expo-router routes only |
 
 The tokens, text styles, `useStyles`, `<Hatch/>`, the toast contract and the
@@ -62,7 +62,8 @@ sees a connected device through the `DeviceHandle` port and asks
   module's service.
 - **Nothing outside `composition/createContainer.ts` constructs an adapter.**
   Screens get their systems from `useWaterSystem()` / `useHeaterSystem()` /
-  `useBatterySystem()`, never from `new`. The persistent transports built by
+  `useBatterySystem()`, or from `useModuleSystem(key)` when the key is a
+  parameter, never from `new`. The persistent transports built by
   `composition/ModuleSessions.ts` are the one carve-out: they name no driver
   and no device API, they only decorate the `TransportFactory` the container
   injected, and one exists per pairing — session lifetime, which the container
@@ -99,15 +100,15 @@ sees a connected device through the `DeviceHandle` port and asks
 - **A system outlives a link drop.** A drop only unbinds the persistent
   transport, so the domain objects — and the last values they hold — survive
   it; a reconnection rebinds those same objects and calls `resync()`. That is
-  what lets a reconnection resume without a cold start. A screen still hides
-  the values while the module is offline — a last known reading is not a
-  measurement.
+  what lets a reconnection resume without a cold start. A tab still shows no
+  value while its module is offline — `ModuleScreen` takes it over instead, and
+  a last known reading is not a measurement.
 - **Connection is automatic**: the registry connects at startup and at
   pairing. There is no retry and no backoff — after a drop, the user asks for
   the reconnection.
 - **One vocabulary for a link, everywhere.** `components/home/link-view.ts`
   turns a `LinkState` into the tone of its dot, the line naming the time of
-  last contact and the reconnection offer; `LinkBadge` draws the dot. Three
+  last contact and the reconnection offer; `LinkBadge` draws the dot. Four
   surfaces go through them today and cannot drift apart: the tab icon, the
   dashboard card, the *Eau* / *Chauff* header and `ModuleScreen`'s takeover.
   The *Modules* row is task T5 of issue #3.
@@ -119,8 +120,18 @@ sees a connected device through the `DeviceHandle` port and asks
   reads `useModuleSlot` and `useModuleRegistry`, which is why it lives in
   `screens/` — `components/` may not import `composition/`. Its header carries
   the module's title and its settings button only: the link already shows as a
-  dot on the tab, and the takeover carries the reconnection. The shell also owns
-  the content padding, so a screen it wraps adds none of its own.
+  dot on the tab, and the takeover carries the reconnection.
+- **The shell owns the whole page frame.** Everything a module tab used to set
+  up for itself now belongs to `ModuleScreen`: the `SafeAreaView`, the
+  `colors.screen` background, the `flex: 1` filling the tab, and the content
+  padding — `Spacing.s` on top, `Spacing.gutter` left and right, nothing at the
+  bottom (`8 / 18 / 0`). A wrapped screen therefore returns a container carrying
+  its `gap` only, and none of that frame: no `SafeAreaView`, no `screen`
+  background, no padding. Keeping the padding "because the container is needed
+  for its `gap`" double-pads the tab. The rule covers the **online branch**,
+  which is the only one `children` render on: `ModuleLinkNotice` and the takeover
+  sit outside `styles.content` and pad themselves, so a reader scanning
+  `module-screen.tsx` meets those two counter-examples before the rule.
 - **What a module reports reaches the user as a toast.**
   `screens/hooks/useFeedbackToast.ts` watches a domain object's `lastFeedback`
   and shows `t(key, params)` when it changes; a module repeating itself is one
@@ -233,7 +244,8 @@ three modules reach *online* on their own, so nothing has to be scanned or
 tapped, and the bar shows all four tabs. Every value on the screens, Bord's
 water and heater cards included, comes from a fake — Bord holds no hardcoded
 reading any more. The water and heater screens still substitute a zeroed
-default while their module is offline.
+default while their module is offline — tasks T5 and T6 of issue #6 retire that,
+since `ModuleScreen` takes the tab over before any reading is asked for.
 
 `EXPO_PUBLIC_FAKE_BLE` is read **once**, by `createContainer()`, and it is the
 only branch in the app. Expo inlines `EXPO_PUBLIC_*` at build time, so this is
