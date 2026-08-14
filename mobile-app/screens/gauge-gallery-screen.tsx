@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  AlarmBanner,
   BorderRadius,
   Button,
   GaugeBars,
@@ -10,11 +11,15 @@ import {
   GaugeRow,
   GaugeSetpointRow,
   GaugeSurface,
+  Motion,
   OfflineCard,
   PageHeader,
   type Palette,
+  ProgressBar,
   Section,
+  SlideToConfirm,
   Spacing,
+  StatTile,
   useStyles,
   useThemeColor,
 } from "@/design-system";
@@ -42,6 +47,7 @@ export default function GaugeGalleryScreen() {
   const colors = useThemeColor();
   const styles = useStyles(makeStyles);
   const [ratio, setRatio] = useState(HIGH);
+  const [confirmations, setConfirmations] = useState(0);
   const percent = String(Math.round(ratio * 100));
 
   const water = {
@@ -304,6 +310,56 @@ export default function GaugeGalleryScreen() {
           </View>
         </Section>
 
+        <Section title="Stat tiles">
+          <Text style={styles.caption}>
+            One height for the dashboard strip and the battery stats
+          </Text>
+          <View style={styles.tiles}>
+            <StatTile label="INT" value="21.4°" />
+            <StatTile label="EXT" value="12.8°" />
+            <StatTile label="HUM" value="48%" />
+            <StatTile label="hPa" value="1013" />
+          </View>
+        </Section>
+
+        <Section title="Alarm banner">
+          <Text style={styles.caption}>Quiet pack, then an alarm</Text>
+          <AlarmBanner
+            tone="ok"
+            icon="check-circle"
+            message="No alarm. Voltages, temperatures and currents within limits."
+          />
+          <AlarmBanner
+            tone="alarm"
+            icon="warning"
+            message="Cell overvoltage on C3."
+          />
+        </Section>
+
+        <Section title="Slide to confirm">
+          <Text style={styles.caption}>
+            A tap fires nothing; past 68 % of the travel it confirms
+          </Text>
+          <SlideToConfirm
+            icon="chevron-right"
+            label="SLIDE TO OPEN"
+            onConfirm={() => setConfirmations(confirmations + 1)}
+          />
+          <Text style={styles.caption}>Confirmed {confirmations} times</Text>
+        </Section>
+
+        <Section title="Progress bar">
+          <Text style={styles.caption}>
+            The 4 px corners clip the fill at {percent} %
+          </Text>
+          <ProgressBar
+            ratio={ratio}
+            troughColor={colors.dangerSurface}
+            fillColor={colors.danger}
+            duration={Motion.drain}
+          />
+        </Section>
+
         <Section title="Offline card">
           <Text style={styles.caption}>Idle, then reconnecting</Text>
           <OfflineCard
@@ -357,6 +413,10 @@ const makeStyles = (colors: Palette) =>
     },
     cluster: {
       height: 96,
+    },
+    tiles: {
+      flexDirection: "row",
+      gap: Spacing.m,
     },
     tanks: {
       flexDirection: "row",

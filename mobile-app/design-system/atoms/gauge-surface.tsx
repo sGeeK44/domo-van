@@ -35,6 +35,8 @@ export type GaugeSurfaceProps = {
   outline?: { color: string; style?: "solid" | "dashed"; width?: number };
   /** Milliseconds; one of `Motion`. */
   duration?: number;
+  /** Overridden when a screen holds two of the same gauge and has to tell them apart. */
+  testID?: string;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
 };
@@ -50,6 +52,7 @@ export function GaugeSurface({
   radius,
   outline,
   duration = Motion.fill,
+  testID = "gauge-surface",
   style,
   children,
 }: GaugeSurfaceProps) {
@@ -70,7 +73,7 @@ export function GaugeSurface({
 
   return (
     <View
-      testID="gauge-surface"
+      testID={testID}
       style={[styles.surface, style, { borderRadius: radius }]}
     >
       {hatched ? (

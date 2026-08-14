@@ -88,6 +88,13 @@ describe("a gauge row", () => {
     expect(screen.getByText("RECONNECTER")).toBeTruthy();
   });
 
+  // The heater card sits at 0 with every zone off; a line flush against the edge reads as a reading.
+  it("marks no boundary on an empty row", () => {
+    render(row({ ratio: 0 }));
+
+    expect(screen.queryByTestId("gauge-meniscus")).toBeNull();
+  });
+
   it("marks no boundary on a hatched row", () => {
     render(row({ state: "hatched" }));
     expect(screen.queryByTestId("gauge-meniscus")).toBeNull();

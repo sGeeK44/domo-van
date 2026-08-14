@@ -27,9 +27,12 @@ dark value, so a missing pair is a type error. Read them through `useThemeColor(
 | `textMuted` | dimmed ink, captions and neutral status |
 | `inverse` / `onInverse` | inverted surface and the ink on it (toast, primary button) |
 | `danger` / `success` | error and confirmation |
+| `dangerBorder` / `successBorder` | the translucent outline of a danger / success container |
+| `dangerSurface` / `successSurface` | its tint: the progress trough, the banner background |
+| `onDanger` | ink over a `danger` fill (the slide knob, *fermer maintenant*) |
 | `hatchBase` / `hatchStripe` | the two `<Hatch/>` stripe colours |
 | `onFill` / `onFillMuted` | ink over a `fill.*` surface |
-| `onFillSurface` | translucent black for a control sitting **on** a fill, so the fill shows through |
+| `onFillSurface` | translucent black for a control sitting **on** a fill, so the fill shows through. Light is `0.22`: at `0.12` the stepper read ~1.4:1 on the heat fill, under WCAG 1.4.11's 3:1 |
 | `fill.{battery,cleanWater,greyWater,heat}` | the four domain fills, chosen by the caller |
 | `line.{…}` | the matching stroke / accent for each fill |
 
@@ -72,11 +75,15 @@ carries **no** `fontWeight`. Spread one into a style: `{ ...TextStyles.toast }`.
 | `sectionLabel` | Archivo 800 | 12 / 12 | section label |
 | `cardLabel` | Archivo 800 | 13 / 13 | card label |
 | `rowTitle` | Archivo 700 | 16 / 16 | row heading |
+| `labelStrong` | Archivo 700 | 14 / 14 | preset button, valve chip |
 | `body` | Archivo 500 | 17 / 24.6 | body copy |
 | `bodySmall` | Archivo 400 | 15 / 22.5 | secondary copy |
+| `caption` | Archivo 400 | 12 / 16.8 | hint under a control |
+| `bannerText` | Archivo 600 | 14 / 18.2 | alarm banner |
 | `button` | Archivo 900 | 17 / 17 | primary button |
 | `buttonSmall` | Archivo 800 | 12 / 12 | compact button |
-| `buttonMedium` | Archivo 800 | 14 / 14 | reconnect button |
+| `buttonMedium` | Archivo 800 | 14 / 14 | reconnect button, slide label |
+| `metricTile` | Archivo 800 | 20 / 20 | stat tile value |
 | `metricSmall` | Archivo 800 | 24 / 24 | aside metric (autonomy) |
 | `metric` | Archivo 800 | 34 / 34 | metric |
 | `metricMedium` | Archivo 800 | 40 / 36 | zone temperature |
@@ -88,10 +95,21 @@ carries **no** `fontWeight`. Spread one into a style: `{ ...TextStyles.toast }`.
 | `monoSmall` | Space Mono 400 | 12 / 14.4 | mono caption |
 | `monoStrong` | Space Mono 700 | 14 / 14 | zone subtitle |
 | `monoValue` | Space Mono 700 | 15 / 18 | gauge reading, column footer |
+| `monoMetric` | Space Mono 700 | 26 / 26 | countdown |
 
 `MetricUnitSize` gives the unit span that sits inside a metric — the mockup
 renders `72` and its `%` at two sizes in the same line. Key it by the metric's
 own style: `metric` → 19, `metricLarge` → 30, `metricHuge` → 34.
+
+### The letter-spacing absorptions
+
+Two of the mockup's shorthands land on an entry that already exists, at a
+deviation not worth a sixth style:
+
+| Mockup | Entry | Δ |
+|---|---|---|
+| the valve chip's `700 13/1` | `labelStrong` (14 / 14) | +1 px |
+| *GLISSER POUR OUVRIR*'s `.1em` tracking | `buttonMedium`'s `0.84` | −0.56 |
 
 ## `useStyles`
 
@@ -136,6 +154,7 @@ a layout placed inside it. It is domain-free — the caller supplies every colou
 | `markerRatio` / `markerColor` | a second 2 px line, independent of the fill (a setpoint) |
 | `hatched` | replaces the fill with `<Hatch/>`: offline, or an empty slot |
 | `radius`, `outline`, `duration`, `style`, `children` | the container, its ring, the sweep |
+| `testID` | defaults to `gauge-surface`; every variant forwards its own, so a screen holding two of the same gauge can address one of them |
 
 Rules the primitive holds, so no variant has to:
 
@@ -143,9 +162,10 @@ Rules the primitive holds, so no variant has to:
   left-to-right for battery *and* water; the tank column fills bottom-up. "Heat
   fills from the left" is true of the heat *screen*, whose zones are rows. Each
   variant fixes its own axis.
-- **No meniscus at 100 %.** A full surface has no boundary left to mark
-  (`drawsMeniscus`). The mockup relied on the line being clipped off the edge;
-  React Native needs the rule stated.
+- **No meniscus at 0 % or 100 %.** Neither an empty nor a full surface has a
+  boundary left to mark (`drawsMeniscus`). The mockup relied on the line being
+  clipped off the edge, and on passing `transparent` on the all-zones-off heater
+  card; React Native needs both rules stated.
 - **The outline is an absolutely-positioned overlay ring**, not a border on the
   container — a border would shift the variant's content inward by its width.
 - **`hatched` suppresses the fill, the meniscus and the marker.** A hatched
@@ -182,7 +202,7 @@ JS thread.
 | `GaugeRow` | horizontal, h 96, `r 24` | a dashboard card: icon + label + mono subtitle + right-aligned value. `state: "hatched"` covers offline **and** empty slot — they differ only in the copy and the trailing element |
 | `GaugeColumn` | vertical, `flex: 1`, `r 28` | a tank: header block on top, metric and footer at the bottom. `draining` adds the danger outline, the danger meniscus and the tinted ink |
 | `GaugeHero` | vertical, h 186, `r 28` | one dominant metric with an aside — the battery screen's headline |
-| `GaugeBars` | a row of vertical bars, `r 15` | a cluster of cells; each bar draws **no** meniscus |
+| `GaugeBars` | a row of vertical bars, `r 15` | a cluster of cells; each bar draws **no** meniscus and sits on `surface`, never on `off` — an unfilled cell is a card, not a switched-off one |
 | `GaugeSetpointRow` | horizontal, `flex: 1`, `r 20` | a heat zone: a live fill, a target marker on its own duration, three controls, and an `inert` state for a switched-off zone |
 
 `OfflineCard` sits beside them but is not a gauge: a hatched card with an icon,
@@ -212,6 +232,43 @@ danger meniscus".
 lands the family before any screen consumes it, which would otherwise leave the
 rounded-corner clipping unverifiable on a device. **#6 deletes it** once the
 real screens render the gauges.
+
+## The screen components of #6
+
+Four forms the gauge family does not cover, all domain-free: they take formatted
+strings and colours, and name no tank, zone or cell.
+
+| Component | Form | Reach for it when |
+|---|---|---|
+| `StatTile` | `flex: 1`, h 68, `r 18` | a strip of readings: `monoLabel` name over a `metricTile` value |
+| `AlarmBanner` | h 58, `r 18`, 1 px outline | one line of state, `tone: "ok"` or `"alarm"` |
+| `SlideToConfirm` | h 80, `r 24`, a 68 px knob | an action too costly for a tap |
+| `ProgressBar` | h 8, `r 4` | time or work left, on the caller's two colours |
+
+### The tile-size absorption
+
+The mockup draws the tile at three sizes, none of them a decision — the
+dashboard strip, the battery stats and the battery temperatures were laid out
+separately. One `StatTile` absorbs all three, so the three strips read as one
+family:
+
+| Mockup | height | radius | value |
+|---|---|---|---|
+| Bord tiles | 64 | 16 | 20 |
+| battery stats | 74 | 18 | 22 |
+| battery temps | 66 | 18 | 19 |
+| **absorbed** | **68** | **`BorderRadius.l`** | **`metricTile`** |
+
+### The slide gesture
+
+`SlideToConfirm` confirms past **68 %** of the knob's travel
+(`trackWidth − 2 × Spacing.xs − 68`) and springs back below it, so a tap fires
+nothing — the drain valve's rule, held by the control rather than by a screen.
+It measures its own track through `onLayout` and confirms nothing until it has,
+and it **never reads or writes a shared value during render**: doing so desyncs
+Reanimated from the Fabric commit (the fix commit `db70094` bought). Tests drive
+it through `__mocks__/react-native-gesture-handler.tsx`, which turns a mouse
+drag into the pan callbacks.
 
 ## The barrel
 

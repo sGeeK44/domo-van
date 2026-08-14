@@ -25,7 +25,12 @@ export type Palette = {
   inverse: string;
   onInverse: string;
   danger: string;
+  dangerBorder: string;
+  dangerSurface: string;
+  onDanger: string;
   success: string;
+  successBorder: string;
+  successSurface: string;
   hatchBase: string;
   hatchStripe: string;
   onFill: string;
@@ -52,12 +57,18 @@ export const Colors: Record<ThemeName, Palette> = {
     inverse: "#101214",
     onInverse: "#FFFFFF",
     danger: "#C0271B",
+    dangerBorder: "rgba(192, 39, 27, 0.30)",
+    dangerSurface: "#F7E4E1",
+    onDanger: "#FFFFFF",
     success: "#15803D",
+    successBorder: "rgba(21, 128, 61, 0.30)",
+    successSurface: "rgba(21, 128, 61, 0.08)",
     hatchBase: "#F7F6F3",
     hatchStripe: "#EBE9E4",
     onFill: "#101214",
     onFillMuted: "#3F4448",
-    onFillSurface: "rgba(0, 0, 0, 0.12)",
+    // 0.12 puts the stepper at ~1.4:1 on the heat fill, under WCAG 1.4.11's 3:1.
+    onFillSurface: "rgba(0, 0, 0, 0.22)",
     fill: {
       battery: "#9FE0B8",
       cleanWater: "#9BDCDC",
@@ -87,7 +98,12 @@ export const Colors: Record<ThemeName, Palette> = {
     inverse: "#FFFFFF",
     onInverse: "#101214",
     danger: "#EF4444",
+    dangerBorder: "rgba(239, 68, 68, 0.35)",
+    dangerSurface: "#2A1E1A",
+    onDanger: "#FFFFFF",
     success: "#22C55E",
+    successBorder: "rgba(34, 197, 94, 0.30)",
+    successSurface: "rgba(34, 197, 94, 0.10)",
     hatchBase: "#191D20",
     hatchStripe: "#212629",
     onFill: "#FFFFFF",
@@ -111,7 +127,6 @@ export const Colors: Record<ThemeName, Palette> = {
 export const FontFamilies = [
   "Archivo_400Regular",
   "Archivo_500Medium",
-  // Named by no text style yet: reserved for the typography migration (#6).
   "Archivo_600SemiBold",
   "Archivo_700Bold",
   "Archivo_800ExtraBold",
@@ -148,6 +163,12 @@ export const TextStyles = {
     lineHeight: 16,
     letterSpacing: 0,
   },
+  labelStrong: {
+    fontFamily: "Archivo_700Bold",
+    fontSize: 14,
+    lineHeight: 14,
+    letterSpacing: 0,
+  },
   body: {
     fontFamily: "Archivo_500Medium",
     fontSize: 17,
@@ -158,6 +179,18 @@ export const TextStyles = {
     fontFamily: "Archivo_400Regular",
     fontSize: 15,
     lineHeight: 22.5,
+    letterSpacing: 0,
+  },
+  caption: {
+    fontFamily: "Archivo_400Regular",
+    fontSize: 12,
+    lineHeight: 16.8,
+    letterSpacing: 0,
+  },
+  bannerText: {
+    fontFamily: "Archivo_600SemiBold",
+    fontSize: 14,
+    lineHeight: 18.2,
     letterSpacing: 0,
   },
   button: {
@@ -177,6 +210,12 @@ export const TextStyles = {
     fontSize: 14,
     lineHeight: 14,
     letterSpacing: 0.84,
+  },
+  metricTile: {
+    fontFamily: "Archivo_800ExtraBold",
+    fontSize: 20,
+    lineHeight: 20,
+    letterSpacing: 0,
   },
   metricSmall: {
     fontFamily: "Archivo_800ExtraBold",
@@ -242,6 +281,12 @@ export const TextStyles = {
     fontFamily: "SpaceMono_700Bold",
     fontSize: 15,
     lineHeight: 18,
+    letterSpacing: 0,
+  },
+  monoMetric: {
+    fontFamily: "SpaceMono_700Bold",
+    fontSize: 26,
+    lineHeight: 26,
     letterSpacing: 0,
   },
 } as const satisfies Record<string, TextStyle & { fontFamily: FontFamily }>;

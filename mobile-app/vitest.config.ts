@@ -19,6 +19,10 @@ export default defineConfig({
         __dirname,
         "__mocks__/react-native-svg.tsx",
       ),
+      "react-native-gesture-handler": path.resolve(
+        __dirname,
+        "__mocks__/react-native-gesture-handler.tsx",
+      ),
       "react-native-reanimated": path.resolve(
         __dirname,
         "__mocks__/react-native-reanimated.tsx",

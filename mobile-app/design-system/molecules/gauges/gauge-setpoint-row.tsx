@@ -38,6 +38,8 @@ export type GaugeSetpointRowProps = {
   caption: string;
   /** The zone is switched off: dimmed fill, no setpoint marker, muted ink. */
   inert?: boolean;
+  /** A screen holding four zones tells them apart with this. */
+  testID?: string;
   onDecrease(): void;
   onIncrease(): void;
   onTogglePower(): void;
@@ -52,6 +54,7 @@ export function GaugeSetpointRow({
   value,
   caption,
   inert = false,
+  testID,
   onDecrease,
   onIncrease,
   onTogglePower,
@@ -70,6 +73,7 @@ export function GaugeSetpointRow({
       markerColor={inert ? undefined : markerColor}
       radius={BorderRadius.xl}
       duration={Motion.fill}
+      testID={testID}
       style={styles.surface}
     >
       <View testID="setpoint-content" style={styles.content}>

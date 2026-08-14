@@ -25,6 +25,8 @@ export type GaugeColumnProps = {
   footer: string;
   /** Dimming the *sibling* tank while this one drains is the caller's layout call (#6), not this component's. */
   draining?: boolean;
+  /** A screen holding two tanks tells them apart with this. */
+  testID?: string;
 };
 
 export function GaugeColumn({
@@ -36,6 +38,7 @@ export function GaugeColumn({
   value,
   footer,
   draining = false,
+  testID,
 }: GaugeColumnProps) {
   const colors = useThemeColor();
   const styles = useStyles(makeStyles);
@@ -49,6 +52,7 @@ export function GaugeColumn({
       radius={BorderRadius.xxxl}
       duration={draining ? Motion.drain : Motion.fill}
       outline={draining ? { color: colors.danger } : undefined}
+      testID={testID}
       style={styles.column}
     >
       <View>

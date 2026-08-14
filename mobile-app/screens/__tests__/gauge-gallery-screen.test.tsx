@@ -15,6 +15,10 @@ const SEEDED_SECTIONS = [
   "Hero and bars",
   "Column gauge",
   "Setpoint row",
+  "Stat tiles",
+  "Alarm banner",
+  "Slide to confirm",
+  "Progress bar",
   "Offline card",
 ];
 

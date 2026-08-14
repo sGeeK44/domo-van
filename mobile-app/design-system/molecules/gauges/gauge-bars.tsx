@@ -62,7 +62,7 @@ const makeStyles = (colors: Palette) =>
     },
     bar: {
       flex: 1,
-      backgroundColor: colors.off,
+      backgroundColor: colors.surface,
       justifyContent: "flex-end",
       alignItems: "center",
       paddingVertical: Spacing.m,

@@ -158,4 +158,18 @@ describe("a column gauge", () => {
     expect(withTiming).toHaveBeenCalledWith(0.68, { duration: Motion.drain });
     expect(styleOf("gauge-fill").height).toBe("68%");
   });
+
+  // The Eau screen shows two tanks: without a name of its own neither can be addressed.
+  it("answers to the name its caller gives it", () => {
+    render(
+      <ThemeProvider initialMode="dark">
+        <GaugeColumn {...BASE} testID="clean-tank" />
+        <GaugeColumn {...BASE} label="GREY WATER" draining testID="grey-tank" />
+      </ThemeProvider>,
+    );
+
+    expect(screen.getByTestId("clean-tank")).toBeTruthy();
+    expect(screen.getByTestId("grey-tank")).toBeTruthy();
+    expect(screen.queryByTestId("gauge-surface")).toBeNull();
+  });
 });

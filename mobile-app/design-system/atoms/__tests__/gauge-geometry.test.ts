@@ -90,6 +90,16 @@ describe("the meniscus", () => {
     expect(drawsMeniscus(0.999, "#000000")).toBe(true);
   });
 
+  it("is not drawn on an empty surface: there is no boundary yet", () => {
+    expect(drawsMeniscus(0, "#000000")).toBe(false);
+    expect(drawsMeniscus(-0.3, "#000000")).toBe(false);
+    expect(drawsMeniscus(Number.NaN, "#000000")).toBe(false);
+  });
+
+  it("appears as soon as the surface holds anything at all", () => {
+    expect(drawsMeniscus(0.001, "#000000")).toBe(true);
+  });
+
   it("is not drawn without a colour: a bar in a cluster marks no boundary", () => {
     expect(drawsMeniscus(0.72, undefined)).toBe(false);
   });

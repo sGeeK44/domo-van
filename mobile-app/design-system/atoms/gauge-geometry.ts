@@ -46,7 +46,8 @@ export function markerInset(ratio: number, axis: GaugeAxis): GaugeLineInset {
   return axis === "vertical" ? { marginBottom: inset } : { marginLeft: inset };
 }
 
-/** Read at render time, never from a worklet, hence no directive. A full surface has no boundary left to mark. */
+/** Read at render time, never from a worklet, hence no directive. Neither a full nor an empty surface has a boundary left to mark. */
 export function drawsMeniscus(ratio: number, lineColor?: string): boolean {
-  return lineColor !== undefined && clampRatio(ratio) < 1;
+  const level = clampRatio(ratio);
+  return lineColor !== undefined && level > 0 && level < 1;
 }
