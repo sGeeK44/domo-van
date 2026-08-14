@@ -108,6 +108,7 @@ export const Colors: Record<ThemeName, Palette> = {
 export const FontFamilies = [
   "Archivo_400Regular",
   "Archivo_500Medium",
+  // Named by no text style yet: reserved for the typography migration (#5/#6).
   "Archivo_600SemiBold",
   "Archivo_700Bold",
   "Archivo_800ExtraBold",
@@ -210,7 +211,7 @@ export const TextStyles = {
     lineHeight: 14.4,
     letterSpacing: 0,
   },
-} as const satisfies Record<string, TextStyle>;
+} as const satisfies Record<string, TextStyle & { fontFamily: FontFamily }>;
 
 export type TextStyleName = keyof typeof TextStyles;
 
