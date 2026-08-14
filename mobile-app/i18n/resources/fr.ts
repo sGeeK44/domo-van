@@ -105,16 +105,30 @@ export const fr = {
       greyWater: "EAU GRISE",
       heater: "CHAUFFAGE",
     },
-    water: { label: "Eau propre" },
+    modules: {
+      battery: "BATTERIE",
+      water: "EAU",
+      heater: "CHAUFFAGE",
+    },
+    empty: {
+      body: "Aucun module n'est associé. Ajoute un module pour voir ses niveaux ici.",
+    },
+    tiles: {
+      interior: "INT",
+      exterior: "EXT",
+      humidity: "HUM",
+      pressure: "hPa",
+    },
+    water: {
+      cleanSubtitle: "{{liters}} L sur {{capacity}}",
+      greySubtitle: "{{liters}} L avant plein",
+    },
     heater: {
-      running: "Chauffe",
-      stopped: "Arrêt",
-      setpoint: "> {{temperature}}°C",
+      zoneTarget: "{{zone}} · cible {{temperature}}",
+      allStopped: "toutes zones à l'arrêt",
     },
     battery: {
-      consumption: "Conso:",
-      remaining: "{{duration}} restantes",
-      charging: "{{duration}} pour charger",
+      summary: "{{duration}} · {{voltage}} V · {{power}} W",
     },
   },
 

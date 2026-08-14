@@ -14,18 +14,28 @@ function zone(isRunning: boolean, setpointCelsius: number): HeaterZoneSnapshot {
 
 describe("what the dashboard says about the heater", () => {
   it("is idle while no zone runs", () => {
-    expect(heaterSummary([zone(false, 21), zone(false, 19)])).toEqual({
-      isRunning: false,
-      setpointCelsius: 0,
-    });
+    expect(heaterSummary([zone(false, 21), zone(false, 19)]).isRunning).toBe(
+      false,
+    );
   });
 
-  it("heats up to the warmest setpoint a running zone asks for", () => {
-    const zones = [zone(true, 19), zone(false, 24), zone(true, 21)];
+  it("heats as soon as one zone does, whichever it is", () => {
+    expect(heaterSummary([zone(false, 19), zone(true, 24)]).isRunning).toBe(
+      true,
+    );
+  });
 
-    expect(heaterSummary(zones)).toEqual({
-      isRunning: true,
-      setpointCelsius: 21,
-    });
+  it("quotes the first zone, whatever the others report", () => {
+    const summary = heaterSummary([zone(false, 21), zone(true, 24)]);
+
+    expect(summary.referenceIndex).toBe(0);
+    expect(summary.reference.setpointCelsius).toBe(21);
+  });
+
+  it("reads a heater that answered nothing as a stopped one", () => {
+    const summary = heaterSummary([]);
+
+    expect(summary.isRunning).toBe(false);
+    expect(summary.reference.isRunning).toBe(false);
   });
 });

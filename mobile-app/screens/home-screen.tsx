@@ -1,23 +1,16 @@
 import { useRouter } from "expo-router";
-import { type PropsWithChildren, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  StatusBar,
-  type StyleProp,
-  StyleSheet,
-  View,
-  type ViewStyle,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BatteryGauge } from "@/components/home/battery-gauge";
-import { EmptySlotCard } from "@/components/home/empty-slot-card";
-import { EnvironmentCard } from "@/components/home/environment-card";
-import { environmentReadings } from "@/components/home/environment-view";
-import { ModuleCard } from "@/components/home/module-card";
-import { StatusCard } from "@/components/home/status-card";
+import { DashboardCard } from "@/components/home/dashboard-card";
+import {
+  type DashboardReadings,
+  dashboardCards,
+} from "@/components/home/dashboard-cards";
+import { environmentTiles } from "@/components/home/environment-view";
 import {
   useModuleRegistry,
-  useModuleSlot,
+  useModuleSlots,
 } from "@/composition/ModuleRegistryProvider";
 import {
   useBatterySystem,
@@ -26,80 +19,52 @@ import {
 } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import {
-  Button,
+  IconSymbol,
   PageHeader,
   type Palette,
+  Spacing,
+  StatTile,
+  TextStyles,
+  useStyles,
   useThemeColor,
 } from "@/design-system";
-import {
-  calculateRemainingTime,
-  DEFAULT_BATTERY_SNAPSHOT,
-  formatRemainingTime,
-} from "@/domain/battery/BatteryTelemetry";
+import { DEFAULT_BATTERY_SNAPSHOT } from "@/domain/battery/BatteryTelemetry";
 import { DEFAULT_ENVIRONMENT } from "@/domain/heater/EnvironmentData";
+import type { ModuleKey } from "@/domain/modules/ModuleDescriptor";
 import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
 import { DEFAULT_TANK_SNAPSHOT } from "@/domain/water/TankLevelSensor";
 import { useHeaterSummary } from "@/screens/hooks/useHeaterSummary";
 
-/** A dash is not copy: it stands in for a measurement no module reported. */
-const NO_READING = "-";
+const MODULES_ROUTE = "/modules";
+
+/** Every module tab is the route its key names, see components/navigation/module-tabs.ts. */
+const MODULE_ROUTE = {
+  battery: "/battery",
+  water: "/water",
+  heater: "/heater",
+} as const satisfies Record<ModuleKey, string>;
 
 export default function HomeScreen() {
   const { t } = useTranslation();
-  const colors = useThemeColor();
-  const styles = getStyles(colors);
+  const styles = useStyles(makeStyles);
   const router = useRouter();
-  const openModules = () => router.push("/modules");
+  const openModules = () => router.push(MODULES_ROUTE);
 
   const { reconnect } = useModuleRegistry();
-  const batterySlot = useModuleSlot("battery");
-  const waterSlot = useModuleSlot("water");
-  const heaterSlot = useModuleSlot("heater");
-  const nothingPaired = [batterySlot, waterSlot, heaterSlot].every(
-    (slot) => slot.pairing === null,
-  );
+  const slots = useModuleSlots();
+  const cards = dashboardCards(slots, useDashboardReadings());
 
-  const batterySystem = useBatterySystem();
-  const waterSystem = useWaterSystem();
-  const heaterSystem = useHeaterSystem();
-
-  const battery = useObservable(batterySystem, DEFAULT_BATTERY_SNAPSHOT);
-  const cleanTank = useObservable(
-    waterSystem?.cleanTank ?? null,
-    DEFAULT_TANK_SNAPSHOT,
-  );
+  const heaterOnline = isOnline(slots, "heater");
   const environment = useObservable(
-    heaterSystem?.environment ?? null,
+    useHeaterSystem()?.environment ?? null,
     DEFAULT_ENVIRONMENT,
   );
-  const heat = useHeaterSummary();
 
-  const batteryOnline = batterySlot.link.status === "online";
-  const waterOnline = waterSlot.link.status === "online";
-  const heaterOnline = heaterSlot.link.status === "online";
-  const heaterPaired = heaterSlot.pairing !== null;
-  const heating = heaterOnline && heat.isRunning;
-
-  const remainingTime = useMemo(() => {
-    if (!batteryOnline) return NO_READING;
-    const hours = calculateRemainingTime(
-      battery.percentage,
-      battery.capacityAh,
-      battery.current,
-    );
-    if (hours === null) return NO_READING;
-    const key =
-      battery.current < 0
-        ? "dashboard.battery.remaining"
-        : "dashboard.battery.charging";
-    return t(key, { duration: formatRemainingTime(hours) });
-  }, [battery, batteryOnline, t]);
-
-  const consumption = batteryOnline ? Math.round(battery.power) : 0;
+  const anyPaired = slots.some((slot) => slot.pairing !== null);
+  const anyFree = slots.some((slot) => slot.pairing === null);
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <View style={styles.screen}>
       <SafeAreaView style={styles.safeArea}>
         <PageHeader
           title={t("dashboard.title")}
@@ -107,80 +72,35 @@ export default function HomeScreen() {
         />
 
         <View style={styles.content}>
-          <View style={styles.gaugeSection}>
-            <Slot
-              slot={batterySlot}
-              onAdd={openModules}
-              onReconnect={() => void reconnect("battery")}
-            >
-              <BatteryGauge
-                percentage={battery.percentage}
-                remainingTime={remainingTime}
-                voltage={battery.voltage}
-                consumption={consumption}
-                isConnected={batteryOnline}
-              />
-            </Slot>
-          </View>
-
-          <View style={styles.cardsRow}>
-            <Slot
-              slot={waterSlot}
-              onAdd={openModules}
-              onReconnect={() => void reconnect("water")}
-              style={styles.rowSlot}
-            >
-              <StatusCard
-                icon="water-drop"
-                value={
-                  waterOnline
-                    ? `${Math.round(cleanTank.percentage)}%`
-                    : NO_READING
-                }
-                label={t("dashboard.water.label")}
-                backgroundColor={colors.fill.cleanWater}
-                onPress={() => router.push("/water")}
-              />
-            </Slot>
-            <Slot
-              slot={heaterSlot}
-              onAdd={openModules}
-              onReconnect={() => void reconnect("heater")}
-              style={styles.rowSlot}
-            >
-              <StatusCard
-                icon="local-fire-department"
-                value={
-                  heaterOnline
-                    ? t(
-                        heat.isRunning
-                          ? "dashboard.heater.running"
-                          : "dashboard.heater.stopped",
-                      )
-                    : NO_READING
-                }
-                label={
-                  heating
-                    ? t("dashboard.heater.setpoint", {
-                        temperature: heat.setpointCelsius.toFixed(0),
-                      })
-                    : NO_READING
-                }
-                backgroundColor={heating ? colors.fill.heat : colors.off}
-                onPress={() => router.push("/heater")}
-              />
-            </Slot>
-          </View>
-
-          {heaterPaired && (
-            <EnvironmentCard
-              {...environmentReadings(environment, heaterOnline)}
-              backgroundColor={colors.surface}
-            />
+          {!anyPaired && (
+            <Text style={styles.empty}>{t("dashboard.empty.body")}</Text>
           )}
 
-          {nothingPaired && (
-            <Button onPress={openModules}>{t("dashboard.addModule")}</Button>
+          <View style={styles.cards}>
+            {cards.map((view) => (
+              <DashboardCard
+                key={view.id}
+                view={view}
+                onAdd={openModules}
+                onOpen={() => router.push(MODULE_ROUTE[view.moduleKey])}
+                onReconnect={() => void reconnect(view.moduleKey)}
+              />
+            ))}
+          </View>
+
+          {anyFree && <AddModuleButton onPress={openModules} />}
+
+          {anyPaired && (
+            <View style={styles.tiles}>
+              {environmentTiles(environment, heaterOnline).map((tile) => (
+                <StatTile
+                  key={tile.labelKey}
+                  testID={`environment-tile-${tile.labelKey}`}
+                  label={t(tile.labelKey)}
+                  value={tile.value}
+                />
+              ))}
+            </View>
           )}
         </View>
       </SafeAreaView>
@@ -188,36 +108,46 @@ export default function HomeScreen() {
   );
 }
 
-type SlotProps = PropsWithChildren<{
-  slot: ModuleSlot;
-  onAdd: () => void;
-  onReconnect: () => void;
-  style?: StyleProp<ViewStyle>;
-}>;
-
-function Slot({ slot, onAdd, onReconnect, style, children }: SlotProps) {
+function AddModuleButton({ onPress }: { onPress: () => void }) {
   const { t } = useTranslation();
-
-  if (!slot.pairing) {
-    return (
-      <EmptySlotCard
-        title={t(slot.module.tabTitleKey)}
-        onPress={onAdd}
-        style={style}
-      />
-    );
-  }
+  const colors = useThemeColor();
+  const styles = useStyles(makeStyles);
 
   return (
-    <ModuleCard link={slot.link} onReconnect={onReconnect} style={style}>
-      {children}
-    </ModuleCard>
+    <Pressable testID="add-module" onPress={onPress} style={styles.addButton}>
+      <IconSymbol name="add" size={ADD_ICON_SIZE} color={colors.onInverse} />
+      <Text style={styles.addLabel}>
+        {t("dashboard.addModule").toUpperCase()}
+      </Text>
+    </Pressable>
   );
 }
 
-const getStyles = (colors: Palette) =>
+/** What every card reads from, gathered once: a card is a view, not a subscriber. */
+function useDashboardReadings(): DashboardReadings {
+  const water = useWaterSystem();
+
+  return {
+    battery: useObservable(useBatterySystem(), DEFAULT_BATTERY_SNAPSHOT),
+    cleanTank: useObservable(water?.cleanTank ?? null, DEFAULT_TANK_SNAPSHOT),
+    greyTank: useObservable(water?.greyTank ?? null, DEFAULT_TANK_SNAPSHOT),
+    heater: useHeaterSummary(),
+  };
+}
+
+function isOnline(slots: readonly ModuleSlot[], key: ModuleKey): boolean {
+  const slot = slots.find((candidate) => candidate.module.key === key);
+  return slot?.link.status === "online";
+}
+
+/** The mockup's 68 / 22 add button; neither lands on a token step. */
+const ADD_HEIGHT = 68;
+const ADD_RADIUS = 22;
+const ADD_ICON_SIZE = 24;
+
+const makeStyles = (colors: Palette) =>
   StyleSheet.create({
-    container: {
+    screen: {
       flex: 1,
       backgroundColor: colors.screen,
     },
@@ -226,18 +156,36 @@ const getStyles = (colors: Palette) =>
     },
     content: {
       flex: 1,
-      paddingHorizontal: 20,
-      gap: 24,
+      paddingTop: Spacing.s,
+      paddingHorizontal: Spacing.gutter,
     },
-    // the gauge centres itself, so the card spans the width and keeps a measurable one
-    gaugeSection: {
-      paddingVertical: 10,
+    empty: {
+      ...TextStyles.body,
+      color: colors.textMuted,
+      paddingTop: Spacing.xs,
+      paddingBottom: Spacing.xxxl,
     },
-    cardsRow: {
+    cards: {
+      gap: Spacing.l,
+    },
+    addButton: {
+      height: ADD_HEIGHT,
+      marginTop: Spacing.l,
       flexDirection: "row",
-      gap: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: Spacing.m,
+      borderRadius: ADD_RADIUS,
+      backgroundColor: colors.inverse,
     },
-    rowSlot: {
-      flex: 1,
+    addLabel: {
+      ...TextStyles.button,
+      color: colors.onInverse,
+    },
+    tiles: {
+      flexDirection: "row",
+      gap: Spacing.m,
+      paddingTop: Spacing.xl,
+      paddingBottom: Spacing.xxl,
     },
   });

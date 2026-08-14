@@ -19,8 +19,6 @@ const COLOR_PERMANENT: Record<string, string> = {
 
 /** Each file a later issue rewrites onto tokens; the entry retires with it. */
 const COLOR_RETIRING: Record<string, string> = {
-  "components/home/battery-gauge.tsx":
-    "#6 rebuilds the battery gauge on the token-driven gauge family",
   "components/water/water-tank.tsx":
     "#6 rebuilds the water tank as a column gauge",
   "components/heater/temperature-colors.ts":

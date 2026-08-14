@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { environmentReadings } from "@/components/home/environment-view";
+import { environmentTiles } from "@/components/home/environment-view";
 import {
   EnvironmentData,
   type EnvironmentSnapshot,
@@ -20,18 +20,23 @@ const silentChannel: Channel = {
 };
 
 function values(online: boolean, snapshot = MEASURED): string[] {
-  const readings = environmentReadings(snapshot, online);
-  return [
-    readings.topLeft.value,
-    readings.topRight.value,
-    readings.bottomLeft.value,
-    readings.bottomRight.value,
-  ];
+  return environmentTiles(snapshot, online).map((tile) => tile.value);
 }
 
 describe("what the dashboard says about the environment", () => {
   it("shows the four measurements of an online heater", () => {
-    expect(values(true)).toEqual(["21.4°C", "48%", "7.8°C", "1009 hPa"]);
+    expect(values(true)).toEqual(["21.4°", "7.8°", "48%", "1009"]);
+  });
+
+  it("labels the four tiles the strip shows, in the mockup's order", () => {
+    expect(
+      environmentTiles(MEASURED, true).map((tile) => tile.labelKey),
+    ).toEqual([
+      "dashboard.tiles.interior",
+      "dashboard.tiles.exterior",
+      "dashboard.tiles.humidity",
+      "dashboard.tiles.pressure",
+    ]);
   });
 
   it("shows no measurement while the heater is offline", () => {

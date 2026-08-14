@@ -107,16 +107,30 @@ export const en: typeof fr = {
       greyWater: "GREY WATER",
       heater: "HEATING",
     },
-    water: { label: "Clean water" },
+    modules: {
+      battery: "BATTERY",
+      water: "WATER",
+      heater: "HEATING",
+    },
+    empty: {
+      body: "No module is paired. Add one to see its levels here.",
+    },
+    tiles: {
+      interior: "IN",
+      exterior: "OUT",
+      humidity: "HUM",
+      pressure: "hPa",
+    },
+    water: {
+      cleanSubtitle: "{{liters}} L of {{capacity}}",
+      greySubtitle: "{{liters}} L before full",
+    },
     heater: {
-      running: "Heating",
-      stopped: "Off",
-      setpoint: "> {{temperature}}°C",
+      zoneTarget: "{{zone}} · target {{temperature}}",
+      allStopped: "all zones off",
     },
     battery: {
-      consumption: "Draw:",
-      remaining: "{{duration}} left",
-      charging: "{{duration}} to charge",
+      summary: "{{duration}} · {{voltage}} V · {{power}} W",
     },
   },
 
