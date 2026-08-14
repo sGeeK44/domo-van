@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Modal, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   BorderRadius,
   Button,
@@ -29,6 +30,8 @@ export function UnpairSheet({
 }: UnpairSheetProps) {
   const colors = useThemeColor();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  // the modal window spans the whole screen, so the sheet clears the navigation bar itself
+  const insets = useSafeAreaInsets();
 
   // the hardware back gesture reaches the sheet too, and an unpair in flight owns the slot
   const dismiss = () => {
@@ -43,7 +46,9 @@ export function UnpairSheet({
       onRequestClose={dismiss}
     >
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
+        <View
+          style={[styles.sheet, { paddingBottom: Spacing.xxl + insets.bottom }]}
+        >
           <Card title={`Dissocier ${moduleName}`} subtitle={deviceName}>
             <Text style={styles.warning}>
               L'emplacement redevient libre. Les réglages restent dans le module
