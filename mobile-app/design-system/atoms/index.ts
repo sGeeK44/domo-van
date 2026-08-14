@@ -1,4 +1,6 @@
 export * from "@/design-system/atoms/button";
+export * from "@/design-system/atoms/gauge-geometry";
+export * from "@/design-system/atoms/gauge-surface";
 export * from "@/design-system/atoms/hatch";
 export * from "@/design-system/atoms/icon-circle-button";
 export * from "@/design-system/atoms/icon-symbol";
