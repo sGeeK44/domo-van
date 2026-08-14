@@ -4,6 +4,7 @@ import {
   calculateRemainingTime,
   formatRemainingTime,
 } from "@/domain/battery/BatteryTelemetry";
+import { zoneRatio } from "@/domain/heater/HeaterPresets";
 import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
 import type { DashboardCardKey } from "@/domain/modules/DashboardCardDescriptor";
 import type {
@@ -11,10 +12,7 @@ import type {
   ModuleKey,
 } from "@/domain/modules/ModuleDescriptor";
 import type { LinkState, ModuleSlot } from "@/domain/modules/ModuleSlot";
-import {
-  clamp01,
-  type TankLevelSnapshot,
-} from "@/domain/water/TankLevelSensor";
+import type { TankLevelSnapshot } from "@/domain/water/TankLevelSensor";
 import type { TranslationKey } from "@/i18n/keys";
 
 /** The palette entry a card paints itself with. The catalogue names the card; this names the colour. */
@@ -65,10 +63,6 @@ export type DashboardCardView =
 const PERCENT = "%";
 const LITERS = "L";
 const DEGREE = "°";
-
-/** The zone bar spans 10–30 °C, the mockup's `(t − 10) × 5` %. */
-const ZONE_FLOOR_CELSIUS = 10;
-const ZONE_SPAN_CELSIUS = 20;
 
 const CARD_TINT: Record<DashboardCardKey, DashboardCardTint> = {
   battery: "battery",
@@ -211,10 +205,6 @@ function heaterCardReading({ heater }: DashboardReadings): CardReading {
 
 function tankLiters(tank: TankLevelSnapshot): number {
   return Math.round((tank.percentage / 100) * tank.capacityLiters);
-}
-
-export function zoneRatio(celsius: number): number {
-  return clamp01((celsius - ZONE_FLOOR_CELSIUS) / ZONE_SPAN_CELSIUS);
 }
 
 function zoneNameKey(index: number): TranslationKey {

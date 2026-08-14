@@ -191,10 +191,7 @@ export const fr = {
       zone4: "Soute",
     },
     zone: {
-      current: "actuel",
-      setpoint: "consigne",
       target: "cible {{temperature}}",
-      running: "Actif",
       stopped: "à l'arrêt",
     },
     presets: {
@@ -203,7 +200,6 @@ export const fr = {
     },
     toast: {
       nightOn: "Mode nuit — cibles abaissées",
-      nightOff: "Mode nuit désactivé",
       allStopped: "Toutes les zones arrêtées",
     },
     settings: {

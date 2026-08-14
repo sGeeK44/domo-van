@@ -18,3 +18,8 @@ export const SAVED: Feedback = { key: "common.feedback.saved" };
 export function ackFailure(code: string): Feedback {
   return { key: "modules.admin.failed", params: { message: code } };
 }
+
+/** `SAVED` is the one outcome that is not a failure: every other key reports one. */
+export function isFailure(feedback: Feedback): boolean {
+  return feedback.key !== SAVED.key;
+}

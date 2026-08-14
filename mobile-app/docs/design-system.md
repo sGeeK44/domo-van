@@ -203,7 +203,7 @@ JS thread.
 | `GaugeColumn` | vertical, `flex: 1`, `r 28` | a tank: header block on top, metric and footer at the bottom. `draining` adds the danger outline, the danger meniscus and the tinted ink |
 | `GaugeHero` | vertical, h 186, `r 28` | one dominant metric with an aside — the battery screen's headline |
 | `GaugeBars` | a row of vertical bars, `r 15` | a cluster of cells; each bar draws **no** meniscus and sits on `surface`, never on `off` — an unfilled cell is a card, not a switched-off one |
-| `GaugeSetpointRow` | horizontal, `flex: 1`, `r 20` | a heat zone: a live fill, a target marker on its own duration, three controls, and an `inert` state for a switched-off zone. Either stepper takes a `…Disabled` at a clamp bound — dimmed like the inert state, and pressing it sends nothing |
+| `GaugeSetpointRow` | horizontal, `flex: 1`, `r 20` | a heat zone: a live fill, a target marker on its own duration, three controls, and an `inert` state for a switched-off zone. `decreaseDisabled` / `increaseDisabled` mark a target sitting on a clamp bound: that stepper alone goes dim and sends nothing. `inert` never dims a stepper — pressing ± is how a switched-off zone comes back on |
 
 `OfflineCard` sits beside them but is not a gauge: a hatched card with an icon,
 a title, the time of last contact and an outlined reconnect action whose ink
@@ -316,7 +316,6 @@ per-file exception maps bound it, each entry naming the issue that retires it:
 | `design-system/tokens.ts` | permanent — the palette itself |
 | `components/home/battery-gauge.tsx` | #6 |
 | `components/water/water-tank.tsx` | #6 |
-| `components/heater/temperature-colors.ts` | #6 (the heat-dial gradient is domain logic) |
 | `components/water/drain-slider.tsx` | #6 |
 | `components/modules/UnpairSheet.tsx` | #6 |
 | `components/water-settings/TankSettingsSection.tsx` | #7 (`ToastAndroid`) |

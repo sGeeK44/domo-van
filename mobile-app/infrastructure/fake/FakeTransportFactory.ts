@@ -35,7 +35,7 @@ export type FakeTransportFactoryOptions = {
 
 /** Serves one transport per device: a second one would be a second firmware. */
 export class FakeTransportFactory implements TransportFactory {
-  private readonly modules = new Map<string, ModuleTransport>();
+  private readonly modules = new Map<string, FakeModuleTransport>();
   private readonly binaries = new Map<string, BinaryTransport>();
   private readonly telemetryIntervalMs: number;
 
@@ -49,6 +49,14 @@ export class FakeTransportFactory implements TransportFactory {
       `${device.id}/${serviceId}`,
       () => new FakeModuleTransport(scenarioFor(serviceId)),
     );
+  }
+
+  /** The firmware already served for a device, so a caller can make it speak unprompted. */
+  servedModule(
+    deviceId: string,
+    serviceId: string,
+  ): FakeModuleTransport | null {
+    return this.modules.get(`${deviceId}/${serviceId}`) ?? null;
   }
 
   /** Forgets every transport served, so the next pairing meets a firmware in its initial state. */

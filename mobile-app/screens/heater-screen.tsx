@@ -14,13 +14,12 @@ import {
   MAX_SETPOINT_CELSIUS,
   MIN_SETPOINT_CELSIUS,
   SETPOINT_STEP_CELSIUS,
+  zoneRatio,
 } from "@/domain/heater/HeaterPresets";
 import type { HeaterSystem } from "@/domain/heater/HeaterSystem";
-import {
-  DEFAULT_ZONE_SNAPSHOT,
-  type HeaterZoneSnapshot,
-} from "@/domain/heater/HeaterZone";
+import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
 import type { TranslationKey } from "@/i18n/keys";
+import { useFeedbackToast } from "@/screens/hooks/useFeedbackToast";
 import { ModuleScreen } from "@/screens/module-screen";
 
 const ZONE_NAME_KEYS: readonly TranslationKey[] = [
@@ -29,15 +28,6 @@ const ZONE_NAME_KEYS: readonly TranslationKey[] = [
   "heater.zones.zone3",
   "heater.zones.zone4",
 ];
-
-/** The mockup's bar spans 10–30 °C, inside the 5–30 °C the targets are clamped to. */
-const BAR_FLOOR_CELSIUS = 10;
-const BAR_SPAN_CELSIUS = 20;
-
-function zonePct(celsius: number): number {
-  const ratio = (celsius - BAR_FLOOR_CELSIUS) / BAR_SPAN_CELSIUS;
-  return Math.min(1, Math.max(0, ratio));
-}
 
 export default function HeaterScreen() {
   const router = useRouter();
@@ -58,28 +48,18 @@ function HeaterZones({ heater }: { heater: HeaterSystem }) {
   const colors = useThemeColor();
   const toast = useToast();
 
-  const nightMode = useObservable(heater.nightMode, false);
+  const nightMode = useObservable(heater.nightMode);
   const zones = [
-    useObservable(heater.zones[0], DEFAULT_ZONE_SNAPSHOT),
-    useObservable(heater.zones[1], DEFAULT_ZONE_SNAPSHOT),
-    useObservable(heater.zones[2], DEFAULT_ZONE_SNAPSHOT),
-    useObservable(heater.zones[3], DEFAULT_ZONE_SNAPSHOT),
+    useObservable(heater.zones[0]),
+    useObservable(heater.zones[1]),
+    useObservable(heater.zones[2]),
+    useObservable(heater.zones[3]),
   ];
 
-  /** A ½ ° step stays silent; the preset it ends does not. */
-  const reportNightModeLeft = () => {
-    if (nightMode) toast.show(t("heater.toast.nightOff"));
-  };
-
-  const adjust = (index: number, deltaCelsius: number) => {
-    void heater.adjustZone(index, deltaCelsius);
-    reportNightModeLeft();
-  };
-
-  const toggle = (index: number) => {
-    void heater.toggleZone(index);
-    reportNightModeLeft();
-  };
+  useFeedbackToast(heater.zones[0]);
+  useFeedbackToast(heater.zones[1]);
+  useFeedbackToast(heater.zones[2]);
+  useFeedbackToast(heater.zones[3]);
 
   return (
     <View style={styles.screen}>
@@ -88,8 +68,8 @@ function HeaterZones({ heater }: { heater: HeaterSystem }) {
           <GaugeSetpointRow
             key={ZONE_NAME_KEYS[index]}
             testID={`heater-zone-${index}`}
-            ratio={zonePct(zone.temperatureCelsius)}
-            setpointRatio={zonePct(zone.setpointCelsius)}
+            ratio={zoneRatio(zone.temperatureCelsius)}
+            setpointRatio={zoneRatio(zone.setpointCelsius)}
             fillColor={colors.fill.heat}
             markerColor={colors.line.heat}
             // The mockup sets the zone name in caps; the dictionary carries it as a name.
@@ -97,25 +77,36 @@ function HeaterZones({ heater }: { heater: HeaterSystem }) {
             value={`${zone.temperatureCelsius.toFixed(1)}°`}
             caption={zoneCaption(zone, t)}
             inert={!zone.isRunning}
-            decreaseDisabled={zone.setpointCelsius <= MIN_SETPOINT_CELSIUS}
-            increaseDisabled={zone.setpointCelsius >= MAX_SETPOINT_CELSIUS}
-            onDecrease={() => adjust(index, -SETPOINT_STEP_CELSIUS)}
-            onIncrease={() => adjust(index, SETPOINT_STEP_CELSIUS)}
-            onTogglePower={() => toggle(index)}
+            // A stopped zone takes either step: pressing one is how it comes back on.
+            decreaseDisabled={
+              zone.isRunning && zone.setpointCelsius <= MIN_SETPOINT_CELSIUS
+            }
+            increaseDisabled={
+              zone.isRunning && zone.setpointCelsius >= MAX_SETPOINT_CELSIUS
+            }
+            onDecrease={() =>
+              void heater.adjustZone(index, -SETPOINT_STEP_CELSIUS)
+            }
+            onIncrease={() =>
+              void heater.adjustZone(index, SETPOINT_STEP_CELSIUS)
+            }
+            onTogglePower={() => void heater.toggleZone(index)}
           />
         ))}
       </View>
-      <HeaterPresets
-        nightMode={nightMode}
-        onNightMode={() => {
-          void heater.applyNightMode();
-          toast.show(t("heater.toast.nightOn"));
-        }}
-        onStopAll={() => {
-          void heater.stopAll();
-          toast.show(t("heater.toast.allStopped"));
-        }}
-      />
+      <View style={styles.presets}>
+        <HeaterPresets
+          nightMode={nightMode}
+          onNightMode={() => {
+            void heater.applyNightMode();
+            toast.show(t("heater.toast.nightOn"));
+          }}
+          onStopAll={() => {
+            void heater.stopAll();
+            toast.show(t("heater.toast.allStopped"));
+          }}
+        />
+      </View>
     </View>
   );
 }
@@ -134,5 +125,10 @@ const styles = StyleSheet.create({
   zones: {
     flex: 1,
     gap: Spacing.m,
+  },
+  // The page's vertical rhythm, kept off the reusable bar: the shell's frame ends at 0.
+  presets: {
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.s,
   },
 });
