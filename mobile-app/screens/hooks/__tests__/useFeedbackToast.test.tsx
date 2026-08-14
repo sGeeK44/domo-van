@@ -7,14 +7,13 @@ import { ThemeProvider, ToastProvider } from "@/design-system";
 import type { Feedback } from "@/domain/Feedback";
 import { createI18n } from "@/i18n/createI18n";
 import {
+  type FeedbackReport,
   type FeedbackSource,
   useFeedbackToast,
 } from "@/screens/hooks/useFeedbackToast";
 
 /** Long enough for the toast to expire on its own, so a second one is visible as such. */
 const AFTER_THE_TOAST = 3000;
-
-type Reported = { lastFeedback: Feedback | null };
 
 function failure(message: string): Feedback {
   return { key: "modules.admin.failed", params: { message } };
@@ -25,8 +24,12 @@ function Reader({ source }: { source: FeedbackSource }) {
   return null;
 }
 
-function renderReader(): MutableObservable<Reported> {
-  const source = createObservable<Reported>({ lastFeedback: null });
+function renderReader(
+  alreadyReported: Feedback | null = null,
+): MutableObservable<FeedbackReport> {
+  const source = createObservable<FeedbackReport>({
+    lastFeedback: alreadyReported,
+  });
 
   render(
     <I18nextProvider i18n={createI18n("fr")}>
@@ -41,7 +44,10 @@ function renderReader(): MutableObservable<Reported> {
   return source;
 }
 
-function report(source: MutableObservable<Reported>, lastFeedback: Feedback) {
+function report(
+  source: MutableObservable<FeedbackReport>,
+  lastFeedback: Feedback,
+) {
   act(() => source.setValue({ lastFeedback }));
 }
 
@@ -79,6 +85,21 @@ describe("what a module reports", () => {
     report(source, failure("ERR_CFG_RANGE"));
 
     expect(screen.queryByTestId("toast")).toBeNull();
+  });
+
+  // What a takeover does on every reconnection: it unmounts the screen and mounts it back.
+  it("stays quiet about a failure reported before it mounted", () => {
+    renderReader(failure("ERR_CFG_RANGE"));
+
+    expect(screen.queryByTestId("toast")).toBeNull();
+  });
+
+  it("still shows what the module reports after such a mount", () => {
+    const source = renderReader(failure("ERR_CFG_RANGE"));
+
+    report(source, failure("ERR_BUSY"));
+
+    expect(screen.getByTestId("toast").textContent).toBe("Erreur: ERR_BUSY");
   });
 
   it("shows the next report, once it differs", () => {

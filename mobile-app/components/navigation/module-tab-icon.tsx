@@ -13,7 +13,11 @@ export type ModuleTabIconProps = {
 
 export function ModuleTabIcon({ tab, color }: ModuleTabIconProps) {
   const icon = (
-    <IconSymbol size={TAB_ICON_SIZE} name={iconName(tab.icon)} color={color} />
+    <IconSymbol
+      size={TAB_ICON_SIZE}
+      name={asIconName(tab.icon)}
+      color={color}
+    />
   );
   if (!tab.link) return icon;
 
@@ -25,6 +29,8 @@ export function ModuleTabIcon({ tab, color }: ModuleTabIconProps) {
 }
 
 // The catalogue names an icon without knowing which set draws it.
-function iconName(name: string): ComponentProps<typeof IconSymbol>["name"] {
+export function asIconName(
+  name: string,
+): ComponentProps<typeof IconSymbol>["name"] {
   return name as ComponentProps<typeof IconSymbol>["name"];
 }
