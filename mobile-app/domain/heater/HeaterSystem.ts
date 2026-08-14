@@ -2,8 +2,8 @@ import { createObservable, type Observable } from "@/core/observable";
 import { AdminModule } from "@/domain/AdminModule";
 import { EnvironmentData } from "@/domain/heater/EnvironmentData";
 import {
-  clampSetpoint,
   nightTargetCelsius,
+  snapSetpoint,
 } from "@/domain/heater/HeaterPresets";
 import { HeaterZone } from "@/domain/heater/HeaterZone";
 import type { ModuleTransport } from "@/domain/ports/ModuleTransport";
@@ -59,9 +59,7 @@ export class HeaterSystem {
   /** Adjusting a target starts the zone it belongs to, and leaves night mode. */
   adjustZone = async (index: number, deltaCelsius: number): Promise<void> => {
     const zone = this.getZone(index);
-    const target = clampSetpoint(
-      zone.getValue().setpointCelsius + deltaCelsius,
-    );
+    const target = snapSetpoint(zone.getValue().setpointCelsius + deltaCelsius);
 
     this.nightModeState.setValue(false);
     await zone.setSetpoint(target);

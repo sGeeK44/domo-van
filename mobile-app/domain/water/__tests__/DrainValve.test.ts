@@ -49,4 +49,42 @@ describe("DrainValve", () => {
 
     expect(valve.getValue().lastClosure).toBe("manual");
   });
+
+  it("claims no closure at all when the close it asked for never reached the module", async () => {
+    const { valve, channel } = openValve();
+    channel.dropLink();
+
+    await valve.close();
+
+    expect(valve.getValue()).toMatchObject({
+      position: "unknown",
+      lastClosure: null,
+    });
+  });
+
+  it("still reads as auto-closed when the close it asked for never reached the module", async () => {
+    const { valve, channel } = openValve();
+    channel.emit("AUTO_CLOSED");
+    channel.dropLink();
+
+    await valve.close();
+
+    expect(valve.getValue()).toMatchObject({
+      position: "unknown",
+      lastClosure: "auto",
+    });
+  });
+
+  it("still reads as auto-closed when the opening it asked for never reached the module", async () => {
+    const { valve, channel } = openValve();
+    channel.emit("AUTO_CLOSED");
+    channel.dropLink();
+
+    await valve.open();
+
+    expect(valve.getValue()).toMatchObject({
+      position: "unknown",
+      lastClosure: "auto",
+    });
+  });
 });

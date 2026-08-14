@@ -72,6 +72,7 @@ export class DrainValve implements Observable<ValveState> {
   };
 
   open = async () => {
+    const closureBeforeWrite = this.state.getValue().lastClosure;
     this.state.update((prev) => ({
       ...prev,
       position: "open",
@@ -85,11 +86,13 @@ export class DrainValve implements Observable<ValveState> {
         ...prev,
         position: "unknown",
         remainingSeconds: 0,
+        lastClosure: closureBeforeWrite,
       }));
     }
   };
 
   close = async () => {
+    const closureBeforeWrite = this.state.getValue().lastClosure;
     this.state.update((prev) => ({
       ...prev,
       position: "closed",
@@ -102,6 +105,7 @@ export class DrainValve implements Observable<ValveState> {
       this.state.update((prev) => ({
         ...prev,
         position: "unknown",
+        lastClosure: closureBeforeWrite,
       }));
     }
   };
