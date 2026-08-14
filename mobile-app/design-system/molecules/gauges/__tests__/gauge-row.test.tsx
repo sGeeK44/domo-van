@@ -8,10 +8,14 @@ import {
 import { ThemeProvider } from "@/design-system/theme/ThemeContext";
 import { Colors, type ThemeName } from "@/design-system/tokens";
 
+// Colours no palette entry holds: a row painting a domain token instead of its props cannot pass.
+const FILL = "rgb(255, 0, 255)";
+const LINE = "rgb(0, 255, 255)";
+
 const BASE = {
   ratio: 0.72,
-  fillColor: "rgb(155, 220, 220)",
-  lineColor: "rgb(10, 106, 106)",
+  fillColor: FILL,
+  lineColor: LINE,
   icon: "water-drop",
   label: "EAU CLAIRE",
   subtitle: "72 L / 100 L",
@@ -55,6 +59,16 @@ describe("a gauge row", () => {
     expect(screen.getByText("EAU CLAIRE")).toBeTruthy();
     expect(screen.queryByTestId("gauge-row-action")).toBeNull();
     expect(screen.queryByTestId("gauge-hatch")).toBeNull();
+  });
+
+  it.each<ThemeName>([
+    "light",
+    "dark",
+  ])("paints the %s row in the colours its caller chose, not in a token", (theme) => {
+    render(row({}, theme));
+
+    expect(styleOf("gauge-fill").backgroundColor).toBe(FILL);
+    expect(styleOf("gauge-meniscus").backgroundColor).toBe(LINE);
   });
 
   it("hatches an offline module and offers its action instead of a reading", () => {

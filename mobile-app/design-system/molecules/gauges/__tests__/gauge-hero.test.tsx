@@ -4,8 +4,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { GaugeHero } from "@/design-system/molecules/gauges/gauge-hero";
 import { ThemeProvider } from "@/design-system/theme/ThemeContext";
 
-const FILL = "rgb(30, 122, 69)";
-const LINE = "rgb(77, 224, 138)";
+// Colours no palette entry holds: a hero painting a domain token instead of its props cannot pass.
+const FILL = "rgb(255, 0, 255)";
+const LINE = "rgb(0, 255, 255)";
 
 function hero(ratio: number) {
   return (
@@ -40,6 +41,15 @@ describe("a gauge hero", () => {
 
     expect(screen.getByTestId("gauge-fill").style.height).toBe("82%");
     expect(screen.getByTestId("gauge-meniscus").style.bottom).toBe("82%");
+  });
+
+  it("paints the fill and the boundary in the colours its caller chose", () => {
+    render(hero(0.82));
+
+    expect(screen.getByTestId("gauge-fill").style.backgroundColor).toBe(FILL);
+    expect(screen.getByTestId("gauge-meniscus").style.backgroundColor).toBe(
+      LINE,
+    );
   });
 
   it("marks no boundary on a full charge", () => {

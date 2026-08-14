@@ -7,7 +7,8 @@ import {
 } from "@/design-system/molecules/gauges/gauge-bars";
 import { ThemeProvider } from "@/design-system/theme/ThemeContext";
 
-const FILL = "rgb(30, 122, 69)";
+// A colour no palette entry holds: a cluster painting a domain token instead of its prop cannot pass.
+const FILL = "rgb(255, 0, 255)";
 
 const CELLS: GaugeBar[] = [
   { id: "c1", label: "C1", ratio: 0.78, value: "3.42" },
