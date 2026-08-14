@@ -35,7 +35,7 @@ export function linePosition(
     : { left: percent(ratio) };
 }
 
-/** A full surface has no boundary left to mark; the browser clipped that line, React Native does not. */
+/** Read at render time, never from a worklet, hence no directive. A full surface has no boundary left to mark. */
 export function drawsMeniscus(ratio: number, lineColor?: string): boolean {
   return lineColor !== undefined && clampRatio(ratio) < 1;
 }

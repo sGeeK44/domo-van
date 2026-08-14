@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
   clampRatio,
@@ -60,5 +63,67 @@ describe("the meniscus", () => {
 
   it("is not drawn without a colour: a bar in a cluster marks no boundary", () => {
     expect(drawsMeniscus(0.72, undefined)).toBe(false);
+  });
+});
+
+/**
+ * The vitest mock runs useAnimatedStyle on the JS thread, so a lost "worklet"
+ * directive only shows up on device. This reads the source instead.
+ */
+const SOURCE = join(import.meta.dirname, "..", "gauge-geometry.ts");
+
+/** Called at render time only; every other helper is reached from the UI runtime. */
+const RENDER_TIME_ONLY = new Set(["drawsMeniscus"]);
+
+function declaredFunctions(): { name: string; isWorklet: boolean }[] {
+  const source = ts.createSourceFile(
+    SOURCE,
+    readFileSync(SOURCE, "utf8"),
+    ts.ScriptTarget.Latest,
+    true,
+  );
+
+  return source.statements
+    .filter(ts.isFunctionDeclaration)
+    .map((declaration) => ({
+      name: declaration.name?.text ?? "",
+      isWorklet: hasWorkletDirective(declaration.body),
+    }));
+}
+
+function hasWorkletDirective(body: ts.Block | undefined): boolean {
+  const first = body?.statements[0];
+  if (!first || !ts.isExpressionStatement(first)) return false;
+  return (
+    ts.isStringLiteral(first.expression) && first.expression.text === "worklet"
+  );
+}
+
+describe("the worklet directives", () => {
+  const functions = declaredFunctions();
+
+  it("reads the helpers it claims to guard", () => {
+    expect(functions.map((entry) => entry.name)).toEqual(
+      expect.arrayContaining([
+        "clampRatio",
+        "percent",
+        "fillExtent",
+        "linePosition",
+        ...RENDER_TIME_ONLY,
+      ]),
+    );
+  });
+
+  it("marks every helper the UI runtime calls, or Reanimated throws on device", () => {
+    const undeclared = functions
+      .filter((entry) => !entry.isWorklet && !RENDER_TIME_ONLY.has(entry.name))
+      .map((entry) => entry.name);
+
+    expect(undeclared).toEqual([]);
+  });
+
+  it("keeps the render-time list honest: a listed helper carries no directive", () => {
+    for (const entry of functions.filter((it) => RENDER_TIME_ONLY.has(it.name)))
+      expect(entry.isWorklet, entry.name).toBe(false);
   });
 });

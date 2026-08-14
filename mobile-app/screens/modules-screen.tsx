@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { GaugeGalleryLink } from "@/components/dev/gauge-gallery-link";
 import { errorMessage } from "@/components/error-message";
 import { FreeSlotRow, ModuleSlotRow, UnpairSheet } from "@/components/modules";
 import {
@@ -89,6 +90,7 @@ export default function ModulesScreen() {
             onPress={() => router.push("/add-module")}
           />
         ))}
+        <GaugeGalleryLink />
       </ScrollView>
 
       <UnpairSheet

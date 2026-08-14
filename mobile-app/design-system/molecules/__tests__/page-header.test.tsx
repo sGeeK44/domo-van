@@ -41,4 +41,15 @@ describe("the header theme button", () => {
     expect(icon()).toBe("brightness-auto");
     expect(onModeChange.mock.calls.flat()).toEqual(["light", "dark", "auto"]);
   });
+
+  it("stays on a page with nothing to configure", () => {
+    render(
+      <ThemeProvider>
+        <PageHeader title="Gauge gallery" />
+      </ThemeProvider>,
+    );
+
+    expect(screen.getByTestId("theme-mode")).toBeTruthy();
+    expect(screen.queryByText("settings")).toBeNull();
+  });
 });

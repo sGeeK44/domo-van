@@ -5,14 +5,11 @@ import {
   BorderRadius,
   Button,
   GaugeSurface,
-  IconCircleButton,
-  Motion,
-  PageTitle,
+  PageHeader,
   type Palette,
   Section,
   Spacing,
   useStyles,
-  useTheme,
   useThemeColor,
 } from "@/design-system";
 
@@ -30,7 +27,6 @@ const HIGH = 0.72;
 export default function GaugeGalleryScreen() {
   const colors = useThemeColor();
   const styles = useStyles(makeStyles);
-  const { colorScheme, setThemeMode } = useTheme();
   const [ratio, setRatio] = useState(HIGH);
 
   const water = {
@@ -41,16 +37,7 @@ export default function GaugeGalleryScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.header}>
-        <PageTitle>Gauge gallery</PageTitle>
-        <IconCircleButton
-          testID="theme-mode"
-          icon={colorScheme === "dark" ? "light-mode" : "dark-mode"}
-          onPress={() =>
-            setThemeMode(colorScheme === "dark" ? "light" : "dark")
-          }
-        />
-      </View>
+      <PageHeader title="Gauge gallery" />
 
       <ScrollView contentContainerStyle={styles.content}>
         <Section title="Horizontal fill">
@@ -123,7 +110,7 @@ export default function GaugeGalleryScreen() {
         </Section>
 
         <Section title="Corner clipping">
-          <Text style={styles.caption}>Radius 15, 20, 24 and 28 at 100 %</Text>
+          <Text style={styles.caption}>Radius {RADII.join(", ")} at 100 %</Text>
           <View style={styles.columns}>
             {RADII.map((radius) => (
               <GaugeSurface
@@ -146,7 +133,6 @@ export default function GaugeGalleryScreen() {
             ratio={ratio}
             axis="vertical"
             radius={BorderRadius.xxxl}
-            duration={Motion.fill}
             style={styles.column}
             {...water}
           />
@@ -164,13 +150,6 @@ const makeStyles = (colors: Palette) =>
     screen: {
       flex: 1,
       backgroundColor: colors.screen,
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: Spacing.xxl,
-      paddingVertical: Spacing.l,
     },
     content: {
       paddingBottom: Spacing.block,

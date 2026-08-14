@@ -28,7 +28,8 @@ const THEME_MODE_ICON: Record<
 
 export type PageHeaderProps = {
   title: string;
-  onSettingsPress: () => void;
+  /** A page with nothing to configure keeps the theme button and drops this one. */
+  onSettingsPress?: () => void;
   /** A page whose modules each show their own status has no global button. */
   onBluetoothPress?: () => void;
   bluetoothStatus?: StatusBadgeProps["status"];
@@ -62,7 +63,9 @@ export function PageHeader({
             <StatusBadge status={bluetoothStatus} />
           </IconCircleButton>
         )}
-        <IconCircleButton icon="settings" onPress={onSettingsPress} />
+        {onSettingsPress && (
+          <IconCircleButton icon="settings" onPress={onSettingsPress} />
+        )}
       </View>
     </View>
   );

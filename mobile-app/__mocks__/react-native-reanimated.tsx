@@ -1,7 +1,7 @@
 // The real package drives a worklet runtime no test environment has, so every helper
 // here settles synchronously: a test observes the geometry the animation targets.
 import { type ComponentType, useRef, useState } from "react";
-import { ScrollView, Text, View } from "react-native-web";
+import { View } from "react-native-web";
 
 export type SharedValue<T> = { value: T };
 
@@ -35,10 +35,6 @@ export function withSpring<T>(target: T): T {
   return target;
 }
 
-export function withDelay<T>(_delay: number, target: T): T {
-  return target;
-}
-
 export function useAnimatedStyle<T>(factory: () => T): T {
   return factory();
 }
@@ -47,15 +43,9 @@ export function useAnimatedProps<T>(factory: () => T): T {
   return factory();
 }
 
-export function useDerivedValue<T>(factory: () => T): SharedValue<T> {
-  return { value: factory() };
-}
-
 export function runOnJS<A extends unknown[], R>(fn: (...args: A) => R) {
   return fn;
 }
-
-export function cancelAnimation(_value: SharedValue<unknown>) {}
 
 export function interpolate(
   value: number,
@@ -98,6 +88,6 @@ export function createAnimatedComponent<P extends object>(
   return component;
 }
 
-const Animated = { View, Text, ScrollView, createAnimatedComponent };
+const Animated = { View, createAnimatedComponent };
 
 export default Animated;

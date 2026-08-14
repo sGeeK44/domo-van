@@ -45,6 +45,8 @@ const NON_COPY = new Set(["hPa", "mV", "Ah", "Kp", "Ki", "Kd"]);
  * A file is listed only when its copy cannot move to a key before that rewrite.
  */
 const ALLOWED: Record<string, string> = {
+  "components/dev/gauge-gallery-link.tsx":
+    "#6 deletes the dev gallery, and this entry point with it",
   "screens/gauge-gallery-screen.tsx":
     "#6 deletes the dev gallery once the real screens render the gauges",
 };
