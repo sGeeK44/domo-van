@@ -9,7 +9,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
 import { AppProviders } from "@/composition/AppProviders";
-import { ThemeProvider, useTheme } from "@/design-system";
+import { ThemeProvider, ToastProvider, useTheme } from "@/design-system";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -23,23 +23,25 @@ function AppContent() {
       value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
     >
       <AppProviders>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modules" options={{ headerShown: false }} />
-          <Stack.Screen name="add-module" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="water-settings"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="heater-settings"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="battery-settings"
-            options={{ headerShown: false }}
-          />
-        </Stack>
+        <ToastProvider>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modules" options={{ headerShown: false }} />
+            <Stack.Screen name="add-module" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="water-settings"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="heater-settings"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="battery-settings"
+              options={{ headerShown: false }}
+            />
+          </Stack>
+        </ToastProvider>
       </AppProviders>
       <StatusBar style="auto" />
     </NavigationThemeProvider>
