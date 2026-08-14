@@ -102,12 +102,12 @@ export function HeaterZoneCard({
           <IconSymbol
             name={isRunning ? "power-settings-new" : "power-off"}
             size={20}
-            color={isRunning ? colors.onInverse : colors.text}
+            color={isRunning ? colors.onFill : colors.text}
           />
           <Text
             style={[
               styles.toggleButtonText,
-              { color: isRunning ? colors.onInverse : colors.text },
+              { color: isRunning ? colors.onFill : colors.text },
             ]}
           >
             {isRunning ? "ON" : "OFF"}

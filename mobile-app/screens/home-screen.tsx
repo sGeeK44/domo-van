@@ -154,7 +154,7 @@ export default function HomeScreen() {
                   heaterOnline ? (heat.isRunning ? "Chauffe" : "Arrêt") : "-"
                 }
                 label={heating ? `> ${heat.setpointCelsius.toFixed(0)}°C` : "-"}
-                backgroundColor={heating ? colors.line.heat : colors.off}
+                backgroundColor={heating ? colors.fill.heat : colors.off}
                 onPress={() => router.push("/heater")}
               />
             </Slot>
