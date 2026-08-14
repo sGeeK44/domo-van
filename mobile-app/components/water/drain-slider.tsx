@@ -18,7 +18,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { IconSymbol, type ThemeColors, useThemeColor } from "@/design-system";
+import { IconSymbol, type Palette, useThemeColor } from "@/design-system";
 
 const HANDLE_SIZE = 54;
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
@@ -127,7 +127,7 @@ export function DrainSlider({
                   <IconSymbol
                     name="delete"
                     size={28}
-                    color={colors.text.inverse}
+                    color={colors.onInverse}
                   />
                 </Animated.View>
               </GestureDetector>
@@ -176,10 +176,10 @@ export function DrainSlider({
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
-      backgroundColor: colors.background.secondary,
+      backgroundColor: colors.surface,
       borderRadius: 20,
       overflow: "hidden",
       borderWidth: 1,
@@ -209,7 +209,7 @@ const getStyles = (colors: ThemeColors) =>
       alignItems: "center",
     },
     instruction: {
-      color: colors.text.primary,
+      color: colors.text,
       textAlign: "center",
       fontSize: 14,
       marginBottom: 15,
@@ -219,14 +219,14 @@ const getStyles = (colors: ThemeColors) =>
     sliderTrack: {
       height: 62,
       width: "100%",
-      backgroundColor: colors.background.primary,
+      backgroundColor: colors.screen,
       borderRadius: 31,
       padding: 4,
       justifyContent: "center",
     },
     trackBackground: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: colors.background.primary,
+      backgroundColor: colors.screen,
       borderRadius: 31,
     },
     progressBar: {
@@ -238,14 +238,14 @@ const getStyles = (colors: ThemeColors) =>
     handle: {
       width: HANDLE_SIZE,
       height: HANDLE_SIZE,
-      backgroundColor: colors.neutral["500"],
+      backgroundColor: colors.textMuted,
       borderRadius: HANDLE_SIZE / 2,
       justifyContent: "center",
       alignItems: "center",
       zIndex: 10,
     },
     stopButton: {
-      backgroundColor: colors.neutral["600"],
+      backgroundColor: colors.off,
       height: 62,
       borderRadius: 31,
       flexDirection: "row",
@@ -254,7 +254,7 @@ const getStyles = (colors: ThemeColors) =>
       width: "100%",
     },
     stopButtonText: {
-      color: colors.text.inverse,
+      color: colors.onInverse,
       fontWeight: "bold",
       fontSize: 15,
       marginLeft: 10,
@@ -265,7 +265,7 @@ const getStyles = (colors: ThemeColors) =>
       marginTop: 20,
     },
     statusText: {
-      color: colors.text.primary,
+      color: colors.text,
       fontSize: 17,
     },
     statusBold: {

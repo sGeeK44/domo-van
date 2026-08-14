@@ -9,9 +9,9 @@ import {
 } from "@/composition/ModuleRegistryProvider";
 import {
   FontSize,
+  type Palette,
   SettingsHeader,
   Spacing,
-  type ThemeColors,
   useThemeColor,
 } from "@/design-system";
 import type { ModuleKey } from "@/domain/modules/ModuleDescriptor";
@@ -115,11 +115,11 @@ function openTabName(
     : undefined;
 }
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background.primary,
+      backgroundColor: colors.screen,
     },
     list: {
       paddingHorizontal: Spacing.xxl,
@@ -127,7 +127,7 @@ const createStyles = (colors: ThemeColors) =>
       gap: Spacing.m,
     },
     error: {
-      color: colors.danger["500"],
+      color: colors.danger,
       fontSize: FontSize.xs,
     },
   });

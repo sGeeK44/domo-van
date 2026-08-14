@@ -6,8 +6,8 @@ import {
   Button,
   Card,
   FontSize,
+  type Palette,
   Spacing,
-  type ThemeColors,
   useThemeColor,
 } from "@/design-system";
 
@@ -79,7 +79,7 @@ export function UnpairSheet({
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     // a scrim, not a page: the Modules list stays visible behind the sheet
     backdrop: {
@@ -89,12 +89,12 @@ const getStyles = (colors: ThemeColors) =>
     },
     sheet: {
       padding: Spacing.xxl,
-      backgroundColor: colors.background.primary,
-      borderTopLeftRadius: BorderRadius.l,
-      borderTopRightRadius: BorderRadius.l,
+      backgroundColor: colors.screen,
+      borderTopLeftRadius: BorderRadius.xl,
+      borderTopRightRadius: BorderRadius.xl,
     },
     warning: {
-      color: colors.text.secondary,
+      color: colors.textMuted,
       fontSize: FontSize.s,
       paddingBottom: Spacing.l,
     },

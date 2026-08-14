@@ -4,8 +4,8 @@ import {
   Button,
   Card,
   FontSize,
+  type Palette,
   Spacing,
-  type ThemeColors,
   useThemeColor,
 } from "@/design-system";
 
@@ -51,13 +51,13 @@ export function ModuleLinkNotice({
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     notice: {
       padding: Spacing.xl,
     },
     text: {
-      color: colors.text.secondary,
+      color: colors.textMuted,
       fontSize: FontSize.s,
       paddingBottom: Spacing.l,
     },

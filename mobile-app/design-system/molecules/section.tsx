@@ -4,8 +4,8 @@ import { useThemeColor } from "@/design-system/theme/use-theme-color";
 import {
   BorderRadius,
   Opacity,
+  type Palette,
   Spacing,
-  type ThemeColors,
 } from "@/design-system/tokens";
 
 export type SectionProps = {
@@ -24,7 +24,7 @@ export function Section({ title, isScanning, children }: SectionProps) {
         <SectionTitle>{title}</SectionTitle>
         {isScanning && (
           <View style={styles.scanningPill}>
-            <ActivityIndicator size="small" color={colors.text.primary} />
+            <ActivityIndicator size="small" color={colors.text} />
           </View>
         )}
       </View>
@@ -33,7 +33,7 @@ export function Section({ title, isScanning, children }: SectionProps) {
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     header: {
       paddingHorizontal: Spacing.xxl,
@@ -50,7 +50,7 @@ const getStyles = (colors: ThemeColors) =>
       paddingVertical: Spacing.xs,
       paddingHorizontal: Spacing.m,
       borderRadius: BorderRadius.pill,
-      backgroundColor: colors.background.secondary,
+      backgroundColor: colors.surface,
     },
     content: {
       paddingHorizontal: Spacing.xxl,

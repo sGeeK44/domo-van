@@ -13,8 +13,8 @@ import {
   FontSize,
   FontWeight,
   Opacity,
+  type Palette,
   Spacing,
-  type ThemeColors,
 } from "@/design-system/tokens";
 
 export type DeviceRowProps = {
@@ -38,7 +38,7 @@ export function DeviceRow({
 
   return (
     <Container style={styles.row} onPress={onPress}>
-      {icon && <IconSymbol name={icon} size={20} color={colors.text.primary} />}
+      {icon && <IconSymbol name={icon} size={20} color={colors.text} />}
       <View style={styles.textContainer}>
         <Text style={styles.name}>{name}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
@@ -48,7 +48,7 @@ export function DeviceRow({
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     row: {
       flexDirection: "row",
@@ -57,18 +57,18 @@ const getStyles = (colors: ThemeColors) =>
       paddingHorizontal: Spacing.xl,
       paddingVertical: Spacing.l,
       borderRadius: BorderRadius.m,
-      backgroundColor: colors.background.secondary,
+      backgroundColor: colors.surface,
     },
     textContainer: {
       flex: 1,
     },
     name: {
-      color: colors.text.primary,
+      color: colors.text,
       fontSize: FontSize.m,
       fontWeight: `${FontWeight.extraBold}`,
     },
     subtitle: {
-      color: colors.text.secondary,
+      color: colors.textMuted,
       fontSize: FontSize.xs,
       opacity: Opacity.subtle,
     },

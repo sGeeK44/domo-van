@@ -6,7 +6,7 @@ import {
   FontSize,
   FontWeight,
   IconSymbol,
-  type ThemeColors,
+  type Palette,
   useThemeColor,
 } from "@/design-system";
 
@@ -29,7 +29,7 @@ function EnvironmentItem({ icon, value }: EnvironmentItemData) {
 
   return (
     <View style={styles.item}>
-      <IconSymbol name={icon} size={20} color={colors.text.primary} />
+      <IconSymbol name={icon} size={20} color={colors.text} />
       <Text style={styles.value}>{value}</Text>
     </View>
   );
@@ -62,10 +62,10 @@ export function EnvironmentCard({
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     card: {
-      borderRadius: BorderRadius.l,
+      borderRadius: BorderRadius.xl,
       padding: 16,
     },
     columns: {
@@ -79,7 +79,7 @@ const getStyles = (colors: ThemeColors) =>
     divider: {
       width: 1,
       alignSelf: "stretch",
-      backgroundColor: colors.neutral["500"],
+      backgroundColor: colors.border,
       marginHorizontal: 16,
     },
     item: {
@@ -90,6 +90,6 @@ const getStyles = (colors: ThemeColors) =>
     value: {
       fontSize: FontSize.l,
       fontWeight: FontWeight.semiBold,
-      color: colors.text.primary,
+      color: colors.text,
     },
   });

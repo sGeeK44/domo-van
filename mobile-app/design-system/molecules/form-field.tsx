@@ -12,8 +12,8 @@ import {
   FontSize,
   FontWeight,
   Opacity,
+  type Palette,
   Spacing,
-  type ThemeColors,
 } from "@/design-system/tokens";
 
 export type FormFieldProps = {
@@ -50,7 +50,7 @@ export function FormField({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={colors.text.secondary}
+        placeholderTextColor={colors.textMuted}
         style={styles.input}
         {...inputProps}
       />
@@ -61,29 +61,29 @@ export function FormField({
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       gap: Spacing.s,
       padding: Spacing.l,
       borderRadius: BorderRadius.m,
-      backgroundColor: colors.background.secondary,
+      backgroundColor: colors.surface,
       borderWidth: 1,
-      borderColor: colors.neutral["500"],
+      borderColor: colors.border,
     },
     label: {
-      color: colors.text.primary,
+      color: colors.text,
       fontSize: FontSize.xs,
       opacity: Opacity.medium,
       fontWeight: `${FontWeight.extraBold}`,
     },
     input: {
-      color: colors.text.primary,
+      color: colors.text,
       paddingVertical: Spacing.m,
       paddingHorizontal: Spacing.l,
       borderRadius: BorderRadius.s,
       borderWidth: 1,
-      borderColor: colors.neutral["600"],
-      backgroundColor: colors.background.primary,
+      borderColor: colors.dash,
+      backgroundColor: colors.screen,
     },
   });

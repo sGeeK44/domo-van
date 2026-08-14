@@ -1,96 +1,205 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
+import type { TextStyle } from "react-native";
 
-import { Platform } from "react-native";
+export type ThemeName = "light" | "dark";
 
-export const Colors = {
+type DomainColors = {
+  battery: string;
+  cleanWater: string;
+  greyWater: string;
+  heat: string;
+};
+
+export type Palette = {
+  screen: string;
+  surface: string;
+  sheet: string;
+  chip: string;
+  inset: string;
+  off: string;
+  dash: string;
+  tabBar: string;
+  border: string;
+  text: string;
+  textSecondary: string;
+  textMuted: string;
+  inverse: string;
+  onInverse: string;
+  danger: string;
+  success: string;
+  hatchBase: string;
+  hatchStripe: string;
+  onFill: string;
+  onFillMuted: string;
+  fill: DomainColors;
+  line: DomainColors;
+};
+
+export const Colors: Record<ThemeName, Palette> = {
   light: {
-    primary: {
-      500: "#0a7ea4",
+    screen: "#F2F1EE",
+    surface: "#FFFFFF",
+    sheet: "#FFFFFF",
+    chip: "#FFFFFF",
+    inset: "#F2F1EE",
+    off: "#E4E2DC",
+    dash: "#C3C0B8",
+    tabBar: "#E7E5E0",
+    border: "rgba(0, 0, 0, 0.14)",
+    text: "#101214",
+    textSecondary: "#3F4448",
+    textMuted: "#5A6167",
+    inverse: "#101214",
+    onInverse: "#FFFFFF",
+    danger: "#C0271B",
+    success: "#15803D",
+    hatchBase: "#F7F6F3",
+    hatchStripe: "#EBE9E4",
+    onFill: "#101214",
+    onFillMuted: "#3F4448",
+    fill: {
+      battery: "#9FE0B8",
+      cleanWater: "#9BDCDC",
+      greyWater: "#DCCDB2",
+      heat: "#F0C79E",
     },
-    secondary: {
-      500: "#5C6166",
-    },
-    info: {
-      500: "#E0E2E4",
-    },
-    success: {
-      500: "#008000",
-    },
-    warning: {
-      500: "#E69500",
-    },
-    danger: {
-      500: "#DC0000",
-    },
-    neutral: {
-      500: "#6B7075",
-      600: "#4A4F54",
-    },
-    water: {
-      clean: "#1CBDBD",
-      grey: "#7A6A54",
-    },
-    heater: {
-      warm: "#E85A2A",
-      hot: "#D32F2F",
-      cold: "#2196F3",
-    },
-    background: {
-      primary: "#F5F5F5",
-      secondary: "#FFFFFF",
-    },
-    text: {
-      primary: "#1A1A1A",
-      secondary: "#4A4F54",
-      inverse: "#FFFFFF",
+    line: {
+      battery: "#0F7A36",
+      cleanWater: "#0A6A6A",
+      greyWater: "#6E5F49",
+      heat: "#8A3F14",
     },
   },
   dark: {
-    primary: {
-      500: "#0a7ea4",
+    screen: "#101214",
+    surface: "#1A1E21",
+    sheet: "#1A1E21",
+    chip: "#1E2226",
+    inset: "#101214",
+    off: "#23292E",
+    dash: "#3A4045",
+    tabBar: "#0B0D0E",
+    border: "rgba(255, 255, 255, 0.16)",
+    text: "#FFFFFF",
+    textSecondary: "#DDE2E5",
+    textMuted: "#9AA1A7",
+    inverse: "#FFFFFF",
+    onInverse: "#101214",
+    danger: "#EF4444",
+    success: "#22C55E",
+    hatchBase: "#191D20",
+    hatchStripe: "#212629",
+    onFill: "#FFFFFF",
+    onFillMuted: "#FFFFFF",
+    fill: {
+      battery: "#1E7A45",
+      cleanWater: "#177E7E",
+      greyWater: "#5C503F",
+      heat: "#8A3F14",
     },
-    secondary: {
-      500: "#687076",
-    },
-    info: {
-      500: "#ECEDEE",
-    },
-    success: {
-      500: "#008000",
-    },
-    warning: {
-      500: "#FFA500",
-    },
-    danger: {
-      500: "#FF0000",
-    },
-    neutral: {
-      500: "#9BA1A6",
-      600: "#687076",
-    },
-    water: {
-      clean: "#29E1E1",
-      grey: "#8E7B61",
-    },
-    heater: {
-      warm: "#FF6B35",
-      hot: "#E53935",
-      cold: "#42A5F5",
-    },
-    background: {
-      primary: "#131313",
-      secondary: "#282828",
-    },
-    text: {
-      primary: "#FFFFFF",
-      secondary: "#9BA1A6",
-      inverse: "#1A1A1A",
+    line: {
+      battery: "#4DE08A",
+      cleanWater: "#5BE0E0",
+      greyWater: "#A8926F",
+      heat: "#FFB27A",
     },
   },
 };
+
+/** Weights are reached through the family name: Android does not synthesise them for custom faces. */
+export const TextStyles = {
+  screenTitle: {
+    fontFamily: "Archivo_900Black",
+    fontSize: 26,
+    lineHeight: 26,
+    letterSpacing: -0.6,
+  },
+  sectionLabel: {
+    fontFamily: "Archivo_800ExtraBold",
+    fontSize: 12,
+    lineHeight: 12,
+    letterSpacing: 1.44,
+  },
+  cardLabel: {
+    fontFamily: "Archivo_800ExtraBold",
+    fontSize: 13,
+    lineHeight: 13,
+    letterSpacing: 1.56,
+  },
+  rowTitle: {
+    fontFamily: "Archivo_700Bold",
+    fontSize: 16,
+    lineHeight: 16,
+    letterSpacing: 0,
+  },
+  body: {
+    fontFamily: "Archivo_500Medium",
+    fontSize: 17,
+    lineHeight: 24.6,
+    letterSpacing: 0,
+  },
+  bodySmall: {
+    fontFamily: "Archivo_400Regular",
+    fontSize: 15,
+    lineHeight: 22.5,
+    letterSpacing: 0,
+  },
+  button: {
+    fontFamily: "Archivo_900Black",
+    fontSize: 17,
+    lineHeight: 17,
+    letterSpacing: 0,
+  },
+  buttonSmall: {
+    fontFamily: "Archivo_800ExtraBold",
+    fontSize: 12,
+    lineHeight: 12,
+    letterSpacing: 0.72,
+  },
+  metric: {
+    fontFamily: "Archivo_800ExtraBold",
+    fontSize: 34,
+    lineHeight: 34,
+    letterSpacing: -1.2,
+  },
+  metricLarge: {
+    fontFamily: "Archivo_800ExtraBold",
+    fontSize: 64,
+    lineHeight: 57.6,
+    letterSpacing: -3,
+  },
+  metricHuge: {
+    fontFamily: "Archivo_800ExtraBold",
+    fontSize: 72,
+    lineHeight: 62,
+    letterSpacing: -3.5,
+  },
+  toast: {
+    fontFamily: "Archivo_700Bold",
+    fontSize: 13,
+    lineHeight: 16.9,
+    letterSpacing: 0,
+  },
+  mono: {
+    fontFamily: "SpaceMono_700Bold",
+    fontSize: 12,
+    lineHeight: 12,
+    letterSpacing: 0,
+  },
+  monoLabel: {
+    fontFamily: "SpaceMono_700Bold",
+    fontSize: 11,
+    lineHeight: 11,
+    letterSpacing: 1.1,
+  },
+  monoSmall: {
+    fontFamily: "SpaceMono_400Regular",
+    fontSize: 12,
+    lineHeight: 14.4,
+    letterSpacing: 0,
+  },
+} as const satisfies Record<string, TextStyle>;
+
+export type TextStyleName = keyof typeof TextStyles;
 
 export const FontSize = {
   xxs: 10,
@@ -114,32 +223,6 @@ export const FontWeight = {
   extraBold: 800,
 } as const;
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: "system-ui",
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: "ui-serif",
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: "ui-rounded",
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: "ui-monospace",
-  },
-  default: {
-    sans: "normal",
-    serif: "serif",
-    rounded: "normal",
-    mono: "monospace",
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded:
-      "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
-
 export const Spacing = {
   xxs: 4,
   xs: 6,
@@ -148,13 +231,20 @@ export const Spacing = {
   l: 12,
   xl: 14,
   xxl: 16,
+  gutter: 18,
   xxxl: 20,
+  block: 24,
 } as const;
 
 export const BorderRadius = {
+  xxs: 4,
+  xs: 7,
   s: 12,
-  m: 14,
-  l: 20,
+  m: 15,
+  l: 18,
+  xl: 20,
+  xxl: 24,
+  xxxl: 28,
   pill: 999,
 } as const;
 
@@ -171,11 +261,3 @@ export const Opacity = {
   overlay: 0.08,
   hint: 0.06,
 } as const;
-
-export const TextColors = {
-  primary: "#FFFFFF",
-  error: "#FF6B6B",
-  dark: "#000000",
-} as const;
-
-export type ThemeColors = typeof Colors.light | typeof Colors.dark;

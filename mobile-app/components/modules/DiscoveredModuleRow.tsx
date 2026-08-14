@@ -6,8 +6,8 @@ import {
   FontSize,
   FontWeight,
   Opacity,
+  type Palette,
   Spacing,
-  type ThemeColors,
   useThemeColor,
 } from "@/design-system";
 import {
@@ -96,7 +96,7 @@ function takenLabel(pairing: DeviceInfo | null, deviceId: string): string {
   return pairing.id === deviceId ? "Déjà appairé" : "Emplacement occupé";
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     row: {
       flexDirection: "row",
@@ -104,24 +104,24 @@ const getStyles = (colors: ThemeColors) =>
       gap: Spacing.l,
       padding: Spacing.xl,
       borderRadius: BorderRadius.m,
-      backgroundColor: colors.background.secondary,
+      backgroundColor: colors.surface,
     },
     text: {
       flex: 1,
       gap: Spacing.xxs,
     },
     title: {
-      color: colors.text.primary,
+      color: colors.text,
       fontSize: FontSize.m,
       fontWeight: `${FontWeight.extraBold}`,
     },
     subtitle: {
-      color: colors.text.secondary,
+      color: colors.textMuted,
       fontSize: FontSize.xs,
       opacity: Opacity.subtle,
     },
     occupied: {
-      color: colors.text.secondary,
+      color: colors.textMuted,
       fontSize: FontSize.xs,
       opacity: Opacity.subtle,
     },

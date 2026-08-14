@@ -4,7 +4,7 @@ import {
   FontSize,
   FontWeight,
   Opacity,
-  type ThemeColors,
+  type Palette,
 } from "@/design-system/tokens";
 
 export type SectionTitleProps = {
@@ -22,10 +22,10 @@ export function SectionTitle({ children, ...props }: SectionTitleProps) {
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     title: {
-      color: colors.text.primary,
+      color: colors.text,
       fontSize: FontSize.s,
       fontWeight: `${FontWeight.extraBold}`,
       opacity: Opacity.high,

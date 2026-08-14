@@ -3,10 +3,10 @@ import type { ComponentProps } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 import {
   BorderRadius,
-  Colors,
   FontSize,
   FontWeight,
   IconSymbol,
+  type Palette,
   useThemeColor,
 } from "@/design-system";
 
@@ -45,10 +45,10 @@ export function StatusCard({
   );
 }
 
-const getStyles = (_colors: typeof Colors.light | typeof Colors.dark) =>
+const getStyles = (_colors: Palette) =>
   StyleSheet.create({
     card: {
-      borderRadius: BorderRadius.l,
+      borderRadius: BorderRadius.xl,
       padding: 16,
       minHeight: 100,
       justifyContent: "center",

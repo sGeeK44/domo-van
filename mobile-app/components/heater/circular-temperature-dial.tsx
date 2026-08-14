@@ -26,7 +26,7 @@ import Svg, {
 import {
   FontSize,
   FontWeight,
-  type ThemeColors,
+  type Palette,
   useThemeColor,
 } from "@/design-system";
 import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
@@ -288,17 +288,17 @@ export function CircularTemperatureDial({
                   >
                     <Stop
                       offset="0%"
-                      stopColor={colors.background.secondary}
+                      stopColor={colors.surface}
                       stopOpacity="1"
                     />
                     <Stop
                       offset="85%"
-                      stopColor={colors.background.primary}
+                      stopColor={colors.screen}
                       stopOpacity="1"
                     />
                     <Stop
                       offset="100%"
-                      stopColor={colors.background.primary}
+                      stopColor={colors.screen}
                       stopOpacity="1"
                     />
                   </RadialGradient>
@@ -393,9 +393,7 @@ export function CircularTemperatureDial({
                   style={[
                     styles.currentTemp,
                     {
-                      color: isRunning
-                        ? colors.text.primary
-                        : colors.text.secondary,
+                      color: isRunning ? colors.text : colors.textMuted,
                     },
                   ]}
                 >
@@ -449,7 +447,7 @@ export function CircularTemperatureDial({
         <Text
           style={[
             styles.toggleButtonText,
-            { color: isRunning ? colors.text.primary : colors.text.secondary },
+            { color: isRunning ? colors.text : colors.textMuted },
           ]}
         >
           {isRunning ? "ON" : "OFF"}
@@ -459,7 +457,7 @@ export function CircularTemperatureDial({
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -470,7 +468,7 @@ const getStyles = (colors: ThemeColors) =>
     zoneName: {
       fontSize: FontSize.s,
       fontWeight: FontWeight.semiBold,
-      color: colors.text.primary,
+      color: colors.text,
       letterSpacing: 2,
       marginBottom: 4,
     },
@@ -505,7 +503,7 @@ const getStyles = (colors: ThemeColors) =>
     },
     targetTemp: {
       fontSize: FontSize.xs,
-      color: colors.text.secondary,
+      color: colors.textMuted,
       marginTop: 2,
     },
     precisionControls: {
@@ -517,14 +515,14 @@ const getStyles = (colors: ThemeColors) =>
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: colors.background.secondary,
+      backgroundColor: colors.surface,
       justifyContent: "center",
       alignItems: "center",
     },
     precisionButtonText: {
       fontSize: 20,
       fontWeight: "600",
-      color: colors.text.primary,
+      color: colors.text,
     },
     toggleButton: {
       paddingVertical: 6,
@@ -535,12 +533,12 @@ const getStyles = (colors: ThemeColors) =>
     toggleButtonOn: {
       backgroundColor: "transparent",
       borderWidth: 1.5,
-      borderColor: colors.neutral["500"],
+      borderColor: colors.border,
     },
     toggleButtonOff: {
       backgroundColor: "transparent",
       borderWidth: 1.5,
-      borderColor: colors.neutral["600"],
+      borderColor: colors.dash,
     },
     toggleButtonText: {
       fontSize: FontSize.s,

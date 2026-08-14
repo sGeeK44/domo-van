@@ -11,11 +11,7 @@ import {
   useModuleSlot,
 } from "@/composition/ModuleRegistryProvider";
 import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
-import {
-  SettingsHeader,
-  type ThemeColors,
-  useThemeColor,
-} from "@/design-system";
+import { type Palette, SettingsHeader, useThemeColor } from "@/design-system";
 import { WATER_MODULE } from "@/domain/modules/ModuleDescriptor";
 
 export default function WaterSettingsScreen() {
@@ -64,10 +60,10 @@ export default function WaterSettingsScreen() {
   );
 }
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background.primary,
+      backgroundColor: colors.screen,
     },
   });

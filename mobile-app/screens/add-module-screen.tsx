@@ -11,9 +11,9 @@ import {
 import {
   Button,
   FontSize,
+  type Palette,
   SettingsHeader,
   Spacing,
-  type ThemeColors,
   useThemeColor,
 } from "@/design-system";
 import {
@@ -148,11 +148,11 @@ export default function AddModuleScreen() {
   );
 }
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background.primary,
+      backgroundColor: colors.screen,
     },
     list: {
       paddingHorizontal: Spacing.xxl,
@@ -160,15 +160,15 @@ const createStyles = (colors: ThemeColors) =>
       gap: Spacing.m,
     },
     status: {
-      color: colors.text.secondary,
+      color: colors.textMuted,
       fontSize: FontSize.xs,
     },
     error: {
-      color: colors.danger["500"],
+      color: colors.danger,
       fontSize: FontSize.xs,
     },
     empty: {
-      color: colors.text.secondary,
+      color: colors.textMuted,
       fontSize: FontSize.m,
     },
   });

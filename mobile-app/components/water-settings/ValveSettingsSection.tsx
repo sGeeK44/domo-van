@@ -13,8 +13,8 @@ import {
   FontWeight,
   IconSymbol,
   Opacity,
+  type Palette,
   Spacing,
-  type ThemeColors,
   useThemeColor,
 } from "@/design-system";
 import type { DrainValve } from "@/domain/water/DrainValve";
@@ -79,11 +79,7 @@ export function ValveSettingsSection({ valve }: Props) {
             style={styles.refreshButton}
             hitSlop={8}
           >
-            <IconSymbol
-              name="refresh"
-              size={18}
-              color={colors.text.secondary}
-            />
+            <IconSymbol name="refresh" size={18} color={colors.textMuted} />
           </Pressable>
         </View>
 
@@ -91,7 +87,7 @@ export function ValveSettingsSection({ valve }: Props) {
           value={autoCloseSeconds}
           onChangeText={setAutoCloseSeconds}
           placeholder="Durée (secondes)"
-          placeholderTextColor={colors.text.secondary}
+          placeholderTextColor={colors.textMuted}
           keyboardType="number-pad"
           style={styles.input}
         />
@@ -121,7 +117,7 @@ export function ValveSettingsSection({ valve }: Props) {
   );
 }
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: Palette) =>
   StyleSheet.create({
     adminSection: {
       paddingHorizontal: Spacing.xxl,
@@ -132,9 +128,9 @@ const createStyles = (colors: ThemeColors) =>
       gap: Spacing.s,
       padding: Spacing.l,
       borderRadius: BorderRadius.m,
-      backgroundColor: colors.background.secondary,
+      backgroundColor: colors.surface,
       borderWidth: 1,
-      borderColor: colors.neutral["500"],
+      borderColor: colors.border,
     },
     fieldHeader: {
       flexDirection: "row",
@@ -146,28 +142,28 @@ const createStyles = (colors: ThemeColors) =>
       padding: Spacing.xxs,
     },
     label: {
-      color: colors.text.primary,
+      color: colors.text,
       fontSize: FontSize.xs,
       opacity: Opacity.medium,
       fontWeight: `${FontWeight.extraBold}`,
     },
     input: {
-      color: colors.text.primary,
+      color: colors.text,
       paddingVertical: Spacing.m,
       paddingHorizontal: Spacing.l,
       borderRadius: BorderRadius.s,
       borderWidth: 1,
-      borderColor: colors.neutral["600"],
-      backgroundColor: colors.background.primary,
+      borderColor: colors.dash,
+      backgroundColor: colors.screen,
     },
     primaryButton: {
-      backgroundColor: colors.primary["500"],
+      backgroundColor: colors.inverse,
       paddingVertical: Spacing.m,
       paddingHorizontal: Spacing.xl,
       borderRadius: BorderRadius.s,
     },
     primaryButtonText: {
-      color: colors.text.inverse,
+      color: colors.onInverse,
       fontWeight: `${FontWeight.extraBold}`,
     },
   });
