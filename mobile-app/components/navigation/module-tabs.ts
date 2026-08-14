@@ -23,7 +23,7 @@ export const DASHBOARD_ROUTE = "/";
 export function dashboardRedirect(
   tabs: readonly ModuleTab[],
   pathname: string,
-): string | null {
+): typeof DASHBOARD_ROUTE | null {
   const open = tabs.find((tab) => pathname === `/${tab.name}`);
   return open && !open.visible ? DASHBOARD_ROUTE : null;
 }
