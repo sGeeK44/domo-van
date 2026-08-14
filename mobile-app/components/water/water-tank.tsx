@@ -100,7 +100,7 @@ export const WaterTank = ({
   const displayVolume = Math.round((percentage / 100) * capacity);
 
   return (
-    <Card title={name} subtitle={`(${capacity}L)`}>
+    <Card title={name} subtitle={`(${capacity}L)`} style={styles.card}>
       <View style={styles.tankContainer} onLayout={onLayout}>
         {width > 0 && height > 0 && (
           <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -162,6 +162,10 @@ export const WaterTank = ({
 
 const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
   StyleSheet.create({
+    // the two tanks share the row evenly
+    card: {
+      flex: 1,
+    },
     tankContainer: {
       flex: 1,
       width: "100%",

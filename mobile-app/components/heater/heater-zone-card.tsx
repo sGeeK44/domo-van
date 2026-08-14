@@ -47,7 +47,11 @@ export function HeaterZoneCard({
       : (colors.heater?.cold ?? "#42A5F5");
 
   return (
-    <Card title={name} subtitle={isRunning ? "Actif" : "Arrêté"}>
+    <Card
+      title={name}
+      subtitle={isRunning ? "Actif" : "Arrêté"}
+      style={styles.card}
+    >
       <View style={styles.content}>
         {/* Current Temperature Display */}
         <View style={styles.temperatureSection}>
@@ -119,6 +123,10 @@ export function HeaterZoneCard({
 
 const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+    // a zone fills the slot the grid gives it
+    card: {
+      flex: 1,
+    },
     content: {
       flex: 1,
       alignItems: "center",
