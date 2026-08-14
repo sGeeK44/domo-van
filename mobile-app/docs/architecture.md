@@ -29,7 +29,9 @@ every pull request, so a violation blocks the merge.
 | `app/` | expo-router routes only |
 
 The tokens, text styles, `useStyles`, `<Hatch/>`, the toast contract and the
-colour guardrail are documented in [design-system.md](./design-system.md).
+colour guardrail are documented in [design-system.md](./design-system.md). The
+gauge family — the primitive, its five variants and the rules they encode — has
+its own section: [Gauges](./design-system.md#gauges).
 
 ## Permission matrix
 

@@ -14,6 +14,8 @@ const SEEDED_SECTIONS = [
   "Gauge row",
   "Hero and bars",
   "Column gauge",
+  "Setpoint row",
+  "Offline card",
 ];
 
 describe("the dev gauge gallery", () => {

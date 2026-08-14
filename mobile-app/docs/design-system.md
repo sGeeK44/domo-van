@@ -80,8 +80,8 @@ carries **no** `fontWeight`. Spread one into a style: `{ ...TextStyles.toast }`.
 | `metricSmall` | Archivo 800 | 24 / 24 | aside metric (autonomy) |
 | `metric` | Archivo 800 | 34 / 34 | metric |
 | `metricMedium` | Archivo 800 | 40 / 36 | zone temperature |
-| `metricLarge` | Archivo 800 | 64 / 57.6 | hero metric |
-| `metricHuge` | Archivo 800 | 72 / 62 | full-bleed metric |
+| `metricLarge` | Archivo 800 | 64 / 57.6 | column (tank) metric |
+| `metricHuge` | Archivo 800 | 72 / 62 | hero metric |
 | `toast` | Archivo 700 | 13 / 16.9 | toast |
 | `mono` | Space Mono 700 | 12 / 12 | mono value |
 | `monoLabel` | Space Mono 700 | 11 / 11 | mono label, cell id |
@@ -116,6 +116,103 @@ calls `useThemeColor()` alongside it. A colourless sheet stays a plain
 100 % of its container, so place it behind a gauge in an absolute-fill wrapper.
 The gauges of #5 use it for the offline and empty-slot states.
 
+## Gauges
+
+Everything measurable in the van is a level, so everything is drawn as a level:
+a container filling from an edge, with a bright 2 px **meniscus** marking the
+fill edge. The family lives in `design-system/molecules/gauges/` behind a
+barrel, on top of one atom.
+
+### `<GaugeSurface/>`, the primitive
+
+`design-system/atoms/gauge-surface.tsx` owns all the geometry; every variant is
+a layout placed inside it. It is domain-free — the caller supplies every colour.
+
+| Prop | Meaning |
+|---|---|
+| `ratio` | 0..1, clamped; `NaN` collapses to 0 |
+| `axis` | `"vertical"` fills bottom-up, `"horizontal"` left-to-right |
+| `fillColor` / `lineColor` | the domain fill and its meniscus; omit `lineColor` for no boundary line |
+| `markerRatio` / `markerColor` | a second 2 px line, independent of the fill (a setpoint) |
+| `hatched` | replaces the fill with `<Hatch/>`: offline, or an empty slot |
+| `radius`, `outline`, `duration`, `style`, `children` | the container, its ring, the sweep |
+
+Rules the primitive holds, so no variant has to:
+
+- **The axis belongs to the form, not to the domain.** The dashboard row fills
+  left-to-right for battery *and* water; the tank column fills bottom-up. "Heat
+  fills from the left" is true of the heat *screen*, whose zones are rows. Each
+  variant fixes its own axis.
+- **No meniscus at 100 %.** A full surface has no boundary left to mark
+  (`drawsMeniscus`). The mockup relied on the line being clipped off the edge;
+  React Native needs the rule stated.
+- **The outline is an absolutely-positioned overlay ring**, not a border on the
+  container — a border would shift the variant's content inward by its width.
+- **`hatched` suppresses the fill, the meniscus and the marker.** A hatched
+  surface shows no reading at all: a last known value is not a measurement.
+- **The first paint does not sweep.** The shared value is *initialised* at the
+  incoming ratio; only later changes animate.
+- The **marker** carries a proportional inset, so it is not clipped away at
+  ratio 0 or 1. The **meniscus** does not, so it starts clipping above
+  `1 − 2/H`, `H` being the surface's extent along the fill axis: 0.989 on the
+  186 px `GaugeHero`, where ratio 0.99 loses 0.14 px of the 2 px line, and
+  higher still on the taller `GaugeColumn` and the full-width `GaugeRow`. A
+  surface has to be under 100 px for 0.99 to push *most* of the line out, and
+  the only ones that short are the `GaugeBars` bars, which draw no meniscus.
+- The meniscus mounts and unmounts on the `ratio` **prop** while its position
+  animates on the shared value: a 0.9 → 1.0 change drops the line at once and
+  the fill then sweeps on unmarked.
+
+`Motion` (above) holds the durations. It is **duration-only**: the mockup's
+drain is `1s linear`, the token keeps the second but the sweep runs on
+Reanimated's default easing, so the ease-vs-linear distinction the mockup
+encodes does not exist here.
+
+**Worklets.** `design-system/atoms/gauge-geometry.ts` is the only place in
+`design-system/` allowed to hold `"worklet"` helpers: a source-level test walks
+the tree and fails on a directive in any other file, and checks that every
+helper in that one carries it. A missing directive crashes on device while
+every test still passes, because the vitest mock runs `useAnimatedStyle` on the
+JS thread.
+
+### The variants
+
+| Variant | Form | Reach for it when |
+|---|---|---|
+| `GaugeRow` | horizontal, h 96, `r 24` | a dashboard card: icon + label + mono subtitle + right-aligned value. `state: "hatched"` covers offline **and** empty slot — they differ only in the copy and the trailing element |
+| `GaugeColumn` | vertical, `flex: 1`, `r 28` | a tank: header block on top, metric and footer at the bottom. `draining` adds the danger outline, the danger meniscus and the tinted ink |
+| `GaugeHero` | vertical, h 186, `r 28` | one dominant metric with an aside — the battery screen's headline |
+| `GaugeBars` | a row of vertical bars, `r 15` | a cluster of cells; each bar draws **no** meniscus |
+| `GaugeSetpointRow` | horizontal, `flex: 1`, `r 20` | a heat zone: a live fill, a target marker on its own duration, three controls, and an `inert` state for a switched-off zone |
+
+`OfflineCard` sits beside them but is not a gauge: a hatched card with an icon,
+a title, the time of last contact and an outlined reconnect action whose ink
+moves from `danger` to `textMuted` while `busy`.
+
+### The four mockup deviations
+
+The ticket and the mockup contradict each other in four places; #5 resolved them
+here rather than in each variant:
+
+| Point | Resolution |
+|---|---|
+| A hatched band above a draining fill | **Mockup wins.** Outline + meniscus + tinted ink only; no band. The sibling tank's `opacity: .55` is the caller's layout decision |
+| The time of last contact on the offline state | **Ticket wins.** `OfflineCard` renders it, in `monoSmall` / `textMuted` |
+| "the minimum cell dimmed" | **Mockup wins.** `GaugeBars` takes a per-bar label (`"C4 min"`); it ranks nothing and dims nothing |
+| "legible on either side of the boundary" | **No per-position ink switch.** The four `fill.*` values share the card's luminance polarity, so `onFill` reads on both |
+
+The drain colour is `danger`, not the mockup's raw unthemed orange — that hex
+would not survive Clair, and the ticket's own wording says "danger outline,
+danger meniscus".
+
+### Looking at one
+
+`/gauge-gallery` renders every variant and every state, reachable in-app from a
+`__DEV__`-only link at the bottom of the Modules screen. It exists because #5
+lands the family before any screen consumes it, which would otherwise leave the
+rounded-corner clipping unverifiable on a device. **#6 deletes it** once the
+real screens render the gauges.
+
 ## The barrel
 
 Import the design system through `@/design-system` from anywhere outside it, and
@@ -140,9 +237,9 @@ per-file exception maps bound it, each entry naming the issue that retires it:
 | File | Retired by |
 |---|---|
 | `design-system/tokens.ts` | permanent — the palette itself |
-| `components/home/battery-gauge.tsx` | #5 |
-| `components/water/water-tank.tsx` | #5 |
-| `components/heater/temperature-colors.ts` | #5 (the heat-dial gradient is domain logic) |
+| `components/home/battery-gauge.tsx` | #6 |
+| `components/water/water-tank.tsx` | #6 |
+| `components/heater/temperature-colors.ts` | #6 (the heat-dial gradient is domain logic) |
 | `components/water/drain-slider.tsx` | #6 |
 | `components/modules/UnpairSheet.tsx` | #6 |
 | `components/water-settings/TankSettingsSection.tsx` | #7 (`ToastAndroid`) |
@@ -150,7 +247,7 @@ per-file exception maps bound it, each entry naming the issue that retires it:
 | `components/heater-settings/HeaterPidSection.tsx` | #7 (`ToastAndroid`) |
 | `components/module-settings/AdminSection.tsx` | #7 (`ToastAndroid`) |
 
-The list shrinks as #5, #6 and #7 rewrite those feature components onto the
-tokens and the toast; #8 removes the guardrail's last non-permanent entry. No
+The list shrinks as #6 and #7 rewrite those feature components onto the
+tokens and the toast; once both land, only the permanent `tokens.ts` is left. No
 `design-system/` file other than `tokens.ts` may appear here — a dedicated test
 asserts it.

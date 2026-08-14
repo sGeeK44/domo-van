@@ -111,7 +111,7 @@ export const Colors: Record<ThemeName, Palette> = {
 export const FontFamilies = [
   "Archivo_400Regular",
   "Archivo_500Medium",
-  // Named by no text style yet: reserved for the typography migration (#5/#6).
+  // Named by no text style yet: reserved for the typography migration (#6).
   "Archivo_600SemiBold",
   "Archivo_700Bold",
   "Archivo_800ExtraBold",

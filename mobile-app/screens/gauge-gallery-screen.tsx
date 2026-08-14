@@ -10,6 +10,7 @@ import {
   GaugeRow,
   GaugeSetpointRow,
   GaugeSurface,
+  OfflineCard,
   PageHeader,
   type Palette,
   Section,
@@ -301,6 +302,27 @@ export default function GaugeGalleryScreen() {
               />
             ))}
           </View>
+        </Section>
+
+        <Section title="Offline card">
+          <Text style={styles.caption}>Idle, then reconnecting</Text>
+          <OfflineCard
+            icon="bluetooth-disabled"
+            title="BATTERY OFFLINE"
+            lastContact="Last contact 15:08"
+            action={{ icon: "refresh", label: "RECONNECT", onPress: () => {} }}
+          />
+          <OfflineCard
+            icon="bluetooth-disabled"
+            title="BATTERY OFFLINE"
+            lastContact="Last contact 15:08"
+            action={{
+              icon: "bluetooth-searching",
+              label: "CONNECTING",
+              busy: true,
+              onPress: () => {},
+            }}
+          />
         </Section>
       </ScrollView>
     </SafeAreaView>
