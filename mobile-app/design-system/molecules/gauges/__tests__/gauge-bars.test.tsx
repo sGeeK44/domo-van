@@ -6,6 +6,7 @@ import {
   GaugeBars,
 } from "@/design-system/molecules/gauges/gauge-bars";
 import { ThemeProvider } from "@/design-system/theme/ThemeContext";
+import { Colors, type ThemeName } from "@/design-system/tokens";
 
 // A colour no palette entry holds: a cluster painting a domain token instead of its prop cannot pass.
 const FILL = "rgb(255, 0, 255)";
@@ -17,12 +18,20 @@ const CELLS: GaugeBar[] = [
   { id: "c4", label: "C4 min", ratio: 0.7, value: "3.39" },
 ];
 
-function bars(cells: GaugeBar[] = CELLS) {
+function bars(cells: GaugeBar[] = CELLS, theme: ThemeName = "dark") {
   return (
-    <ThemeProvider initialMode="dark">
+    <ThemeProvider initialMode={theme}>
       <GaugeBars bars={cells} fillColor={FILL} />
     </ThemeProvider>
   );
+}
+
+/** The palette is written in hex; the DOM answers in rgb(). */
+function rgb(hex: string): string {
+  const [red, green, blue] = [1, 3, 5].map((start) =>
+    Number.parseInt(hex.slice(start, start + 2), 16),
+  );
+  return `rgb(${red}, ${green}, ${blue})`;
 }
 
 describe("a cluster of gauge bars", () => {
@@ -58,6 +67,20 @@ describe("a cluster of gauge bars", () => {
 
     expect(screen.getByText("3.39")).toBeTruthy();
     expect(screen.getByText("C4 min")).toBeTruthy();
+  });
+
+  // `off` is the inert state's token; an unfilled cell is a card, not a switched-off one.
+  it.each<ThemeName>([
+    "light",
+    "dark",
+  ])("sits each bar on the card surface, never on the inert fill (%s)", (theme) => {
+    render(bars(CELLS, theme));
+
+    for (const bar of screen.getAllByTestId("gauge-surface")) {
+      expect(window.getComputedStyle(bar).backgroundColor).toBe(
+        rgb(Colors[theme].surface),
+      );
+    }
   });
 
   it("ranks nothing: the minimum cell is filled like its siblings", () => {

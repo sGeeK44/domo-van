@@ -19,6 +19,8 @@ export type GaugeHeroProps = {
   label: string;
   value: { amount: string; unit: string };
   aside: { value: string; caption: string };
+  /** A screen holding several gauges tells them apart with this. */
+  testID?: string;
 };
 
 export function GaugeHero({
@@ -28,6 +30,7 @@ export function GaugeHero({
   label,
   value,
   aside,
+  testID,
 }: GaugeHeroProps) {
   const styles = useStyles(makeStyles);
 
@@ -39,6 +42,7 @@ export function GaugeHero({
       lineColor={lineColor}
       radius={BorderRadius.xxxl}
       duration={Motion.fill}
+      testID={testID}
       style={styles.card}
     >
       <View style={styles.headline}>

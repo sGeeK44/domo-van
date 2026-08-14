@@ -39,6 +39,8 @@ export type GaugeRowProps = {
   action?: GaugeRowAction;
   trailingAdd?: boolean;
   state?: GaugeRowState;
+  /** A screen holding several rows tells them apart with this. */
+  testID?: string;
   onPress?(): void;
 };
 
@@ -61,6 +63,7 @@ export function GaugeRow({
   action,
   trailingAdd = false,
   state = "filled",
+  testID,
   onPress,
 }: GaugeRowProps) {
   const colors = useThemeColor();
@@ -86,6 +89,7 @@ export function GaugeRow({
       hatched={hatched}
       radius={BorderRadius.xxl}
       duration={Motion.fill}
+      testID={testID}
       style={styles.card}
     >
       <View style={styles.content}>
