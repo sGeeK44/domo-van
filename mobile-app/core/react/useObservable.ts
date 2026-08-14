@@ -10,9 +10,14 @@ const NEVER_EMITS = () => () => {};
  * `defaultValue` must be referentially stable, otherwise every render
  * produces a new snapshot and React re-renders forever.
  */
+export function useObservable<T>(observable: Observable<T>): T;
 export function useObservable<T>(
   observable: Observable<T> | null,
   defaultValue: T,
+): T;
+export function useObservable<T>(
+  observable: Observable<T> | null,
+  defaultValue?: T,
 ): T {
   const subscribe = useCallback(
     (onStoreChange: () => void) =>
@@ -21,7 +26,7 @@ export function useObservable<T>(
   );
 
   const getSnapshot = useCallback(
-    () => (observable ? observable.getValue() : defaultValue),
+    () => (observable ? observable.getValue() : (defaultValue as T)),
     [observable, defaultValue],
   );
 

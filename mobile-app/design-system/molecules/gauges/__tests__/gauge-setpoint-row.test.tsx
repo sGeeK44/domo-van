@@ -160,25 +160,40 @@ describe("a setpoint row", () => {
     expect(inkOf(LABEL)).toBe(rgb(colors.textMuted));
     expect(inkOf(VALUE)).toBe(rgb(colors.textMuted));
     expect(inkOf(CAPTION)).toBe(rgb(colors.textMuted));
-    expect(inkOf(DECREASE_GLYPH)).toBe(rgb(colors.dash));
-    expect(inkOf(INCREASE_GLYPH)).toBe(rgb(colors.dash));
     expect(inkOf(POWER_GLYPH)).toBe(rgb(colors.textMuted));
+    // The ± is how a switched-off zone comes back on, so it keeps the paint of a live control.
+    expect(inkOf(DECREASE_GLYPH)).toBe(rgb(colors.onFill));
+    expect(inkOf(INCREASE_GLYPH)).toBe(rgb(colors.onFill));
+    expect(paintOf("setpoint-decrease").backgroundColor).toBe(
+      colors.onFillSurface,
+    );
   });
 
-  it("offers no step past a clamp bound, and shows the one it still offers", () => {
+  it.each(THEMES)("sends nothing from a stepper at a bound in %s", (theme) => {
     const onDecrease = vi.fn();
     const onIncrease = vi.fn();
-    render(row({ increaseDisabled: true, onDecrease, onIncrease }));
+    render(row({ increaseDisabled: true, onDecrease, onIncrease }, theme));
+    const colors = Colors[theme];
 
     fireEvent.click(screen.getByTestId("setpoint-increase"));
     fireEvent.click(screen.getByTestId("setpoint-decrease"));
 
     expect(onIncrease).not.toHaveBeenCalled();
     expect(onDecrease).toHaveBeenCalledTimes(1);
+    expect(paintOf("setpoint-increase").backgroundColor).toBe(rgb(colors.off));
+    expect(inkOf(INCREASE_GLYPH)).toBe(rgb(colors.dash));
+    expect(paintOf("setpoint-decrease").backgroundColor).toBe(
+      colors.onFillSurface,
+    );
+  });
+
+  // A bound and a switched-off zone are two different things: only the bound is dead.
+  it("keeps a clamp bound dead on a switched-off zone, and its neighbour live", () => {
+    render(row({ inert: true, increaseDisabled: true }));
+
     expect(paintOf("setpoint-increase").backgroundColor).toBe(
       rgb(Colors.dark.off),
     );
-    expect(inkOf(INCREASE_GLYPH)).toBe(rgb(Colors.dark.dash));
     expect(paintOf("setpoint-decrease").backgroundColor).toBe(
       Colors.dark.onFillSurface,
     );
@@ -197,9 +212,6 @@ describe("a setpoint row", () => {
       rgb(Colors.dark.textMuted),
     );
     expect(paintOf("setpoint-power").borderTopWidth).toBe("1.5px");
-    expect(paintOf("setpoint-decrease").backgroundColor).toBe(
-      rgb(Colors.dark.off),
-    );
   });
 
   it.each([

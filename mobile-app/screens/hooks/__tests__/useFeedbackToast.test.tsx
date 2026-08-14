@@ -4,7 +4,7 @@ import { I18nextProvider } from "react-i18next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createObservable, type MutableObservable } from "@/core/observable";
 import { ThemeProvider, ToastProvider } from "@/design-system";
-import type { Feedback } from "@/domain/Feedback";
+import { type Feedback, SAVED } from "@/domain/Feedback";
 import { createI18n } from "@/i18n/createI18n";
 import {
   type FeedbackReport,
@@ -75,6 +75,24 @@ describe("what a module reports", () => {
     expect(screen.getByTestId("toast").textContent).toBe(
       "Erreur: ERR_CFG_RANGE",
     );
+  });
+
+  // The heater ACKs every write, so a success is the common case: the screen owns that confirmation.
+  it("stays quiet about a write that went through", () => {
+    const source = renderReader();
+
+    report(source, SAVED);
+
+    expect(screen.queryByTestId("toast")).toBeNull();
+  });
+
+  it("still shows the failure that follows a success", () => {
+    const source = renderReader();
+
+    report(source, SAVED);
+    report(source, failure("ERR_BUSY"));
+
+    expect(screen.getByTestId("toast").textContent).toBe("Erreur: ERR_BUSY");
   });
 
   it("shows nothing again when the module repeats itself", () => {

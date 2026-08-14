@@ -15,3 +15,13 @@ export function snapSetpoint(celsius: number): number {
 export function nightTargetCelsius(zoneIndex: number): number | null {
   return NIGHT_TARGETS_CELSIUS[zoneIndex] ?? null;
 }
+
+/** A zone bar spans 10–30 °C, inside the 5–30 °C its target is clamped to. */
+const BAR_FLOOR_CELSIUS = 10;
+const BAR_SPAN_CELSIUS = 20;
+
+/** Where a temperature sits on a zone bar, 0 to 1: the mockup's `(t − 10) × 5` %. */
+export function zoneRatio(celsius: number): number {
+  const ratio = (celsius - BAR_FLOOR_CELSIUS) / BAR_SPAN_CELSIUS;
+  return Math.min(1, Math.max(0, ratio));
+}

@@ -36,7 +36,7 @@ export type GaugeSetpointRowProps = {
   /** `metricMedium`; the degree sign comes from the caller. */
   value: string;
   caption: string;
-  /** The zone is switched off: dimmed fill, no setpoint marker, muted ink. */
+  /** The zone is switched off: dimmed fill, no setpoint marker, muted ink — the steppers stay live. */
   inert?: boolean;
   /** The target sits on a clamp bound: the step it offers does not exist. */
   decreaseDisabled?: boolean;
@@ -91,14 +91,12 @@ export function GaugeSetpointRow({
           <Stepper
             testID="setpoint-decrease"
             glyph="−"
-            unavailable={inert || decreaseDisabled}
             disabled={decreaseDisabled}
             onPress={onDecrease}
           />
           <Stepper
             testID="setpoint-increase"
             glyph="+"
-            unavailable={inert || increaseDisabled}
             disabled={increaseDisabled}
             onPress={onIncrease}
           />
@@ -122,34 +120,22 @@ export function GaugeSetpointRow({
 type StepperProps = {
   testID: string;
   glyph: string;
-  /** Dimmed: the zone is off, or the step is out of range. */
-  unavailable: boolean;
+  /** The step is out of range: dimmed, and pressing it sends nothing. */
   disabled: boolean;
   onPress: () => void;
 };
 
-function Stepper({
-  testID,
-  glyph,
-  unavailable,
-  disabled,
-  onPress,
-}: StepperProps) {
+function Stepper({ testID, glyph, disabled, onPress }: StepperProps) {
   const styles = useStyles(makeStyles);
 
   return (
     <Pressable
       testID={testID}
-      style={[
-        styles.control,
-        unavailable ? styles.stepperOff : styles.stepperOn,
-      ]}
+      style={[styles.control, disabled ? styles.stepperOff : styles.stepperOn]}
       disabled={disabled}
       onPress={onPress}
     >
-      <Text style={[styles.glyph, unavailable && styles.glyphOff]}>
-        {glyph}
-      </Text>
+      <Text style={[styles.glyph, disabled && styles.glyphOff]}>{glyph}</Text>
     </Pressable>
   );
 }

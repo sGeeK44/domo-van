@@ -45,7 +45,6 @@ export function HeaterPresets({
         testID="preset-stop-all"
         icon="power-settings-new"
         label={t("heater.presets.stopAll")}
-        active={false}
         onPress={onStopAll}
       />
     </View>
@@ -56,7 +55,8 @@ type PresetButtonProps = {
   testID: string;
   icon: IconName;
   label: string;
-  active: boolean;
+  /** A preset that reports a state; a pure command passes none and exposes none. */
+  active?: boolean;
   onPress(): void;
 };
 
@@ -75,7 +75,7 @@ function PresetButton({
     <Pressable
       testID={testID}
       accessibilityRole="button"
-      aria-selected={active}
+      aria-pressed={active}
       style={[styles.button, active ? styles.buttonActive : styles.buttonIdle]}
       onPress={onPress}
     >
@@ -90,8 +90,6 @@ const makeStyles = (colors: Palette) =>
     bar: {
       flexDirection: "row",
       gap: Spacing.m,
-      paddingTop: Spacing.xl,
-      paddingBottom: Spacing.s,
     },
     button: {
       flex: 1,

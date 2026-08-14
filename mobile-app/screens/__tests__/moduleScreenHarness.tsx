@@ -23,6 +23,7 @@ import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner"
 import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
 import { createI18n } from "@/i18n/createI18n";
 import type { FakeBluetooth } from "@/infrastructure/fake/FakeBluetooth";
+import type { FakeModuleTransport } from "@/infrastructure/fake/FakeModuleTransport";
 import type { FakeTransportFactory } from "@/infrastructure/fake/FakeTransportFactory";
 
 export type ModulesHarness = {
@@ -33,6 +34,8 @@ export type ModulesHarness = {
   slots: () => readonly ModuleSlot[];
   dropLink: (deviceId: string) => void;
   forgetFirmware: () => void;
+  /** Pushes a frame from a module's firmware, the way an unsolicited one arrives. */
+  firmwareFrame: (key: ModuleKey, channelId: string, frame: string) => void;
 };
 
 function unavailable(): never {
@@ -53,6 +56,10 @@ function Probe({ harness }: { harness: ModulesHarness }) {
       (bluetooth as FakeBluetooth).dropLink(deviceId);
     harness.forgetFirmware = () =>
       (transports as FakeTransportFactory).forgetAll();
+    harness.firmwareFrame = (key, channelId, frame) =>
+      firmwareOf(slots, transports as FakeTransportFactory, key)
+        .channel(channelId)
+        .emit(frame);
     harness.advertised = async () => {
       const found: DiscoveredBluetoothDevice[] = [];
       await bluetooth.startScan(ALL_SCAN_SERVICE_UUIDS, (device) =>
@@ -75,6 +82,7 @@ export function renderModuleScreen(screen: ReactNode): ModulesHarness {
     slots: unavailable,
     dropLink: unavailable,
     forgetFirmware: unavailable,
+    firmwareFrame: unavailable,
   };
 
   render(
@@ -126,6 +134,24 @@ function pairedId(harness: ModulesHarness, key: ModuleKey): string | null {
     .slots()
     .find((candidate) => candidate.module.key === key);
   return slot?.pairing?.id ?? null;
+}
+
+function firmwareOf(
+  slots: readonly ModuleSlot[],
+  transports: FakeTransportFactory,
+  key: ModuleKey,
+): FakeModuleTransport {
+  const slot = slots.find((candidate) => candidate.module.key === key);
+  const deviceId = slot?.pairing?.id;
+  // A module without a service id speaks over a binary transport, which scripts no channel.
+  const serviceId = slot?.module.serviceId;
+  if (!deviceId || !serviceId) {
+    throw new Error(`no channel-speaking fake is paired as "${key}"`);
+  }
+
+  const firmware = transports.servedModule(deviceId, serviceId);
+  if (!firmware) throw new Error(`no firmware was served for "${key}"`);
+  return firmware;
 }
 
 function advertising(

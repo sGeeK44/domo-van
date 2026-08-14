@@ -245,9 +245,10 @@ The app then runs with Bluetooth switched off. It boots already paired: the
 three modules reach *online* on their own, so nothing has to be scanned or
 tapped, and the bar shows all four tabs. Every value on the screens, Bord's
 water and heater cards included, comes from a fake — Bord holds no hardcoded
-reading any more. The water and heater screens still substitute a zeroed
-default while their module is offline — tasks T5 and T6 of issue #6 retire that,
-since `ModuleScreen` takes the tab over before any reading is asked for.
+reading any more. The water screen still substitutes a zeroed default while its
+module is offline — task T5 of issue #6 retires that, since `ModuleScreen` takes
+the tab over before any reading is asked for. The heater screen no longer does:
+it reads its zones through `useObservable` without a fallback.
 
 `EXPO_PUBLIC_FAKE_BLE` is read **once**, by `createContainer()`, and it is the
 only branch in the app. Expo inlines `EXPO_PUBLIC_*` at build time, so this is

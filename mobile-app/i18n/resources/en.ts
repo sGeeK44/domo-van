@@ -192,10 +192,7 @@ export const en: typeof fr = {
       zone4: "Hold",
     },
     zone: {
-      current: "current",
-      setpoint: "target",
       target: "target {{temperature}}",
-      running: "Running",
       stopped: "off",
     },
     presets: {
@@ -204,7 +201,6 @@ export const en: typeof fr = {
     },
     toast: {
       nightOn: "Night mode — targets lowered",
-      nightOff: "Night mode off",
       allStopped: "All zones stopped",
     },
     settings: {
