@@ -8,6 +8,8 @@ import { Bluetooth } from "@/infrastructure/ble/Bluetooth";
 import { FakeBluetooth } from "@/infrastructure/fake/FakeBluetooth";
 import { FakeTransportFactory } from "@/infrastructure/fake/FakeTransportFactory";
 import { InMemoryDeviceRepository } from "@/infrastructure/fake/InMemoryDeviceRepository";
+import { InMemoryPreferencesRepository } from "@/infrastructure/fake/InMemoryPreferencesRepository";
+import { AsyncStoragePreferencesRepository } from "@/infrastructure/storage/AsyncStoragePreferencesRepository";
 import { SecureStoreDeviceRepository } from "@/infrastructure/storage/SecureStoreDeviceRepository";
 
 function withFakeBle(value: string | undefined): void {
@@ -31,6 +33,9 @@ describe("createContainer", () => {
     expect(container.deviceRepository).toBeInstanceOf(
       SecureStoreDeviceRepository,
     );
+    expect(container.preferences).toBeInstanceOf(
+      AsyncStoragePreferencesRepository,
+    );
   });
 
   it("binds the BLE stack for any value of EXPO_PUBLIC_FAKE_BLE other than 1", () => {
@@ -49,6 +54,7 @@ describe("createContainer", () => {
     expect(container.bluetooth).toBeInstanceOf(FakeBluetooth);
     expect(container.transports).toBeInstanceOf(FakeTransportFactory);
     expect(container.deviceRepository).toBeInstanceOf(InMemoryDeviceRepository);
+    expect(container.preferences).toBeInstanceOf(InMemoryPreferencesRepository);
   });
 
   it("creates no native BLE client in fake mode", () => {

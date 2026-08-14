@@ -22,7 +22,7 @@ every pull request, so a violation blocks the merge.
 | `i18n/` | the FR/EN dictionaries, the i18next instance and the typed key union |
 | `domain/` | business logic and the **ports** it needs (`domain/ports/`), plus the module catalogue (`domain/modules/`) |
 | `infrastructure/` | implementations of those ports — BLE transports, secure store |
-| `composition/` | the composition root: the one place binding concretes to ports |
+| `composition/` | the composition root: the one place binding concretes to ports, plus the app-shell wiring that sits above the React tree (`appContainer`, the boot gate) |
 | `design-system/` | tokens, atoms, molecules, theme |
 | `components/` | feature UI, renders domain objects with design-system primitives |
 | `screens/` | page components |
@@ -62,6 +62,20 @@ sees a connected device through the `DeviceHandle` port and asks
   and no device API, they only decorate the `TransportFactory` the container
   injected, and one exists per pairing — session lifetime, which the container
   knows nothing about.
+- **One boot gate, above the providers.** `composition/useAppReady.ts` ANDs
+  every condition the first paint waits on — the bundled fonts and the stored
+  theme mode — and lifts the splash once they all hold. It renders above
+  `AppProviders`, so it takes its port from `composition/appContainer.ts`, the
+  container built outside the React tree and handed down unchanged by
+  `ContainerProvider`. A second gate elsewhere would paint a frame this one is
+  still holding.
+- **The design system receives persistence, it never imports it.**
+  `composition/` may not import `design-system/` and `design-system/` may not
+  import `domain/`, so `ThemeProvider` is mounted by `app/_layout.tsx`, the one
+  place that sees both. It takes an `initialMode` value — already hydrated,
+  which is what avoids a light→dark flash — and an `onModeChange` callback.
+  Neither names a port; the write-through and its swallowed rejection live in
+  `composition/useThemePreference.ts`.
 - **`ModuleRegistry` owns the slots.** One slot per module type holds the
   pairing and the link state. `composition/ModuleRegistryProvider.tsx` builds
   the registry inside its mount effect and disposes it on unmount; disposal is
@@ -211,6 +225,7 @@ builds the BLE stack, so no fake is reachable unless you ask for one.
 | `bluetooth` | `Bluetooth` (ble-plx) | `FakeBluetooth` |
 | `transports` | `BleTransportFactory` | `FakeTransportFactory` |
 | `deviceRepository` | `SecureStoreDeviceRepository` | `InMemoryDeviceRepository` |
+| `preferences` | `AsyncStoragePreferencesRepository` | `InMemoryPreferencesRepository` |
 
 What the fake serves:
 

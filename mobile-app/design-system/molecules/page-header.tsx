@@ -24,7 +24,7 @@ export function PageHeader({
   bluetoothStatus,
   bluetoothDisabled = false,
 }: PageHeaderProps) {
-  const { colorScheme, toggleTheme } = useTheme();
+  const { colorScheme, setThemeMode } = useTheme();
 
   return (
     <View style={styles.header}>
@@ -32,7 +32,9 @@ export function PageHeader({
       <View style={styles.buttons}>
         <IconCircleButton
           icon={colorScheme === "dark" ? "light-mode" : "dark-mode"}
-          onPress={toggleTheme}
+          onPress={() =>
+            setThemeMode(colorScheme === "dark" ? "light" : "dark")
+          }
         />
         {onBluetoothPress && bluetoothStatus && (
           <IconCircleButton

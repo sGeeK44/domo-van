@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
 import { AppProviders } from "@/composition/AppProviders";
+import { appContainer } from "@/composition/appContainer";
 import { useAppReady } from "@/composition/useAppReady";
 import {
   BundledFonts,
@@ -60,7 +61,10 @@ function AppContent() {
 }
 
 export default function RootLayout() {
-  const ready = useAppReady(BundledFonts);
+  const { ready, initialThemeMode, saveThemeMode } = useAppReady(
+    BundledFonts,
+    appContainer.preferences,
+  );
 
   if (!ready) {
     return null;
@@ -68,7 +72,10 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
+      <ThemeProvider
+        initialMode={initialThemeMode}
+        onModeChange={saveThemeMode}
+      >
         <AppContent />
       </ThemeProvider>
     </GestureHandlerRootView>
