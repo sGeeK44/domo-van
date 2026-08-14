@@ -1,4 +1,4 @@
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useThemeColor } from "@/design-system/theme/use-theme-color";
 
 export type StatusBadgeProps = {
@@ -10,18 +10,16 @@ const STATUS_COLORS = {
   connected: "#2ECC71",
   partial: "#F39C12",
   disconnected: "#E74C3C",
+  loading: "#F39C12",
 };
 
+/**
+ * One view for every status, never a subtree that comes and goes: a link
+ * settles in under a frame, and Fabric merges a create with the delete that
+ * follows it, which strands the created view outside the tree.
+ */
 export function StatusBadge({ status, size = 10 }: StatusBadgeProps) {
   const colors = useThemeColor();
-
-  if (status === "loading") {
-    return (
-      <View style={[styles.container, { width: size, height: size }]}>
-        <ActivityIndicator size={size} color={colors.text.primary} />
-      </View>
-    );
-  }
 
   return (
     <View
@@ -40,13 +38,6 @@ export function StatusBadge({ status, size = 10 }: StatusBadgeProps) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   badge: {
     position: "absolute",
     top: 6,
