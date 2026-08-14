@@ -30,6 +30,7 @@ export type Palette = {
   hatchStripe: string;
   onFill: string;
   onFillMuted: string;
+  onFillSurface: string;
   fill: DomainColors;
   line: DomainColors;
 };
@@ -56,6 +57,7 @@ export const Colors: Record<ThemeName, Palette> = {
     hatchStripe: "#EBE9E4",
     onFill: "#101214",
     onFillMuted: "#3F4448",
+    onFillSurface: "rgba(0, 0, 0, 0.12)",
     fill: {
       battery: "#9FE0B8",
       cleanWater: "#9BDCDC",
@@ -90,6 +92,7 @@ export const Colors: Record<ThemeName, Palette> = {
     hatchStripe: "#212629",
     onFill: "#FFFFFF",
     onFillMuted: "#FFFFFF",
+    onFillSurface: "rgba(0, 0, 0, 0.35)",
     fill: {
       battery: "#1E7A45",
       cleanWater: "#177E7E",
@@ -169,11 +172,29 @@ export const TextStyles = {
     lineHeight: 12,
     letterSpacing: 0.72,
   },
+  buttonMedium: {
+    fontFamily: "Archivo_800ExtraBold",
+    fontSize: 14,
+    lineHeight: 14,
+    letterSpacing: 0.84,
+  },
+  metricSmall: {
+    fontFamily: "Archivo_800ExtraBold",
+    fontSize: 24,
+    lineHeight: 24,
+    letterSpacing: 0,
+  },
   metric: {
     fontFamily: "Archivo_800ExtraBold",
     fontSize: 34,
     lineHeight: 34,
     letterSpacing: -1.2,
+  },
+  metricMedium: {
+    fontFamily: "Archivo_800ExtraBold",
+    fontSize: 40,
+    lineHeight: 36,
+    letterSpacing: -1.5,
   },
   metricLarge: {
     fontFamily: "Archivo_800ExtraBold",
@@ -211,9 +232,28 @@ export const TextStyles = {
     lineHeight: 14.4,
     letterSpacing: 0,
   },
+  monoStrong: {
+    fontFamily: "SpaceMono_700Bold",
+    fontSize: 14,
+    lineHeight: 14,
+    letterSpacing: 0,
+  },
+  monoValue: {
+    fontFamily: "SpaceMono_700Bold",
+    fontSize: 15,
+    lineHeight: 18,
+    letterSpacing: 0,
+  },
 } as const satisfies Record<string, TextStyle & { fontFamily: FontFamily }>;
 
 export type TextStyleName = keyof typeof TextStyles;
+
+/** The unit is a smaller span inside the metric it follows. */
+export const MetricUnitSize = {
+  metric: 19,
+  metricLarge: 30,
+  metricHuge: 34,
+} as const satisfies Partial<Record<TextStyleName, number>>;
 
 export const FontSize = {
   xxs: 10,
@@ -260,6 +300,13 @@ export const BorderRadius = {
   xxl: 24,
   xxxl: 28,
   pill: 999,
+} as const;
+
+/** Gauge transition durations, in milliseconds. */
+export const Motion = {
+  fill: 500,
+  marker: 300,
+  drain: 1000,
 } as const;
 
 export const Opacity = {
