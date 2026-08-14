@@ -22,6 +22,7 @@ import {
   moduleForAdvertisement,
 } from "@/domain/modules/ModuleDescriptor";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
+import { message } from "@/screens/error-message";
 
 const SCAN_TIMEOUT_MS = 30_000;
 
@@ -55,11 +56,6 @@ export default function AddModuleScreen() {
     setError(null);
     setIsScanning(true);
 
-    const timer = setTimeout(() => {
-      setIsScanning(false);
-      void bluetooth.stopScan();
-    }, SCAN_TIMEOUT_MS);
-
     const remember = (device: DiscoveredBluetoothDevice) => {
       if (!moduleForAdvertisement(device.serviceUuids)) return;
       setFound((seen) =>
@@ -75,11 +71,20 @@ export default function AddModuleScreen() {
         setError(message(cause, "La recherche a échoué."));
       });
 
-    stopRunningScan.current = () => {
+    // the radio only starts scanning once the permission round-trip resolves, which outlives both the timeout and the screen
+    const stopRadio = () => {
       cancelled = true;
-      clearTimeout(timer);
-      // the radio only starts scanning once the permission round-trip resolves, which outlives the screen
       void started.then(() => bluetooth.stopScan());
+    };
+
+    const timer = setTimeout(() => {
+      setIsScanning(false);
+      stopRadio();
+    }, SCAN_TIMEOUT_MS);
+
+    stopRunningScan.current = () => {
+      clearTimeout(timer);
+      stopRadio();
     };
   }, [bluetooth]);
 
@@ -141,10 +146,6 @@ export default function AddModuleScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-}
-
-function message(cause: unknown, fallback: string): string {
-  return cause instanceof Error ? cause.message : fallback;
 }
 
 const createStyles = (colors: ThemeColors) =>

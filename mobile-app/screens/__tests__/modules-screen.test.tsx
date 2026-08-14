@@ -6,7 +6,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 // The container is built when ContainerProvider is imported, so the switch is flipped before it.
 process.env.EXPO_PUBLIC_FAKE_BLE = "1";
@@ -14,8 +14,26 @@ process.env.EXPO_PUBLIC_FAKE_BLE = "1";
 const { pairOnly, renderModuleScreen } = await import("./moduleScreenHarness");
 const { default: ModulesScreen } = await import("@/screens/modules-screen");
 const { ModuleRegistry } = await import("@/domain/modules/ModuleRegistry");
+const { InMemoryDeviceRepository } = await import(
+  "@/infrastructure/fake/InMemoryDeviceRepository"
+);
 const { resetNavigation, routerHistory, routerStack, setOpenTab } =
   await import("@/__mocks__/expo-router");
+
+/** Node only reports a rejection as unhandled once the current macrotask has drained. */
+function flush(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+function watchUnhandledRejections(): readonly unknown[] {
+  const escaped: unknown[] = [];
+  const collect = (reason: unknown) => escaped.push(reason);
+  process.on("unhandledRejection", collect);
+  onTestFinished(() => {
+    process.off("unhandledRejection", collect);
+  });
+  return escaped;
+}
 
 async function openUnpairSheet(key: string): Promise<void> {
   fireEvent.click(screen.getByTestId(`unpair-${key}`));
@@ -61,6 +79,26 @@ describe("the Modules screen", () => {
     expect(screen.queryByTestId("module-slot-water")).toBeNull();
     expect(unpair).toHaveBeenCalledTimes(1);
     expect(unpair).toHaveBeenCalledWith("water");
+  });
+
+  it("keeps the sheet open and names the failure when storage refuses to drop the pairing", async () => {
+    const escaped = watchUnhandledRejections();
+    const harness = renderModuleScreen(<ModulesScreen />);
+    await pairOnly(harness, ["water"]);
+    vi.spyOn(
+      InMemoryDeviceRepository.prototype,
+      "clearLastDevice",
+    ).mockRejectedValue(new Error("Trousseau inaccessible."));
+
+    await openUnpairSheet("water");
+    await confirmUnpair();
+    await act(async () => {
+      await flush();
+    });
+
+    expect(screen.getByText("Trousseau inaccessible.")).toBeTruthy();
+    expect(screen.getByTestId("unpair-confirm")).toBeTruthy();
+    expect(escaped).toEqual([]);
   });
 
   it("keeps the paired module when the sheet is cancelled", async () => {

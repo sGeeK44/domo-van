@@ -1,6 +1,6 @@
 import { useRootNavigationState, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FreeSlotRow, ModuleSlotRow, UnpairSheet } from "@/components/modules";
 import {
@@ -8,6 +8,7 @@ import {
   useModuleSlots,
 } from "@/composition/ModuleRegistryProvider";
 import {
+  FontSize,
   SettingsHeader,
   Spacing,
   type ThemeColors,
@@ -15,6 +16,7 @@ import {
 } from "@/design-system";
 import type { ModuleKey } from "@/domain/modules/ModuleDescriptor";
 import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
+import { message } from "@/screens/error-message";
 
 const SETTINGS_ROUTE = {
   water: "/water-settings",
@@ -35,6 +37,7 @@ export default function ModulesScreen() {
 
   const [leaving, setLeaving] = useState<ModuleSlot | null>(null);
   const [isUnpairing, setIsUnpairing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const occupied = slots.filter((slot) => slot.pairing !== null);
   const free = slots.filter((slot) => slot.pairing === null);
@@ -44,15 +47,19 @@ export default function ModulesScreen() {
     const key = leaving.module.key;
 
     setIsUnpairing(true);
+    setError(null);
     try {
       await unpair(key);
       // replace would stack a second tabs navigator over the first; dismissTo pops back to it
       if (openTabName(navigationState) === key) {
         router.dismissTo(DASHBOARD_ROUTE);
       }
+      setLeaving(null);
+    } catch (cause: unknown) {
+      // the slot is already free in memory but storage still holds the pairing, so it would come back at the next launch
+      setError(message(cause, "La dissociation a échoué."));
     } finally {
       setIsUnpairing(false);
-      setLeaving(null);
     }
   };
 
@@ -61,6 +68,7 @@ export default function ModulesScreen() {
       <SettingsHeader title="Modules" onBackPress={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.list}>
+        {error && <Text style={styles.error}>{error}</Text>}
         {occupied.map((slot) => (
           <ModuleSlotRow
             key={slot.module.key}
@@ -117,5 +125,9 @@ const createStyles = (colors: ThemeColors) =>
       paddingHorizontal: Spacing.xxl,
       paddingBottom: Spacing.xxl,
       gap: Spacing.m,
+    },
+    error: {
+      color: colors.danger["500"],
+      fontSize: FontSize.xs,
     },
   });

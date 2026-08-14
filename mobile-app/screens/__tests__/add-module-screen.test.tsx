@@ -8,6 +8,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 
 // The container is built when ContainerProvider is imported, so the switch is flipped before it.
 process.env.EXPO_PUBLIC_FAKE_BLE = "1";
@@ -21,9 +22,16 @@ const { FakeBluetooth } = await import("@/infrastructure/fake/FakeBluetooth");
 const { resetNavigation, routerHistory } = await import(
   "@/__mocks__/expo-router"
 );
+const { WATER_MODULE } = await import("@/domain/modules/ModuleDescriptor");
 
 const WATER_DEVICE = "discovered-fake-water";
 const SCAN_TIMEOUT_MS = 30_000;
+
+const LATE_DEVICE: DiscoveredBluetoothDevice = {
+  id: "late-water",
+  name: "Water Module (late)",
+  serviceUuids: [WATER_MODULE.scanServiceUuid],
+};
 
 /** Lets every pending promise settle, timers included, before the assertion reads the radio. */
 function flush(): Promise<void> {
@@ -133,6 +141,47 @@ describe("the Ajouter screen", () => {
     });
 
     expect(radio.isScanning).toBe(false);
+  });
+
+  it("leaves no radio scanning when the 30 s window closes before the scan starts", async () => {
+    vi.useFakeTimers();
+    const radio: {
+      isScanning: boolean;
+      report: ((device: DiscoveredBluetoothDevice) => void) | null;
+    } = { isScanning: false, report: null };
+    let grantPermission = () => {};
+    vi.spyOn(FakeBluetooth.prototype, "startScan").mockImplementation(
+      async (_serviceUuids, onDeviceFound) => {
+        await new Promise<void>((resolve) => {
+          grantPermission = resolve;
+        });
+        radio.isScanning = true;
+        radio.report = onDeviceFound;
+      },
+    );
+    vi.spyOn(FakeBluetooth.prototype, "stopScan").mockImplementation(
+      async () => {
+        radio.isScanning = false;
+        radio.report = null;
+      },
+    );
+    renderModuleScreen(<AddModuleScreen />);
+
+    await act(async () => {
+      vi.advanceTimersByTime(SCAN_TIMEOUT_MS);
+    });
+    // the timeout has fired; flush needs a macrotask fake timers would never reach
+    vi.useRealTimers();
+    await act(async () => {
+      grantPermission();
+      await flush();
+    });
+    await act(async () => {
+      radio.report?.(LATE_DEVICE);
+    });
+
+    expect(radio.isScanning).toBe(false);
+    expect(screen.queryByTestId(`discovered-${LATE_DEVICE.id}`)).toBeNull();
   });
 
   it("does not navigate when a slow pairing lands after the screen is gone", async () => {
