@@ -23,6 +23,7 @@ import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner"
 import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
 import { createI18n } from "@/i18n/createI18n";
 import type { FakeBluetooth } from "@/infrastructure/fake/FakeBluetooth";
+import type { FakeTransportFactory } from "@/infrastructure/fake/FakeTransportFactory";
 
 export type ModulesHarness = {
   pair: (key: ModuleKey, device: DiscoveredBluetoothDevice) => Promise<void>;
@@ -31,6 +32,7 @@ export type ModulesHarness = {
   stored: (key: ModuleKey) => Promise<DeviceInfo | null>;
   slots: () => readonly ModuleSlot[];
   dropLink: (deviceId: string) => void;
+  forgetFirmware: () => void;
 };
 
 function unavailable(): never {
@@ -39,7 +41,7 @@ function unavailable(): never {
 
 function Probe({ harness }: { harness: ModulesHarness }) {
   const { pair, unpair } = useModuleRegistry();
-  const { bluetooth, deviceRepository } = useContainer();
+  const { bluetooth, deviceRepository, transports } = useContainer();
   const slots = useModuleSlots();
 
   useEffect(() => {
@@ -49,6 +51,8 @@ function Probe({ harness }: { harness: ModulesHarness }) {
     harness.stored = (key) => deviceRepository.getLastDevice(key);
     harness.dropLink = (deviceId) =>
       (bluetooth as FakeBluetooth).dropLink(deviceId);
+    harness.forgetFirmware = () =>
+      (transports as FakeTransportFactory).forgetAll();
     harness.advertised = async () => {
       const found: DiscoveredBluetoothDevice[] = [];
       await bluetooth.startScan(ALL_SCAN_SERVICE_UUIDS, (device) =>
@@ -57,7 +61,7 @@ function Probe({ harness }: { harness: ModulesHarness }) {
       await bluetooth.stopScan();
       return found;
     };
-  }, [harness, pair, unpair, slots, bluetooth, deviceRepository]);
+  }, [harness, pair, unpair, slots, bluetooth, deviceRepository, transports]);
 
   return null;
 }
@@ -70,6 +74,7 @@ export function renderModuleScreen(screen: ReactNode): ModulesHarness {
     stored: unavailable,
     slots: unavailable,
     dropLink: unavailable,
+    forgetFirmware: unavailable,
   };
 
   render(
@@ -88,7 +93,10 @@ export function renderModuleScreen(screen: ReactNode): ModulesHarness {
   return harness;
 }
 
-/** The container is a singleton, so a test states the pairings it needs rather than inheriting them. */
+/**
+ * The container is a singleton, so a test states the pairings it needs rather than
+ * inheriting them — and meets a firmware that kept nothing an earlier test wrote.
+ */
 export async function pairOnly(
   harness: ModulesHarness,
   keys: readonly ModuleKey[],
@@ -98,6 +106,7 @@ export async function pairOnly(
 
   await act(async () => {
     for (const module of ALL_MODULES) await harness.unpair(module.key);
+    harness.forgetFirmware();
     for (const key of keys) await harness.pair(key, advertising(devices, key));
   });
 }

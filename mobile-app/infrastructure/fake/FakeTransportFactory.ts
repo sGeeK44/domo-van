@@ -51,6 +51,12 @@ export class FakeTransportFactory implements TransportFactory {
     );
   }
 
+  /** Forgets every transport served, so the next pairing meets a firmware in its initial state. */
+  forgetAll(): void {
+    this.modules.clear();
+    this.binaries.clear();
+  }
+
   binaryTransport(device: DeviceHandle): BinaryTransport {
     return reuse(
       this.binaries,
