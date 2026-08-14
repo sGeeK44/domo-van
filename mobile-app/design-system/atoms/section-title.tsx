@@ -1,5 +1,5 @@
 import { StyleSheet, Text, type TextProps } from "react-native";
-import { useThemeColor } from "@/design-system/theme/use-theme-color";
+import { useStyles } from "@/design-system/theme/use-styles";
 import {
   FontSize,
   FontWeight,
@@ -12,8 +12,7 @@ export type SectionTitleProps = {
 } & Omit<TextProps, "style">;
 
 export function SectionTitle({ children, ...props }: SectionTitleProps) {
-  const colors = useThemeColor();
-  const styles = getStyles(colors);
+  const styles = useStyles(makeStyles);
 
   return (
     <Text style={styles.title} {...props}>
@@ -22,7 +21,7 @@ export function SectionTitle({ children, ...props }: SectionTitleProps) {
   );
 }
 
-const getStyles = (colors: Palette) =>
+const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     title: {
       color: colors.text,

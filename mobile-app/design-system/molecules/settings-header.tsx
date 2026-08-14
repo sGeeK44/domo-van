@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
+import { useStyles } from "@/design-system/theme/use-styles";
 import { useThemeColor } from "@/design-system/theme/use-theme-color";
 import {
   FontSize,
@@ -15,7 +16,7 @@ export type SettingsHeaderProps = {
 
 export function SettingsHeader({ title, onBackPress }: SettingsHeaderProps) {
   const colors = useThemeColor();
-  const styles = getStyles(colors);
+  const styles = useStyles(makeStyles);
 
   return (
     <View style={styles.header}>
@@ -28,7 +29,7 @@ export function SettingsHeader({ title, onBackPress }: SettingsHeaderProps) {
   );
 }
 
-const getStyles = (colors: Palette) =>
+const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     header: {
       flexDirection: "row",

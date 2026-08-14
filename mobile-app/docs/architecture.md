@@ -28,6 +28,9 @@ every pull request, so a violation blocks the merge.
 | `screens/` | page components |
 | `app/` | expo-router routes only |
 
+The tokens, text styles, `useStyles`, `<Hatch/>`, the toast contract and the
+colour guardrail are documented in [design-system.md](./design-system.md).
+
 ## Permission matrix
 
 "May import" = the listed directories plus itself.

@@ -1,5 +1,6 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { SectionTitle } from "@/design-system/atoms/section-title";
+import { useStyles } from "@/design-system/theme/use-styles";
 import { useThemeColor } from "@/design-system/theme/use-theme-color";
 import {
   BorderRadius,
@@ -16,7 +17,7 @@ export type SectionProps = {
 
 export function Section({ title, isScanning, children }: SectionProps) {
   const colors = useThemeColor();
-  const styles = getStyles(colors);
+  const styles = useStyles(makeStyles);
 
   return (
     <>
@@ -33,7 +34,7 @@ export function Section({ title, isScanning, children }: SectionProps) {
   );
 }
 
-const getStyles = (colors: Palette) =>
+const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     header: {
       paddingHorizontal: Spacing.xxl,

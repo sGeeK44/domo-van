@@ -6,6 +6,7 @@ import {
   View,
 } from "react-native";
 import { Button } from "@/design-system/atoms/button";
+import { useStyles } from "@/design-system/theme/use-styles";
 import { useThemeColor } from "@/design-system/theme/use-theme-color";
 import {
   BorderRadius,
@@ -41,7 +42,7 @@ export function FormField({
   inputProps,
 }: FormFieldProps) {
   const colors = useThemeColor();
-  const styles = getStyles(colors);
+  const styles = useStyles(makeStyles);
 
   return (
     <View style={styles.container}>
@@ -61,7 +62,7 @@ export function FormField({
   );
 }
 
-const getStyles = (colors: Palette) =>
+const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       gap: Spacing.s,

@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
+import { useStyles } from "@/design-system/theme/use-styles";
 import { useThemeColor } from "@/design-system/theme/use-theme-color";
 import {
   BorderRadius,
@@ -33,7 +34,7 @@ export function DeviceRow({
   onPress,
 }: DeviceRowProps) {
   const colors = useThemeColor();
-  const styles = getStyles(colors);
+  const styles = useStyles(makeStyles);
   const Container = onPress ? Pressable : View;
 
   return (
@@ -48,7 +49,7 @@ export function DeviceRow({
   );
 }
 
-const getStyles = (colors: Palette) =>
+const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     row: {
       flexDirection: "row",
