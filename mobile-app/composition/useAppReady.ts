@@ -2,12 +2,24 @@ import type { FontSource } from "expo-font";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import {
+  type ThemePreference,
+  useThemePreference,
+} from "@/composition/useThemePreference";
+import type { PreferencesRepository } from "@/domain/ports/PreferencesRepository";
+
+export type AppReady = Omit<ThemePreference, "hydrated"> & { ready: boolean };
 
 /** The single place readiness is decided: every boot gate ANDs into `ready`. */
-export function useAppReady(fonts: Record<string, FontSource>): boolean {
+export function useAppReady(
+  fonts: Record<string, FontSource>,
+  preferences: PreferencesRepository,
+): AppReady {
   const [fontsLoaded, fontError] = useFonts(fonts);
+  const { hydrated, initialThemeMode, saveThemeMode } =
+    useThemePreference(preferences);
   // useFonts never retries, so waiting on a failure would hold the splash for the process lifetime.
-  const ready = fontsLoaded || fontError !== null;
+  const ready = (fontsLoaded || fontError !== null) && hydrated;
 
   useEffect(() => {
     if (fontError) {
@@ -23,5 +35,5 @@ export function useAppReady(fonts: Record<string, FontSource>): boolean {
     }
   }, [ready]);
 
-  return ready;
+  return { ready, initialThemeMode, saveThemeMode };
 }

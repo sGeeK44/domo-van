@@ -1,6 +1,7 @@
 import type { BluetoothScanner } from "@/domain/ports/BluetoothScanner";
 import type { DeviceConnector } from "@/domain/ports/DeviceConnector";
 import type { DeviceRepository } from "@/domain/ports/DeviceRepository";
+import type { PreferencesRepository } from "@/domain/ports/PreferencesRepository";
 import type { TransportFactory } from "@/domain/ports/TransportFactory";
 import { BleConnections } from "@/infrastructure/ble/BleConnections";
 import { BleTransportFactory } from "@/infrastructure/ble/BleTransportFactory";
@@ -11,12 +12,15 @@ import {
 } from "@/infrastructure/fake/FakeBluetooth";
 import { FakeTransportFactory } from "@/infrastructure/fake/FakeTransportFactory";
 import { InMemoryDeviceRepository } from "@/infrastructure/fake/InMemoryDeviceRepository";
+import { InMemoryPreferencesRepository } from "@/infrastructure/fake/InMemoryPreferencesRepository";
+import { AsyncStoragePreferencesRepository } from "@/infrastructure/storage/AsyncStoragePreferencesRepository";
 import { SecureStoreDeviceRepository } from "@/infrastructure/storage/SecureStoreDeviceRepository";
 
 export type Container = {
   bluetooth: BluetoothScanner & DeviceConnector;
   transports: TransportFactory;
   deviceRepository: DeviceRepository;
+  preferences: PreferencesRepository;
 };
 
 /** A real BMS pushes telemetry unprompted; the fake one has to be told to. */
@@ -39,6 +43,7 @@ function bleContainer(): Container {
     bluetooth: createBluetooth(connections),
     transports: new BleTransportFactory(connections),
     deviceRepository: new SecureStoreDeviceRepository(),
+    preferences: new AsyncStoragePreferencesRepository(),
   };
 }
 
@@ -49,5 +54,6 @@ function fakeContainer(): Container {
       telemetryIntervalMs: FAKE_BMS_PUSH_MS,
     }),
     deviceRepository: new InMemoryDeviceRepository(fakePairedDevices()),
+    preferences: new InMemoryPreferencesRepository(),
   };
 }

@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { PreferencesRepository } from "@/domain/ports/PreferencesRepository";
+import { InMemoryPreferencesRepository } from "@/infrastructure/fake/InMemoryPreferencesRepository";
 
 // expo-font pulls react-native's Flow source, which Vite cannot parse, and the
 // font result is the very input under test — so both boundaries are stubbed.
@@ -15,9 +17,19 @@ vi.mock("expo-splash-screen", () => ({
 
 const { useAppReady } = await import("@/composition/useAppReady");
 
-function Boot() {
-  const ready = useAppReady({});
-  return <span data-testid="boot">{ready ? "app" : "splash"}</span>;
+function Boot({ preferences }: { preferences: PreferencesRepository }) {
+  const { ready, initialThemeMode } = useAppReady({}, preferences);
+  return (
+    <span data-testid="boot">
+      {ready ? `app:${initialThemeMode}` : "splash"}
+    </span>
+  );
+}
+
+function renderBoot(stored?: PreferencesRepository) {
+  return render(
+    <Boot preferences={stored ?? new InMemoryPreferencesRepository()} />,
+  );
 }
 
 function shown(): string {
@@ -33,17 +45,27 @@ describe("useAppReady", () => {
   afterEach(cleanup);
 
   it("holds the splash while the fonts are still loading", () => {
-    render(<Boot />);
+    renderBoot();
 
     expect(shown()).toBe("splash");
     expect(hideAsync).not.toHaveBeenCalled();
   });
 
-  it("lifts the splash once the fonts are loaded", async () => {
+  it("holds the splash until the stored preferences are read", async () => {
     fontResult = [true, null];
-    render(<Boot />);
+    renderBoot();
 
-    expect(shown()).toBe("app");
+    expect(shown()).toBe("splash");
+    expect(hideAsync).not.toHaveBeenCalled();
+
+    await waitFor(() => expect(shown()).toBe("app:auto"));
+  });
+
+  it("lifts the splash once the fonts are loaded and the preferences are read", async () => {
+    fontResult = [true, null];
+    renderBoot(new InMemoryPreferencesRepository({ themeMode: "light" }));
+
+    await waitFor(() => expect(shown()).toBe("app:light"));
     await waitFor(() => expect(hideAsync).toHaveBeenCalled());
   });
 
@@ -52,9 +74,9 @@ describe("useAppReady", () => {
     const failure = new Error("asset bundle incomplete");
     fontResult = [false, failure];
 
-    render(<Boot />);
+    renderBoot();
 
-    expect(shown()).toBe("app");
+    await waitFor(() => expect(shown()).toBe("app:auto"));
     await waitFor(() => expect(hideAsync).toHaveBeenCalled());
     expect(warn).toHaveBeenCalledWith(expect.any(String), failure);
     warn.mockRestore();

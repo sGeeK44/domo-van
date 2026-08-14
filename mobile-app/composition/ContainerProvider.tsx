@@ -1,17 +1,12 @@
 import { createContext, type PropsWithChildren, useContext } from "react";
-import { type Container, createContainer } from "@/composition/createContainer";
+import { appContainer } from "@/composition/appContainer";
+import type { Container } from "@/composition/createContainer";
 
 const ContainerContext = createContext<Container | null>(null);
 
-/**
- * Built once for the lifetime of the app: the adapters it holds own native
- * resources (a `BleManager`) that must not be duplicated.
- */
-const container = createContainer();
-
 export function ContainerProvider({ children }: PropsWithChildren) {
   return (
-    <ContainerContext.Provider value={container}>
+    <ContainerContext.Provider value={appContainer}>
       {children}
     </ContainerContext.Provider>
   );

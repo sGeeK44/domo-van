@@ -21,6 +21,10 @@ export default defineConfig({
         __dirname,
         "__mocks__/expo-localization.ts",
       ),
+      "@react-native-async-storage/async-storage": path.resolve(
+        __dirname,
+        "__mocks__/async-storage.ts",
+      ),
       "expo-router": path.resolve(__dirname, "__mocks__/expo-router.ts"),
       "react-native-safe-area-context": path.resolve(
         __dirname,
