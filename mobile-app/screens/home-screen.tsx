@@ -46,7 +46,7 @@ const DEFAULT_ENVIRONMENT: EnvironmentSnapshot = {
   exteriorTemperatureCelsius: 0,
   humidity: 0,
   pressureHPa: 1013.25,
-  lastMessage: null,
+  lastFeedback: null,
 };
 
 /** A dash is not copy: it stands in for a measurement no module reported. */
@@ -57,7 +57,7 @@ const DEFAULT_TANK: TankLevelSnapshot = {
   heightMm: 0,
   percentage: 0,
   lastDistanceMm: null,
-  lastMessage: null,
+  lastFeedback: null,
 };
 
 export default function HomeScreen() {

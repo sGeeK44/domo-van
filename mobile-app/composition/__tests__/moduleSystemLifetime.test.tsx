@@ -31,7 +31,7 @@ const NO_TANK = {
   heightMm: 0,
   percentage: 0,
   lastDistanceMm: null,
-  lastMessage: null,
+  lastFeedback: null,
 };
 
 /** Two of these stand for two components of the same screen. */

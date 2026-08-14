@@ -8,6 +8,7 @@ import {
   ToastAndroid,
   View,
 } from "react-native";
+import { errorMessage } from "@/components/error-message";
 import {
   BorderRadius,
   FontSize,
@@ -50,8 +51,7 @@ export function TankSettingsSection({ tank, label }: Props) {
       try {
         await tank.getConfig();
       } catch (e) {
-        const msg = e instanceof Error ? e.message : t("common.errors.read");
-        showToast(msg);
+        showToast(errorMessage(e, t, "common.errors.read"));
       }
     };
   }, [tank, t]);
@@ -60,8 +60,9 @@ export function TankSettingsSection({ tank, label }: Props) {
     const sub = tank.subscribe((snapshot) => {
       setVolumeLiters(String(snapshot.capacityLiters));
       setHeightMm(String(snapshot.heightMm));
-      if (snapshot.lastMessage) {
-        showToast(snapshot.lastMessage);
+      if (snapshot.lastFeedback) {
+        const { key, params } = snapshot.lastFeedback;
+        showToast(t(key, params));
       }
     });
 
@@ -70,7 +71,7 @@ export function TankSettingsSection({ tank, label }: Props) {
     return () => {
       sub();
     };
-  }, [tank, requestAllCfg]);
+  }, [tank, requestAllCfg, t]);
 
   return (
     <View style={styles.adminSection}>
@@ -122,9 +123,7 @@ export function TankSettingsSection({ tank, label }: Props) {
             try {
               await tank.setConfig(volumeLiters.trim(), heightMm.trim());
             } catch (e) {
-              showToast(
-                e instanceof Error ? e.message : t("common.errors.send"),
-              );
+              showToast(errorMessage(e, t, "common.errors.send"));
             }
           }}
           style={styles.primaryButton}

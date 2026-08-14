@@ -4,9 +4,9 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const ROOT = join(import.meta.dirname, "..", "..");
-const SCANNED = ["components", "screens"];
+const SCANNED = ["app", "components", "design-system", "screens"];
 
-/** Props that carry copy. `name`, `value` and `subtitle` also carry data, so they are read too. */
+/** Props that carry copy. `name` and `subtitle` also carry data, so they are read too. */
 const COPY_PROPS = new Set([
   "title",
   "subtitle",
@@ -15,6 +15,23 @@ const COPY_PROPS = new Set([
   "placeholder",
   "accessibilityLabel",
   "accessibilityHint",
+  "name",
+  "children",
+]);
+
+/** On an icon or a route, `name` is an identifier, not copy. */
+const IDENTIFIER_NAME_TAGS = new Set([
+  "IconSymbol",
+  "MaterialIcons",
+  "Stack.Screen",
+  "Tabs.Screen",
+]);
+
+/** Operators whose operands both reach the screen. A comparison operand is a value, not copy. */
+const BOTH_SIDES_RENDER = new Set<ts.SyntaxKind>([
+  ts.SyntaxKind.BarBarToken,
+  ts.SyntaxKind.QuestionQuestionToken,
+  ts.SyntaxKind.PlusToken,
 ]);
 
 /**
@@ -44,6 +61,13 @@ function isCopy(text: string): boolean {
   return /\p{L}{2,}/u.test(trimmed);
 }
 
+function binaryOperands(node: ts.BinaryExpression): ts.Node[] {
+  const operator = node.operatorToken.kind;
+  if (operator === ts.SyntaxKind.AmpersandAmpersandToken) return [node.right];
+  return BOTH_SIDES_RENDER.has(operator) ? [node.left, node.right] : [];
+}
+
+/** Reaches through the shapes that render a string: `{a ? "x" : "y"}`, `{a || "x"}`, `{"x" + b}`. */
 function literalsOf(node: ts.Node): string[] {
   if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
     return [node.text];
@@ -54,6 +78,16 @@ function literalsOf(node: ts.Node): string[] {
       ...node.templateSpans.map((span) => span.literal.text),
     ];
   }
+  if (ts.isJsxExpression(node)) {
+    return node.expression ? literalsOf(node.expression) : [];
+  }
+  if (ts.isParenthesizedExpression(node)) return literalsOf(node.expression);
+  if (ts.isConditionalExpression(node)) {
+    return [...literalsOf(node.whenTrue), ...literalsOf(node.whenFalse)];
+  }
+  if (ts.isBinaryExpression(node)) {
+    return binaryOperands(node).flatMap(literalsOf);
+  }
   return [];
 }
 
@@ -61,6 +95,20 @@ function literalsOf(node: ts.Node): string[] {
 function isRenderedChild(node: ts.Node): node is ts.JsxExpression {
   if (!ts.isJsxExpression(node)) return false;
   return ts.isJsxElement(node.parent) || ts.isJsxFragment(node.parent);
+}
+
+function tagOf(attribute: ts.JsxAttribute): string {
+  const element = attribute.parent.parent;
+  return ts.isJsxOpeningElement(element) || ts.isJsxSelfClosingElement(element)
+    ? element.tagName.getText()
+    : "";
+}
+
+function isCopyProp(node: ts.JsxAttribute): boolean {
+  if (!ts.isIdentifier(node.name) || !COPY_PROPS.has(node.name.text)) {
+    return false;
+  }
+  return node.name.text !== "name" || !IDENTIFIER_NAME_TAGS.has(tagOf(node));
 }
 
 function copyIn(file: string): string[] {
@@ -77,15 +125,10 @@ function copyIn(file: string): string[] {
     if (ts.isJsxText(node) && isCopy(node.text)) {
       hits.push(node.text.trim());
     }
-    if (isRenderedChild(node) && node.expression) {
-      hits.push(...literalsOf(node.expression).filter(isCopy));
+    if (isRenderedChild(node)) {
+      hits.push(...literalsOf(node).filter(isCopy));
     }
-    if (
-      ts.isJsxAttribute(node) &&
-      ts.isIdentifier(node.name) &&
-      COPY_PROPS.has(node.name.text) &&
-      node.initializer
-    ) {
+    if (ts.isJsxAttribute(node) && node.initializer && isCopyProp(node)) {
       hits.push(...literalsOf(node.initializer).filter(isCopy));
     }
     ts.forEachChild(node, visit);

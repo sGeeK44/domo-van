@@ -8,7 +8,7 @@ function zone(isRunning: boolean, setpointCelsius: number): HeaterZoneSnapshot {
     setpointCelsius,
     isRunning,
     pidConfig: null,
-    lastMessage: null,
+    lastFeedback: null,
   };
 }
 

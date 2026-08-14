@@ -5,26 +5,18 @@ import { describe, expect, it } from "vitest";
 
 const ROOT = join(import.meta.dirname, "..", "..");
 
-/**
- * `domain/` carries translation keys, never copy. What is left is the
- * `lastMessage` feedback channel, which a settings section pushes straight to a
- * toast; #7 rewrites those screens onto the toast contract and moves it to keys.
- * The ceiling only ever goes down.
- */
-const ALLOWED: Record<string, string> = {
-  "domain/heater/HeaterZone.ts":
-    "`lastMessage` feedback copy, surfaced by HeaterPidSection — retired by #7",
-  "domain/heater/EnvironmentData.ts":
-    "`lastMessage` feedback copy on the environment snapshot — retired by #7",
-  "domain/water/DrainValve.ts":
-    "`lastMessage` feedback copy, surfaced by ValveSettingsSection — retired by #7",
-};
+/** `domain/` carries translation keys, never copy. Nothing is pinned: the list stays empty. */
+const ALLOWED: Record<string, string> = {};
 
-const CEILING = 9;
+const CEILING = 0;
 
-/** French copy, told apart from the English text a `throw` or a log carries. */
-function isFrenchCopy(text: string): boolean {
-  return /[àâçèéêëîïôùûÀÂÇÈÉÊËÎÏÔÙÛ]/.test(text) || /\bErreur\b/.test(text);
+/** Words with no English homograph, to catch French a diacritic misses. */
+const FRENCH_WORDS =
+  /\b(erreur|le|la|les|un|une|des|du|de|dans|avec|pour|sur|est|sont|pas|aucun|aucune|veuillez|patientez|cours|votre|vos|notre|nos|cette|ces)\b/i;
+
+/** Spelling, not meaning: a diacritic or a French word. Prose with neither slips through. */
+function looksFrench(text: string): boolean {
+  return /[àâçèéêëîïôùûÀÂÇÈÉÊËÎÏÔÙÛ]/.test(text) || FRENCH_WORDS.test(text);
 }
 
 function sourceFiles(): string[] {
@@ -54,7 +46,7 @@ function frenchCopyIn(file: string): string[] {
       ts.isTemplateHead(node) ||
       ts.isTemplateMiddle(node) ||
       ts.isTemplateTail(node);
-    if (literal && isFrenchCopy(node.text)) hits.push(node.text);
+    if (literal && looksFrench(node.text)) hits.push(node.text);
     ts.forEachChild(node, visit);
   };
   visit(source);
@@ -93,5 +85,10 @@ describe("the domain carries keys, not copy", () => {
     );
 
     expect(total).toBeLessThanOrEqual(CEILING);
+  });
+
+  it("reads spelling: it catches an unaccented sentence, not one without a French word", () => {
+    expect(looksFrench("Vidange en cours, patientez un instant")).toBe(true);
+    expect(looksFrench("Purge finie")).toBe(false);
   });
 });

@@ -75,11 +75,7 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
 
   async pair(key: ModuleKey, device: DiscoveredBluetoothDevice): Promise<void> {
     const controller = this.controllerOf(key);
-    await controller.claim({
-      id: device.id,
-      // a nameless radio leaves the module key as its identity; the row above already names the module
-      name: device.name || controller.module.key,
-    });
+    await controller.claim({ id: device.id, name: device.name });
   }
 
   async unpair(key: ModuleKey): Promise<void> {

@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { errorMessage } from "@/components/error-message";
 import { FreeSlotRow, ModuleSlotRow, UnpairSheet } from "@/components/modules";
 import {
   useModuleRegistry,
@@ -17,7 +18,6 @@ import {
 } from "@/design-system";
 import type { ModuleKey } from "@/domain/modules/ModuleDescriptor";
 import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
-import { message } from "@/screens/error-message";
 
 const SETTINGS_ROUTE = {
   water: "/water-settings",
@@ -59,7 +59,7 @@ export default function ModulesScreen() {
       setLeaving(null);
     } catch (cause: unknown) {
       // the slot is already free in memory but storage still holds the pairing, so it would come back at the next launch
-      setError(message(cause, t("modules.list.unpairFailed")));
+      setError(errorMessage(cause, t, "modules.list.unpairFailed"));
     } finally {
       setIsUnpairing(false);
     }

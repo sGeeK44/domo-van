@@ -11,7 +11,7 @@ const MEASURED: EnvironmentSnapshot = {
   exteriorTemperatureCelsius: 7.8,
   humidity: 48,
   pressureHPa: 1008.6,
-  lastMessage: null,
+  lastFeedback: null,
 };
 
 const silentChannel: Channel = {

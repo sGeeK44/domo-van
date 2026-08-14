@@ -20,14 +20,14 @@ const DEFAULT_TANK_STATE: TankLevelSnapshot = {
   heightMm: 0,
   percentage: 0,
   lastDistanceMm: null,
-  lastMessage: null,
+  lastFeedback: null,
 };
 
 const DEFAULT_VALVE_STATE: ValveState = {
   position: "unknown",
   autoCloseSeconds: 30,
   remainingSeconds: 0,
-  lastMessage: null,
+  lastFeedback: null,
 };
 
 export default function WaterScreen() {

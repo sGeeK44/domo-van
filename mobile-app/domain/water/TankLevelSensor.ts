@@ -5,6 +5,7 @@ import {
   Unsubscribe,
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
+import { type Feedback, SAVED } from "@/domain/Feedback";
 import { Channel } from "@/domain/ports/Channel";
 import {
   parseDistanceMessage,
@@ -21,7 +22,7 @@ export type TankLevelSnapshot = {
   heightMm: number;
   percentage: number;
   lastDistanceMm: number | null;
-  lastMessage: string | null;
+  lastFeedback: Feedback | null;
 };
 
 export function clamp01(n: number): number {
@@ -69,7 +70,7 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
       heightMm: 0,
       percentage: 0,
       lastDistanceMm: null,
-      lastMessage: null,
+      lastFeedback: null,
     });
 
     // Subscribe first, then request config (so the response is not missed).
@@ -122,7 +123,7 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
       this.state.update((prev) => {
         return {
           ...prev,
-          lastMessage: msg,
+          lastFeedback: SAVED,
         };
       });
       return;

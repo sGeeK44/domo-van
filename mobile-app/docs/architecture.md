@@ -123,6 +123,16 @@ source of truth — the mockups are French — and `i18n/resources/en.ts` is a
   answers `{ key, params }` and `ModuleSlotRow` answers the same shape; the
   component calls `t()`. That keeps the helpers framework-free and their tests
   readable.
+- **A module reports an outcome, not a sentence.** `domain/Feedback.ts` is that
+  same shape for the `lastFeedback` field of `HeaterZone`, `EnvironmentData`,
+  `DrainValve` and `TankLevelSensor`: `{ key: FeedbackKey; params? }`, where
+  `FeedbackKey` is a union of literals every dictionary must define. A settings
+  section shows `t(key, params)`, so switching the locale switches the toast.
+- **A failure of ours names a key too.** `domain/ReportedError` carries a
+  `messageKey`; `NotConnectedError` and `TransportDisposedError` extend it.
+  `components/error-message.ts` shows that key, and falls back to the raw
+  `Error.message` — a BLE-library message reaches the UI untranslated, since
+  mapping a third-party string is guesswork.
 - **The design system never translates.** `design-system-has-no-copy` forbids
   `design-system/` → `i18n/`: the toast takes a string the caller already ran
   through `t()`. `i18n-is-self-contained` forbids the layer from reaching
@@ -133,21 +143,26 @@ source of truth — the mockups are French — and `i18n/resources/en.ts` is a
   this layer's. `composition/AppProviders.tsx` mounts `I18nextProvider`
   outermost over one module-scope instance.
 - **The guardrail.** `i18n/__tests__/no-literal-copy.test.ts` walks the TypeScript
-  AST of `components/` and `screens/` and fails on a copy-shaped literal in a JSX
-  text node, a rendered `{"…"}` child, or a `title` / `subtitle` / `label` /
-  `buttonLabel` / `placeholder` / `accessibility*` prop. Two lists bound it:
-  `NON_COPY` is permanent (units and notation — `hPa`, `mV`, `Ah`, `Kp`, `Ki`,
-  `Kd`), while `ALLOWED` is per-file and each entry must name the issue that
-  retires it. `ALLOWED` is **empty**: nothing under `components/` or `screens/`
-  still holds copy. Units, symbols and numeric placeholder examples are not copy
-  and stay literals; the guardrail does not police plain helper returns, so a new
-  helper building a sentence has to be caught in review.
-- **One debt, named.** `i18n/__tests__/no-domain-copy.test.ts` holds the domain to
-  the same rule and carries the one exception: the `lastMessage` feedback copy on
-  `HeaterZone`, `DrainValve` and `EnvironmentData` — 9 French literals a settings
-  section pushes straight to a toast. #7 rewrites those screens onto the toast
-  contract and moves the field to keys. The test pins a ceiling, so the debt can
-  only shrink, and any *new* French literal anywhere else in `domain/` fails CI.
+  AST of `app/`, `components/`, `design-system/` and `screens/`, and fails on a
+  copy-shaped literal in a JSX text node, a rendered child — including through
+  `{a ? "x" : "y"}`, `{a || "x"}` and `{"x" + b}` — or a `title` / `subtitle` /
+  `label` / `buttonLabel` / `placeholder` / `accessibility*` / `name` /
+  `children` prop. `name` is skipped on an icon or a route tag, where it is an
+  identifier. Two lists bound it: `NON_COPY` is permanent (units and notation —
+  `hPa`, `mV`, `Ah`, `Kp`, `Ki`, `Kd`), while `ALLOWED` is per-file and each
+  entry must name the issue that retires it. `ALLOWED` is **empty**: no scanned
+  file still holds copy. What it does not see: a literal reached through a
+  variable, a helper return or a call argument, and a prop outside that list —
+  those still have to be caught in review.
+- **The domain guardrail reads spelling, not meaning.**
+  `i18n/__tests__/no-domain-copy.test.ts` fails on a string literal in `domain/`
+  that carries a French diacritic or a French word from its list (`erreur`,
+  `le`, `des`, `pour`, `cours`, …). Its `ALLOWED` list is **empty** and its ceiling is
+  **0**, so any such literal fails CI. It is a spelling detector, not a copy
+  detector: French with neither marker — *"Purge finie"* — passes, and so does
+  English prose, which `domain/` legitimately carries in the messages of the
+  errors it throws. A sentence the UI displays has to come from a `Feedback` or a
+  `ReportedError` key; nothing but review enforces that.
 
 ## The tab bar
 

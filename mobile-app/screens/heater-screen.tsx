@@ -19,7 +19,7 @@ const DEFAULT_ZONE_STATE: HeaterZoneSnapshot = {
   setpointCelsius: 20,
   isRunning: false,
   pidConfig: null,
-  lastMessage: null,
+  lastFeedback: null,
 };
 
 const ZONE_NAME_KEYS = [
