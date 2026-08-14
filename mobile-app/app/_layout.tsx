@@ -3,15 +3,14 @@ import {
   DefaultTheme,
   ThemeProvider as NavigationThemeProvider,
 } from "@react-navigation/native";
-import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
 import { AppProviders } from "@/composition/AppProviders";
+import { useAppReady } from "@/composition/useAppReady";
 import {
   BundledFonts,
   ThemeProvider,
@@ -23,19 +22,9 @@ export const unstable_settings = {
   anchor: "(tabs)",
 };
 
-SplashScreen.preventAutoHideAsync();
-
-function useAppReady() {
-  const [fontsLoaded] = useFonts(BundledFonts);
-
-  useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
-
-  return fontsLoaded;
-}
+SplashScreen.preventAutoHideAsync().catch((error) => {
+  console.warn("Failed to hold the splash screen:", error);
+});
 
 function AppContent() {
   const { colorScheme } = useTheme();
@@ -71,7 +60,7 @@ function AppContent() {
 }
 
 export default function RootLayout() {
-  const ready = useAppReady();
+  const ready = useAppReady(BundledFonts);
 
   if (!ready) {
     return null;
