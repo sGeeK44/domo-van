@@ -38,6 +38,9 @@ export type GaugeSetpointRowProps = {
   caption: string;
   /** The zone is switched off: dimmed fill, no setpoint marker, muted ink. */
   inert?: boolean;
+  /** The target sits on a clamp bound: the step it offers does not exist. */
+  decreaseDisabled?: boolean;
+  increaseDisabled?: boolean;
   /** A screen holding four zones tells them apart with this. */
   testID?: string;
   onDecrease(): void;
@@ -54,6 +57,8 @@ export function GaugeSetpointRow({
   value,
   caption,
   inert = false,
+  decreaseDisabled = false,
+  increaseDisabled = false,
   testID,
   onDecrease,
   onIncrease,
@@ -86,13 +91,15 @@ export function GaugeSetpointRow({
           <Stepper
             testID="setpoint-decrease"
             glyph="−"
-            inert={inert}
+            unavailable={inert || decreaseDisabled}
+            disabled={decreaseDisabled}
             onPress={onDecrease}
           />
           <Stepper
             testID="setpoint-increase"
             glyph="+"
-            inert={inert}
+            unavailable={inert || increaseDisabled}
+            disabled={increaseDisabled}
             onPress={onIncrease}
           />
           <Pressable
@@ -115,20 +122,34 @@ export function GaugeSetpointRow({
 type StepperProps = {
   testID: string;
   glyph: string;
-  inert: boolean;
+  /** Dimmed: the zone is off, or the step is out of range. */
+  unavailable: boolean;
+  disabled: boolean;
   onPress: () => void;
 };
 
-function Stepper({ testID, glyph, inert, onPress }: StepperProps) {
+function Stepper({
+  testID,
+  glyph,
+  unavailable,
+  disabled,
+  onPress,
+}: StepperProps) {
   const styles = useStyles(makeStyles);
 
   return (
     <Pressable
       testID={testID}
-      style={[styles.control, inert ? styles.stepperOff : styles.stepperOn]}
+      style={[
+        styles.control,
+        unavailable ? styles.stepperOff : styles.stepperOn,
+      ]}
+      disabled={disabled}
       onPress={onPress}
     >
-      <Text style={[styles.glyph, inert && styles.glyphOff]}>{glyph}</Text>
+      <Text style={[styles.glyph, unavailable && styles.glyphOff]}>
+        {glyph}
+      </Text>
     </Pressable>
   );
 }

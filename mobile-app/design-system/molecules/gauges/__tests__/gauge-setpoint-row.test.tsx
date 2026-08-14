@@ -165,6 +165,25 @@ describe("a setpoint row", () => {
     expect(inkOf(POWER_GLYPH)).toBe(rgb(colors.textMuted));
   });
 
+  it("offers no step past a clamp bound, and shows the one it still offers", () => {
+    const onDecrease = vi.fn();
+    const onIncrease = vi.fn();
+    render(row({ increaseDisabled: true, onDecrease, onIncrease }));
+
+    fireEvent.click(screen.getByTestId("setpoint-increase"));
+    fireEvent.click(screen.getByTestId("setpoint-decrease"));
+
+    expect(onIncrease).not.toHaveBeenCalled();
+    expect(onDecrease).toHaveBeenCalledTimes(1);
+    expect(paintOf("setpoint-increase").backgroundColor).toBe(
+      rgb(Colors.dark.off),
+    );
+    expect(inkOf(INCREASE_GLYPH)).toBe(rgb(Colors.dark.dash));
+    expect(paintOf("setpoint-decrease").backgroundColor).toBe(
+      Colors.dark.onFillSurface,
+    );
+  });
+
   it("clamps a reading past the top before it dims it", () => {
     render(row({ inert: true, ratio: 1.4 }));
 

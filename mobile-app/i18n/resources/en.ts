@@ -194,9 +194,18 @@ export const en: typeof fr = {
     zone: {
       current: "current",
       setpoint: "target",
-      target: "Target: {{temperature}}°C",
+      target: "target {{temperature}}",
       running: "Running",
-      stopped: "Stopped",
+      stopped: "off",
+    },
+    presets: {
+      nightMode: "Night mode",
+      stopAll: "Stop all",
+    },
+    toast: {
+      nightOn: "Night mode — targets lowered",
+      nightOff: "Night mode off",
+      allStopped: "All zones stopped",
     },
     settings: {
       title: "Heating",

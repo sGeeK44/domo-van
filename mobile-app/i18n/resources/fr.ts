@@ -193,9 +193,18 @@ export const fr = {
     zone: {
       current: "actuel",
       setpoint: "consigne",
-      target: "Cible: {{temperature}}°C",
+      target: "cible {{temperature}}",
       running: "Actif",
-      stopped: "Arrêté",
+      stopped: "à l'arrêt",
+    },
+    presets: {
+      nightMode: "Mode nuit",
+      stopAll: "Tout arrêter",
+    },
+    toast: {
+      nightOn: "Mode nuit — cibles abaissées",
+      nightOff: "Mode nuit désactivé",
+      allStopped: "Toutes les zones arrêtées",
     },
     settings: {
       title: "Chauffage",
