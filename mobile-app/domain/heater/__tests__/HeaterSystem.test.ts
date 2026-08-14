@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { Observable } from "@/core/observable";
+import {
+  MAX_SETPOINT_CELSIUS,
+  MIN_SETPOINT_CELSIUS,
+  SETPOINT_STEP_CELSIUS,
+} from "@/domain/heater/HeaterPresets";
 import { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import { FakeModuleTransport } from "@/infrastructure/fake/FakeModuleTransport";
 import { heaterScenario } from "@/infrastructure/fake/scenarios/heaterScenario";
@@ -9,6 +14,22 @@ const ZONE_CHANNELS = ["0002", "0003", "0004", "0005"];
 const ZONE_2 = ZONE_CHANNELS[2];
 const ZONE_3 = ZONE_CHANNELS[3];
 const ENVIRONMENT = "0006";
+
+/** The scenario's own zones: Salon runs at 21.0, Chambre is off at 19.5. */
+const SALON = 0;
+const CHAMBRE = 1;
+
+function heaterOnFake(): HeaterSystem {
+  return new HeaterSystem(new FakeModuleTransport(heaterScenario()));
+}
+
+function runningZones(heater: HeaterSystem): boolean[] {
+  return heater.zones.map((zone) => zone.getValue().isRunning);
+}
+
+function targets(heater: HeaterSystem): number[] {
+  return heater.zones.map((zone) => zone.getValue().setpointCelsius);
+}
 
 const STATE_CHANGING_FRAMES: Record<string, string> = {
   [ADMIN]: "OK",
@@ -142,6 +163,93 @@ describe("HeaterSystem", () => {
     }
     expect(transport.channel(ENVIRONMENT).commands).toEqual(["ENV?", "ENV?"]);
     expect(transport.channel(ADMIN).commands).toEqual([]);
+  });
+
+  it("switches a stopped zone back on when its target is adjusted", async () => {
+    const heater = heaterOnFake();
+    const before = heater.getZone(CHAMBRE).getValue();
+
+    await heater.adjustZone(CHAMBRE, SETPOINT_STEP_CELSIUS);
+    await heater.getZone(CHAMBRE).getStatus();
+
+    expect(before.isRunning).toBe(false);
+    expect(heater.getZone(CHAMBRE).getValue()).toMatchObject({
+      isRunning: true,
+      setpointCelsius: before.setpointCelsius + SETPOINT_STEP_CELSIUS,
+    });
+  });
+
+  it("leaves a running zone running when its target is adjusted", async () => {
+    const heater = heaterOnFake();
+    const before = heater.getZone(SALON).getValue();
+
+    await heater.adjustZone(SALON, -SETPOINT_STEP_CELSIUS);
+    await heater.getZone(SALON).getStatus();
+
+    expect(before.isRunning).toBe(true);
+    expect(heater.getZone(SALON).getValue()).toMatchObject({
+      isRunning: true,
+      setpointCelsius: before.setpointCelsius - SETPOINT_STEP_CELSIUS,
+    });
+  });
+
+  it("refuses to take a target outside the range the UI allows", async () => {
+    const heater = heaterOnFake();
+
+    await heater.adjustZone(SALON, 100);
+    await heater.adjustZone(CHAMBRE, -100);
+    await heater.zones[SALON].getStatus();
+    await heater.zones[CHAMBRE].getStatus();
+
+    expect(targets(heater)[SALON]).toBe(MAX_SETPOINT_CELSIUS);
+    expect(targets(heater)[CHAMBRE]).toBe(MIN_SETPOINT_CELSIUS);
+  });
+
+  it("lowers the living zones and stops the others on night mode", async () => {
+    const heater = heaterOnFake();
+
+    await heater.applyNightMode();
+    for (const zone of heater.zones) {
+      await zone.getStatus();
+    }
+
+    expect(targets(heater).slice(0, 2)).toEqual([18, 17]);
+    expect(runningZones(heater)).toEqual([true, true, false, false]);
+    expect(heater.nightMode.getValue()).toBe(true);
+  });
+
+  it("leaves night mode on a manual adjustment, without rewriting a target", async () => {
+    const heater = heaterOnFake();
+    await heater.applyNightMode();
+    const nightTargets = targets(heater);
+
+    await heater.adjustZone(SALON, SETPOINT_STEP_CELSIUS);
+
+    expect(heater.nightMode.getValue()).toBe(false);
+    expect(targets(heater).slice(1)).toEqual(nightTargets.slice(1));
+  });
+
+  it("leaves night mode when a zone is powered by hand", async () => {
+    const heater = heaterOnFake();
+    await heater.applyNightMode();
+
+    await heater.toggleZone(SALON);
+
+    expect(heater.getZone(SALON).getValue().isRunning).toBe(false);
+    expect(heater.nightMode.getValue()).toBe(false);
+  });
+
+  it("stops every zone and leaves night mode in one action", async () => {
+    const heater = heaterOnFake();
+    await heater.applyNightMode();
+
+    await heater.stopAll();
+    for (const zone of heater.zones) {
+      await zone.getStatus();
+    }
+
+    expect(runningZones(heater)).toEqual([false, false, false, false]);
+    expect(heater.nightMode.getValue()).toBe(false);
   });
 
   it("ignores every frame the module sends once disposed", () => {

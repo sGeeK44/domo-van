@@ -23,14 +23,19 @@ export type HeaterZoneSnapshot = {
   lastFeedback: Feedback | null; // Last outcome to show
 };
 
+/** What a zone reads as before the module has answered anything. */
+export const DEFAULT_ZONE_SNAPSHOT: HeaterZoneSnapshot = {
+  temperatureCelsius: 0,
+  setpointCelsius: 20,
+  isRunning: false,
+  pidConfig: null,
+  lastFeedback: null,
+};
+
 export class HeaterZone implements Observable<HeaterZoneSnapshot> {
-  private readonly state = createObservable<HeaterZoneSnapshot>({
-    temperatureCelsius: 0,
-    setpointCelsius: 20,
-    isRunning: false,
-    pidConfig: null,
-    lastFeedback: null,
-  });
+  private readonly state = createObservable<HeaterZoneSnapshot>(
+    DEFAULT_ZONE_SNAPSHOT,
+  );
   private channelUnsub: Unsubscribe | null = null;
 
   constructor(

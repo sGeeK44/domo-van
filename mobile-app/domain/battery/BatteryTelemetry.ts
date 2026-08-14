@@ -79,6 +79,19 @@ export const DEFAULT_BATTERY_SNAPSHOT: BatterySnapshot = {
   lastUpdate: null,
 };
 
+/** The cell the detail screen marks. A tie goes to the lowest index. */
+export function weakestCellIndex(
+  cellVoltages: readonly number[],
+): number | null {
+  if (cellVoltages.length === 0) return null;
+
+  let weakest = 0;
+  for (let index = 1; index < cellVoltages.length; index++) {
+    if (cellVoltages[index] < cellVoltages[weakest]) weakest = index;
+  }
+  return weakest;
+}
+
 /**
  * Parse error flags from JK BMS into alarm types
  */

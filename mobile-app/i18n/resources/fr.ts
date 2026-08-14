@@ -99,6 +99,12 @@ export const fr = {
     title: "Bord",
     addModule: "Ajouter un module",
     emptySlot: { hint: "Aucun module" },
+    cards: {
+      battery: "BATTERIE",
+      cleanWater: "EAU PROPRE",
+      greyWater: "EAU GRISE",
+      heater: "CHAUFFAGE",
+    },
     water: { label: "Eau propre" },
     heater: {
       running: "Chauffe",

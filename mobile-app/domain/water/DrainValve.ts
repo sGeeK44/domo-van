@@ -14,20 +14,28 @@ import {
 
 export type ValvePosition = "open" | "closed" | "unknown";
 
+/** Who closed the valve: the user, or the module's own auto-close. */
+export type ClosureCause = "manual" | "auto";
+
 export type ValveState = {
   position: ValvePosition;
   autoCloseSeconds: number;
   remainingSeconds: number;
+  lastClosure: ClosureCause | null;
   lastFeedback: Feedback | null;
 };
 
+/** What the valve reads as before the module has answered anything. */
+export const DEFAULT_VALVE_STATE: ValveState = {
+  position: "unknown",
+  autoCloseSeconds: 30,
+  remainingSeconds: 0,
+  lastClosure: null,
+  lastFeedback: null,
+};
+
 export class DrainValve implements Observable<ValveState> {
-  private readonly state = createObservable<ValveState>({
-    position: "unknown",
-    autoCloseSeconds: 30,
-    remainingSeconds: 0,
-    lastFeedback: null,
-  });
+  private readonly state = createObservable<ValveState>(DEFAULT_VALVE_STATE);
   private channelUnsub: Unsubscribe | null = null;
 
   constructor(private readonly channel: Channel) {
@@ -68,6 +76,7 @@ export class DrainValve implements Observable<ValveState> {
       ...prev,
       position: "open",
       remainingSeconds: prev.autoCloseSeconds,
+      lastClosure: null,
     }));
     try {
       await this.channel.send("OPEN");
@@ -85,6 +94,7 @@ export class DrainValve implements Observable<ValveState> {
       ...prev,
       position: "closed",
       remainingSeconds: 0,
+      lastClosure: "manual",
     }));
     try {
       await this.channel.send("CLOSE");
@@ -114,6 +124,7 @@ export class DrainValve implements Observable<ValveState> {
         ...prev,
         position: "open",
         remainingSeconds: countdown,
+        lastClosure: null,
       }));
       return;
     }
@@ -124,6 +135,7 @@ export class DrainValve implements Observable<ValveState> {
         ...prev,
         position: "closed",
         remainingSeconds: 0,
+        lastClosure: msg === "AUTO_CLOSED" ? "auto" : "manual",
       }));
       return;
     }

@@ -1,5 +1,6 @@
 import { JK_BMS_SERVICE_UUID } from "@/domain/battery/JkBmsUuids";
 import { buildServiceUuid } from "@/domain/modules/BleUuid";
+import type { DashboardCardDescriptor } from "@/domain/modules/DashboardCardDescriptor";
 
 export type ModuleKey = "water" | "heater" | "battery";
 
@@ -18,6 +19,8 @@ export type ModuleDescriptor = {
   tabTitleKey: `modules.${ModuleKey}.tab`;
   /** Icon name, a plain string so the catalogue names no icon set. */
   tabIcon: string;
+  /** The dashboard cards this module feeds: one tab, one or more cards. */
+  cards: readonly DashboardCardDescriptor[];
 };
 
 export const WATER_MODULE: ModuleDescriptor = {
@@ -27,6 +30,18 @@ export const WATER_MODULE: ModuleDescriptor = {
   scanServiceUuid: buildServiceUuid("0001"),
   tabTitleKey: "modules.water.tab",
   tabIcon: "water-drop",
+  cards: [
+    {
+      key: "cleanWater",
+      labelKey: "dashboard.cards.cleanWater",
+      icon: "water-drop",
+    },
+    {
+      key: "greyWater",
+      labelKey: "dashboard.cards.greyWater",
+      icon: "delete-outline",
+    },
+  ],
 };
 
 export const HEATER_MODULE: ModuleDescriptor = {
@@ -36,6 +51,13 @@ export const HEATER_MODULE: ModuleDescriptor = {
   scanServiceUuid: buildServiceUuid("0002"),
   tabTitleKey: "modules.heater.tab",
   tabIcon: "local-fire-department",
+  cards: [
+    {
+      key: "heater",
+      labelKey: "dashboard.cards.heater",
+      icon: "local-fire-department",
+    },
+  ],
 };
 
 export const BATTERY_MODULE: ModuleDescriptor = {
@@ -45,6 +67,13 @@ export const BATTERY_MODULE: ModuleDescriptor = {
   scanServiceUuid: JK_BMS_SERVICE_UUID,
   tabTitleKey: "modules.battery.tab",
   tabIcon: "battery-full",
+  cards: [
+    {
+      key: "battery",
+      labelKey: "dashboard.cards.battery",
+      icon: "battery-full",
+    },
+  ],
 };
 
 /** Catalogue order is display order: it drives the tab bar and the dashboard. */

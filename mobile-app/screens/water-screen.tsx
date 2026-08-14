@@ -12,23 +12,8 @@ import {
 import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import { PageHeader, type Palette, useThemeColor } from "@/design-system";
-import { ValveState } from "@/domain/water/DrainValve";
-import { TankLevelSnapshot } from "@/domain/water/TankLevelSensor";
-
-const DEFAULT_TANK_STATE: TankLevelSnapshot = {
-  capacityLiters: 0,
-  heightMm: 0,
-  percentage: 0,
-  lastDistanceMm: null,
-  lastFeedback: null,
-};
-
-const DEFAULT_VALVE_STATE: ValveState = {
-  position: "unknown",
-  autoCloseSeconds: 30,
-  remainingSeconds: 0,
-  lastFeedback: null,
-};
+import { DEFAULT_VALVE_STATE } from "@/domain/water/DrainValve";
+import { DEFAULT_TANK_SNAPSHOT } from "@/domain/water/TankLevelSensor";
 
 export default function WaterScreen() {
   const { t } = useTranslation();
@@ -43,9 +28,12 @@ export default function WaterScreen() {
 
   const clean = useObservable(
     waterSystem?.cleanTank ?? null,
-    DEFAULT_TANK_STATE,
+    DEFAULT_TANK_SNAPSHOT,
   );
-  const grey = useObservable(waterSystem?.greyTank ?? null, DEFAULT_TANK_STATE);
+  const grey = useObservable(
+    waterSystem?.greyTank ?? null,
+    DEFAULT_TANK_SNAPSHOT,
+  );
   const valve = useObservable(
     waterSystem?.greyDrainValve ?? null,
     DEFAULT_VALVE_STATE,
