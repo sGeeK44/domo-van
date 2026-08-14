@@ -1,5 +1,6 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { type ReactNode, useEffect } from "react";
+import { I18nextProvider } from "react-i18next";
 import { expect } from "vitest";
 import {
   ContainerProvider,
@@ -20,6 +21,7 @@ import {
 import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
+import { createI18n } from "@/i18n/createI18n";
 import type { FakeBluetooth } from "@/infrastructure/fake/FakeBluetooth";
 
 export type ModulesHarness = {
@@ -71,14 +73,16 @@ export function renderModuleScreen(screen: ReactNode): ModulesHarness {
   };
 
   render(
-    <ThemeProvider>
-      <ContainerProvider>
-        <ModuleRegistryProvider>
-          <Probe harness={harness} />
-          {screen}
-        </ModuleRegistryProvider>
-      </ContainerProvider>
-    </ThemeProvider>,
+    <I18nextProvider i18n={createI18n("fr")}>
+      <ThemeProvider>
+        <ContainerProvider>
+          <ModuleRegistryProvider>
+            <Probe harness={harness} />
+            {screen}
+          </ModuleRegistryProvider>
+        </ContainerProvider>
+      </ThemeProvider>
+    </I18nextProvider>,
   );
 
   return harness;

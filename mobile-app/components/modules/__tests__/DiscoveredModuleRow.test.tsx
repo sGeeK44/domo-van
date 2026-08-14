@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
+import { I18nextProvider } from "react-i18next";
 import { afterEach, describe, expect, it } from "vitest";
 import { DiscoveredModuleRow } from "@/components/modules";
 import { ThemeProvider } from "@/design-system";
@@ -7,20 +8,25 @@ import { WATER_MODULE } from "@/domain/modules/ModuleDescriptor";
 import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
+import { createI18n } from "@/i18n/createI18n";
+import type { Language } from "@/i18n/language";
 
 function renderRow(
   device: DiscoveredBluetoothDevice,
   slots: readonly ModuleSlot[] = [],
+  language: Language = "fr",
 ) {
   render(
-    <ThemeProvider>
-      <DiscoveredModuleRow
-        device={device}
-        slots={slots}
-        isPairing={false}
-        onPair={() => {}}
-      />
-    </ThemeProvider>,
+    <I18nextProvider i18n={createI18n(language)}>
+      <ThemeProvider>
+        <DiscoveredModuleRow
+          device={device}
+          slots={slots}
+          isPairing={false}
+          onPair={() => {}}
+        />
+      </ThemeProvider>
+    </I18nextProvider>,
   );
 }
 
@@ -47,7 +53,7 @@ describe("a scan result", () => {
     renderRow(waterDevice("AA:BB:CC"));
 
     expect(screen.getByTestId("discovered-AA:BB:CC")).toBeTruthy();
-    expect(screen.getByText(WATER_MODULE.displayName)).toBeTruthy();
+    expect(screen.getByText("Module d'eau")).toBeTruthy();
   });
 
   // iOS can satisfy the scan filter and still report no service.
@@ -79,5 +85,16 @@ describe("a scan result", () => {
     renderRow(waterDevice("AA:BB:CC"), [waterSlot(null)]);
 
     expect(screen.getByTestId("pair-AA:BB:CC")).toBeTruthy();
+  });
+
+  it("reads in English once the device locale says so", () => {
+    renderRow(
+      waterDevice("AA:BB:CC"),
+      [waterSlot({ id: "AA:BB:CC", name: "Cuve" })],
+      "en",
+    );
+
+    expect(screen.getByText("Water module")).toBeTruthy();
+    expect(screen.getByText("Already paired")).toBeTruthy();
   });
 });

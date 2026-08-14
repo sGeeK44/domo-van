@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ModuleLinkNotice } from "@/components/modules";
@@ -23,6 +24,7 @@ import {
 import { BATTERY_MODULE } from "@/domain/modules/ModuleDescriptor";
 
 export default function BatterySettingsScreen() {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
@@ -36,7 +38,10 @@ export default function BatterySettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <SettingsHeader title="Batterie" onBackPress={() => router.back()} />
+      <SettingsHeader
+        title={t("battery.settings.title")}
+        onBackPress={() => router.back()}
+      />
 
       <ScrollView>
         {isOnline ? (
@@ -59,101 +64,112 @@ type BatteryInfoSectionProps = {
 };
 
 function BatteryInfoSection({ battery, colors }: BatteryInfoSectionProps) {
+  const { t } = useTranslation();
   const styles = useMemo(() => createInfoStyles(colors), [colors]);
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Informations Batterie</Text>
+      <Text style={styles.sectionTitle}>{t("battery.settings.section")}</Text>
 
       <View style={styles.row}>
-        <Text style={styles.label}>État de charge</Text>
+        <Text style={styles.label}>{t("battery.settings.charge")}</Text>
         <Text style={styles.value}>{battery.percentage}%</Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>Tension totale</Text>
+        <Text style={styles.label}>{t("battery.settings.voltage")}</Text>
         <Text style={styles.value}>{battery.voltage.toFixed(2)} V</Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>Courant</Text>
+        <Text style={styles.label}>{t("battery.settings.current")}</Text>
         <Text style={styles.value}>{battery.current.toFixed(2)} A</Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>Puissance</Text>
+        <Text style={styles.label}>{t("battery.settings.power")}</Text>
         <Text style={styles.value}>{battery.power.toFixed(0)} W</Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>Température MOS</Text>
+        <Text style={styles.label}>{t("battery.settings.mosTemperature")}</Text>
         <Text style={styles.value}>{battery.tempMos}°C</Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>Température cellule 1</Text>
+        <Text style={styles.label}>
+          {t("battery.settings.cell1Temperature")}
+        </Text>
         <Text style={styles.value}>{battery.tempCell1}°C</Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>Température cellule 2</Text>
+        <Text style={styles.label}>
+          {t("battery.settings.cell2Temperature")}
+        </Text>
         <Text style={styles.value}>{battery.tempCell2}°C</Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>Nombre de cellules</Text>
+        <Text style={styles.label}>{t("battery.settings.cellCount")}</Text>
         <Text style={styles.value}>{battery.cellCount}</Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>Tension min cellule</Text>
+        <Text style={styles.label}>{t("battery.settings.minCellVoltage")}</Text>
         <Text style={styles.value}>{battery.minCellVoltage.toFixed(3)} V</Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>Tension max cellule</Text>
+        <Text style={styles.label}>{t("battery.settings.maxCellVoltage")}</Text>
         <Text style={styles.value}>{battery.maxCellVoltage.toFixed(3)} V</Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>Delta cellules</Text>
+        <Text style={styles.label}>{t("battery.settings.cellDelta")}</Text>
         <Text style={styles.value}>
           {(battery.cellDelta * 1000).toFixed(0)} mV
         </Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>Cycles</Text>
+        <Text style={styles.label}>{t("battery.settings.cycles")}</Text>
         <Text style={styles.value}>{battery.cycleCount}</Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>Capacité</Text>
+        <Text style={styles.label}>{t("battery.settings.capacity")}</Text>
         <Text style={styles.value}>{battery.capacityAh.toFixed(1)} Ah</Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>En charge</Text>
-        <Text style={styles.value}>{battery.isCharging ? "Oui" : "Non"}</Text>
-      </View>
-
-      <View style={styles.row}>
-        <Text style={styles.label}>En décharge</Text>
+        <Text style={styles.label}>{t("battery.settings.charging")}</Text>
         <Text style={styles.value}>
-          {battery.isDischarging ? "Oui" : "Non"}
+          {t(battery.isCharging ? "common.state.yes" : "common.state.no")}
         </Text>
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>Équilibrage</Text>
+        <Text style={styles.label}>{t("battery.settings.discharging")}</Text>
         <Text style={styles.value}>
-          {battery.balancing ? "Actif" : "Inactif"}
+          {t(battery.isDischarging ? "common.state.yes" : "common.state.no")}
+        </Text>
+      </View>
+
+      <View style={styles.row}>
+        <Text style={styles.label}>{t("battery.settings.balancing")}</Text>
+        <Text style={styles.value}>
+          {t(
+            battery.balancing
+              ? "battery.settings.balancingOn"
+              : "battery.settings.balancingOff",
+          )}
         </Text>
       </View>
 
       {battery.hasAlarm && (
         <View style={styles.alarmRow}>
-          <Text style={styles.alarmLabel}>Alarmes</Text>
+          <Text style={styles.alarmLabel}>{t("battery.settings.alarms")}</Text>
           <Text style={styles.alarmValue}>{battery.alarms.join(", ")}</Text>
         </View>
       )}

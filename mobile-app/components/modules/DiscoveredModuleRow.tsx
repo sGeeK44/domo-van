@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
 import {
   BorderRadius,
@@ -18,6 +19,7 @@ import {
 import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
+import type { TranslationKey } from "@/i18n/keys";
 
 export type DiscoveredModuleRowProps = {
   device: DiscoveredBluetoothDevice;
@@ -63,37 +65,43 @@ function ResolvedRow({
   isPairing,
   onPair,
 }: ResolvedRowProps) {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
-  const taken = takenLabel(pairing, device.id);
+  const taken = takenKey(pairing, device.id);
 
   return (
     <View testID={`discovered-${device.id}`} style={styles.row}>
       <View style={styles.text}>
         <Text style={styles.title}>{device.name}</Text>
         <Text style={styles.subtitle}>{device.id}</Text>
-        <Text style={styles.subtitle}>{module.displayName}</Text>
+        <Text style={styles.subtitle}>{t(module.displayNameKey)}</Text>
       </View>
 
       {taken ? (
-        <Text style={styles.occupied}>{taken}</Text>
+        <Text style={styles.occupied}>{t(taken)}</Text>
       ) : (
         <Button
           testID={`pair-${device.id}`}
           loading={isPairing}
           onPress={() => onPair(module.key, device)}
         >
-          Appairer
+          {t("modules.add.pair")}
         </Button>
       )}
     </View>
   );
 }
 
-function takenLabel(pairing: DeviceInfo | null, deviceId: string): string {
-  if (!pairing) return "";
-  return pairing.id === deviceId ? "Déjà appairé" : "Emplacement occupé";
+function takenKey(
+  pairing: DeviceInfo | null,
+  deviceId: string,
+): TranslationKey | null {
+  if (!pairing) return null;
+  return pairing.id === deviceId
+    ? "modules.add.alreadyPaired"
+    : "modules.add.slotTaken";
 }
 
 const getStyles = (colors: Palette) =>

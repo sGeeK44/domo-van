@@ -1,26 +1,28 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { StyleSheet, ToastAndroid, View } from "react-native";
 import { FormField, Spacing } from "@/design-system";
 import type { AdminModule } from "@/domain/AdminModule";
+import type { TranslationKey } from "@/i18n/keys";
 
 const showToast = (message: string) => {
   ToastAndroid.show(message, ToastAndroid.SHORT);
 };
 
-function validateAdminName(name: string): string | null {
+function validateAdminName(name: string): TranslationKey | null {
   const trimmed = name.trim();
   if (trimmed.length < 1 || trimmed.length > 20) {
-    return "Le nom doit faire entre 1 et 20 caractères.";
+    return "modules.admin.nameLength";
   }
   if (!/^[A-Za-z0-9 _-]+$/.test(trimmed)) {
-    return "Caractères autorisés: A-Z, 0-9, espace, - et _.";
+    return "modules.admin.nameCharset";
   }
   return null;
 }
 
-function validatePin(pin: string): string | null {
+function validatePin(pin: string): TranslationKey | null {
   if (!/^\d{6}$/.test(pin)) {
-    return "Le PIN doit contenir exactement 6 chiffres.";
+    return "modules.admin.pinDigits";
   }
   return null;
 }
@@ -35,6 +37,7 @@ type Props = {
  * Works with any module that has an AdminModule instance.
  */
 export function AdminSection({ adminModule, deviceName }: Props) {
+  const { t } = useTranslation();
   const [adminName, setAdminName] = useState("");
   const [adminPin, setAdminPin] = useState("");
   const [sendingName, setSendingName] = useState(false);
@@ -47,29 +50,29 @@ export function AdminSection({ adminModule, deviceName }: Props) {
   useEffect(() => {
     const sub = adminModule.subscribe((msg) => {
       if (msg.success) {
-        showToast("OK. Le module va redémarrer. Reconnecte-toi.");
+        showToast(t("modules.admin.restarted"));
       } else if (msg.error) {
-        showToast(`Erreur: ${msg.error}`);
+        showToast(t("modules.admin.failed", { message: msg.error }));
       }
     });
 
     return () => {
       sub();
     };
-  }, [adminModule]);
+  }, [adminModule, t]);
 
   const handleSaveName = async () => {
     const err = validateAdminName(adminName);
     if (err) {
-      showToast(err);
+      showToast(t(err));
       return;
     }
     setSendingName(true);
-    showToast("Envoi du nouveau nom…");
+    showToast(t("modules.admin.sendingName"));
     try {
       await adminModule.setName(adminName.trim());
     } catch (e) {
-      showToast(e instanceof Error ? e.message : "Erreur lors de l'envoi.");
+      showToast(e instanceof Error ? e.message : t("common.errors.send"));
     } finally {
       setSendingName(false);
     }
@@ -78,15 +81,15 @@ export function AdminSection({ adminModule, deviceName }: Props) {
   const handleSavePin = async () => {
     const err = validatePin(adminPin);
     if (err) {
-      showToast(err);
+      showToast(t(err));
       return;
     }
     setSendingPin(true);
-    showToast("Envoi du nouveau PIN…");
+    showToast(t("modules.admin.sendingPin"));
     try {
       await adminModule.setPin(adminPin);
     } catch (e) {
-      showToast(e instanceof Error ? e.message : "Erreur lors de l'envoi.");
+      showToast(e instanceof Error ? e.message : t("common.errors.send"));
     } finally {
       setSendingPin(false);
     }
@@ -95,22 +98,22 @@ export function AdminSection({ adminModule, deviceName }: Props) {
   return (
     <View style={styles.adminSection}>
       <FormField
-        label="Administration"
+        label={t("modules.admin.section")}
         value={adminName}
         onChangeText={setAdminName}
-        placeholder="Nom du module"
-        buttonLabel="Enregistrer le nom"
+        placeholder={t("modules.admin.namePlaceholder")}
+        buttonLabel={t("modules.admin.saveName")}
         onButtonPress={handleSaveName}
         loading={sendingName}
         inputProps={{ autoCapitalize: "words" }}
       />
 
       <FormField
-        label="PIN (6 chiffres)"
+        label={t("modules.admin.pinLabel")}
         value={adminPin}
         onChangeText={setAdminPin}
         placeholder="123456"
-        buttonLabel="Enregistrer le PIN"
+        buttonLabel={t("modules.admin.savePin")}
         onButtonPress={handleSavePin}
         loading={sendingPin}
         inputProps={{

@@ -26,7 +26,7 @@
       "comment": "Production code must not depend on a devDependency: it is absent from the shipped bundle.",
       "severity": "error",
       "from": {
-        "path": "^(core|domain|infrastructure|composition|design-system|components|screens|app)/",
+        "path": "^(core|i18n|domain|infrastructure|composition|design-system|components|screens|app)/",
         "pathNot": "(^|/)__tests__/"
       },
       "to": { "dependencyTypes": ["npm-dev"] }
@@ -37,8 +37,24 @@
       "severity": "error",
       "from": { "path": "^core/", "pathNot": "(^|/)__tests__/" },
       "to": {
+        "path": "^(i18n|domain|infrastructure|composition|design-system|components|screens|app)/"
+      }
+    },
+    {
+      "name": "i18n-is-self-contained",
+      "comment": "i18n/ holds the dictionaries and the i18next instance: it sits immediately after core/ and imports no layer to its right.",
+      "severity": "error",
+      "from": { "path": "^i18n/", "pathNot": "(^|/)__tests__/" },
+      "to": {
         "path": "^(domain|infrastructure|composition|design-system|components|screens|app)/"
       }
+    },
+    {
+      "name": "design-system-has-no-copy",
+      "comment": "design-system/ never translates: the toast takes a string the caller already ran through t().",
+      "severity": "error",
+      "from": { "path": "^design-system/", "pathNot": "(^|/)__tests__/" },
+      "to": { "path": "^i18n/" }
     },
     {
       "name": "core-has-no-packages",
@@ -80,11 +96,11 @@
     },
     {
       "name": "domain-only-to-core",
-      "comment": "domain/ holds business logic and the ports it needs. It may only import core/.",
+      "comment": "domain/ holds business logic and the ports it needs. It may only import core/ — it carries translation keys as literals, so it never reaches i18n/ either.",
       "severity": "error",
       "from": { "path": "^domain/", "pathNot": "(^|/)__tests__/" },
       "to": {
-        "path": "^(infrastructure|composition|design-system|components|screens|app)/"
+        "path": "^(i18n|infrastructure|composition|design-system|components|screens|app)/"
       }
     },
     {

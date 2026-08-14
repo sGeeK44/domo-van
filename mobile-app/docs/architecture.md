@@ -3,8 +3,12 @@
 The app is layered, one-way only:
 
 ```
-core → domain → infrastructure → app
+core → i18n → domain → infrastructure → app
 ```
+
+`i18n/` sits immediately after `core/`, but `domain/` does **not** import it: the
+domain carries translation *keys* as plain string literals and never reads a
+dictionary. See "Copy and translation" below.
 
 `npm run arch` enforces it with `dependency-cruiser`; the rules live in
 `.dependency-cruiser.json` and every one of them is `error`. CI runs it on
@@ -15,6 +19,7 @@ every pull request, so a violation blocks the merge.
 | directory | holds |
 |---|---|
 | `core/` | technical primitives with no business meaning — `observable`, `core/react/useObservable` |
+| `i18n/` | the FR/EN dictionaries, the i18next instance and the typed key union |
 | `domain/` | business logic and the **ports** it needs (`domain/ports/`), plus the module catalogue (`domain/modules/`) |
 | `infrastructure/` | implementations of those ports — BLE transports, secure store |
 | `composition/` | the composition root: the one place binding concretes to ports |
@@ -30,12 +35,13 @@ every pull request, so a violation blocks the merge.
 | layer | may import (local) | npm packages |
 |---|---|---|
 | `core` | — | **none**, except `core/react/**` → `react` only |
+| `i18n` | `core` | any |
 | `domain` | `core` | **none at all** |
-| `infrastructure` | `core`, `domain` | any |
-| `composition` | `core`, `domain`, `infrastructure` | any except `react-native-ble-plx` |
-| `design-system` | `core` | react / react-native / expo-\* / svg — **not** ble-plx |
-| `components` | `core`, `domain`, `design-system` (barrel only) | as design-system |
-| `screens` | `core`, `domain`, `design-system` (barrel), `components`, `composition` | as design-system |
+| `infrastructure` | `core`, `i18n`, `domain` | any |
+| `composition` | `core`, `i18n`, `domain`, `infrastructure` | any except `react-native-ble-plx` |
+| `design-system` | `core` — **never `i18n`** | react / react-native / expo-\* / svg — **not** ble-plx |
+| `components` | `core`, `i18n`, `domain`, `design-system` (barrel only) | as design-system |
+| `screens` | `core`, `i18n`, `domain`, `design-system` (barrel), `components`, `composition` | as design-system |
 | `app` | `screens`, `composition`, `design-system` (barrel) | any |
 
 `react-native-ble-plx` is confined to `infrastructure/ble/`. Everything else
@@ -96,6 +102,53 @@ sees a connected device through the `DeviceHandle` port and asks
   `screens/tabs-layout.tsx`, because the bar it draws reads the slots and the
   catalogue, which `app/` may not import.
 
+## Copy and translation
+
+Every user-visible string goes through a key. `i18n/resources/fr.ts` is the
+source of truth — the mockups are French — and `i18n/resources/en.ts` is a
+**full** translation typed as `typeof fr`, so a missing or stray key fails
+`npm run typecheck`. Keys read `<area>.<screen>.<element>`; the areas are
+`common`, `link`, `modules`, `dashboard`, `water`, `heater` and `battery`.
+
+- **`i18n/keys.ts` types `t()`.** It merges `CustomTypeOptions` into the
+  `i18next` module, so `t('does.not.exist')` is a compile error and
+  `TranslationKey` is the union of every dotted path the dictionary defines.
+- **`domain/` carries keys, never copy.** `ModuleDescriptor.displayNameKey` and
+  `.tabTitleKey` are typed as the template literals
+  `` `modules.${ModuleKey}.name` `` / `` .tab ``. A literal is not an import, so
+  `domain-has-no-framework` still holds, and the types stay assignable to
+  `TranslationKey` without a cast — renaming a dictionary key breaks the
+  consumer, not silently the UI.
+- **A pure helper returns a key, not a sentence.** `components/home/link-view.ts`
+  answers `{ key, params }` and `ModuleSlotRow` answers the same shape; the
+  component calls `t()`. That keeps the helpers framework-free and their tests
+  readable.
+- **The design system never translates.** `design-system-has-no-copy` forbids
+  `design-system/` → `i18n/`: the toast takes a string the caller already ran
+  through `t()`. `i18n-is-self-contained` forbids the layer from reaching
+  anything to its right.
+- **The language comes from the device.** `i18n/language.ts` maps
+  `expo-localization`'s `getLocales()[0].languageCode` to `fr` / `en`, `fr`
+  otherwise. Persisting a *chosen* language is the preferences port's job, not
+  this layer's. `composition/AppProviders.tsx` mounts `I18nextProvider`
+  outermost over one module-scope instance.
+- **The guardrail.** `i18n/__tests__/no-literal-copy.test.ts` walks the TypeScript
+  AST of `components/` and `screens/` and fails on a copy-shaped literal in a JSX
+  text node, a rendered `{"…"}` child, or a `title` / `subtitle` / `label` /
+  `buttonLabel` / `placeholder` / `accessibility*` prop. Two lists bound it:
+  `NON_COPY` is permanent (units and notation — `hPa`, `mV`, `Ah`, `Kp`, `Ki`,
+  `Kd`), while `ALLOWED` is per-file and each entry must name the issue that
+  retires it. `ALLOWED` is **empty**: nothing under `components/` or `screens/`
+  still holds copy. Units, symbols and numeric placeholder examples are not copy
+  and stay literals; the guardrail does not police plain helper returns, so a new
+  helper building a sentence has to be caught in review.
+- **One debt, named.** `i18n/__tests__/no-domain-copy.test.ts` holds the domain to
+  the same rule and carries the one exception: the `lastMessage` feedback copy on
+  `HeaterZone`, `DrainValve` and `EnvironmentData` — 9 French literals a settings
+  section pushes straight to a toast. #7 rewrites those screens onto the toast
+  contract and moves the field to keys. The test pins a ceiling, so the debt can
+  only shrink, and any *new* French literal anywhere else in `domain/` fails CI.
+
 ## The tab bar
 
 `screens/tabs-layout.tsx` renders one `<Tabs.Screen>` per entry of
@@ -113,8 +166,9 @@ sees a connected device through the `DeviceHandle` port and asks
 
 ### Adding a module
 
-1. Add a `ModuleDescriptor` to `ALL_MODULES` — `tabTitle` and `tabIcon`
-   included, since the bar reads them off the catalogue.
+1. Add a `ModuleDescriptor` to `ALL_MODULES` — `tabTitleKey` and `tabIcon`
+   included, since the bar reads them off the catalogue — then add
+   `modules.<key>.name` and `modules.<key>.tab` to both dictionaries.
 2. Add `app/(tabs)/<key>.tsx`, a two-line route over its screen.
 3. Give it a session in `composition/ModuleSessions.ts` and, for a fake
    install, a scenario in `infrastructure/fake/`.

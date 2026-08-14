@@ -5,7 +5,8 @@ export type ModuleKey = "water" | "heater" | "battery";
 
 export type ModuleDescriptor = {
   key: ModuleKey;
-  displayName: string;
+  /** Translation key, not copy: the catalogue names a string it cannot read. */
+  displayNameKey: `modules.${ModuleKey}.name`;
   /**
    * Service id in the van's own UUID scheme, or `null` for a third-party
    * device that does not follow it.
@@ -13,36 +14,36 @@ export type ModuleDescriptor = {
   serviceId: string | null;
   /** Service UUID advertised by the device, used to filter a BLE scan. */
   scanServiceUuid: string;
-  /** Label of the tab the module gets once it is paired. */
-  tabTitle: string;
+  /** Translation key of the tab label the module gets once it is paired. */
+  tabTitleKey: `modules.${ModuleKey}.tab`;
   /** Icon name, a plain string so the catalogue names no icon set. */
   tabIcon: string;
 };
 
 export const WATER_MODULE: ModuleDescriptor = {
   key: "water",
-  displayName: "Water Module",
+  displayNameKey: "modules.water.name",
   serviceId: "0001",
   scanServiceUuid: buildServiceUuid("0001"),
-  tabTitle: "Eau",
+  tabTitleKey: "modules.water.tab",
   tabIcon: "water-drop",
 };
 
 export const HEATER_MODULE: ModuleDescriptor = {
   key: "heater",
-  displayName: "Heater Module",
+  displayNameKey: "modules.heater.name",
   serviceId: "0002",
   scanServiceUuid: buildServiceUuid("0002"),
-  tabTitle: "Chauff",
+  tabTitleKey: "modules.heater.tab",
   tabIcon: "local-fire-department",
 };
 
 export const BATTERY_MODULE: ModuleDescriptor = {
   key: "battery",
-  displayName: "JK BMS",
+  displayNameKey: "modules.battery.name",
   serviceId: null,
   scanServiceUuid: JK_BMS_SERVICE_UUID,
-  tabTitle: "Batt",
+  tabTitleKey: "modules.battery.tab",
   tabIcon: "battery-full",
 };
 

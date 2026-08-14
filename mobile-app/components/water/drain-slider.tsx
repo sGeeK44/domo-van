@@ -1,5 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   LayoutChangeEvent,
   Pressable,
@@ -34,6 +35,7 @@ export function DrainSlider({
   onDrain: () => void;
   onStopDrain: () => void;
 }) {
+  const { t } = useTranslation();
   const [containerWidth, setContainerWidth] = useState(0);
 
   const translateX = useSharedValue(0);
@@ -100,7 +102,7 @@ export function DrainSlider({
     <View style={styles.container}>
       <View style={styles.header}>
         <IconSymbol name="warning" size={24} color="#FFF" />
-        <Text style={styles.headerText}>ZONE DE VIDANGE</Text>
+        <Text style={styles.headerText}>{t("water.drain.zone")}</Text>
       </View>
 
       <View style={styles.body}>
@@ -111,7 +113,7 @@ export function DrainSlider({
             style={styles.fullWidthCenter}
           >
             <Text style={styles.instruction}>
-              GLISSER POUR VIDANGER {">>>"}
+              {t("water.drain.slide")} {">>>"}
             </Text>
 
             <View style={styles.sliderTrack} onLayout={onLayout}>
@@ -140,7 +142,7 @@ export function DrainSlider({
             style={styles.fullWidthCenter}
           >
             <Text style={[styles.instruction, { color: "#FF5E3A" }]}>
-              Fermeture automatique dans{" "}
+              {t("water.drain.autoClose")}{" "}
               <Text style={{ fontWeight: "900" }}>{remainingSeconds}s</Text>
             </Text>
 
@@ -156,16 +158,18 @@ export function DrainSlider({
                 size={24}
                 color={colors.onInverse}
               />
-              <Text style={styles.stopButtonText}>FERMER IMMÉDIATEMENT</Text>
+              <Text style={styles.stopButtonText}>
+                {t("water.drain.closeNow")}
+              </Text>
             </Pressable>
           </Animated.View>
         )}
 
         <View style={styles.statusContainer}>
           <Text style={styles.statusText}>
-            État vanne :{" "}
+            {t("water.drain.valveState")}{" "}
             <Text style={styles.statusBold}>
-              {isDraining ? "OUVERTE" : "FERMÉE"}
+              {t(isDraining ? "water.drain.open" : "water.drain.closed")}
             </Text>
           </Text>
           <IconSymbol

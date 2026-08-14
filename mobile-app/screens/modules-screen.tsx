@@ -1,5 +1,6 @@
 import { useRootNavigationState, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FreeSlotRow, ModuleSlotRow, UnpairSheet } from "@/components/modules";
@@ -27,6 +28,7 @@ const SETTINGS_ROUTE = {
 const DASHBOARD_ROUTE = "/(tabs)";
 
 export default function ModulesScreen() {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
@@ -57,7 +59,7 @@ export default function ModulesScreen() {
       setLeaving(null);
     } catch (cause: unknown) {
       // the slot is already free in memory but storage still holds the pairing, so it would come back at the next launch
-      setError(message(cause, "La dissociation a échoué."));
+      setError(message(cause, t("modules.list.unpairFailed")));
     } finally {
       setIsUnpairing(false);
     }
@@ -65,7 +67,10 @@ export default function ModulesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <SettingsHeader title="Modules" onBackPress={() => router.back()} />
+      <SettingsHeader
+        title={t("modules.list.title")}
+        onBackPress={() => router.back()}
+      />
 
       <ScrollView contentContainerStyle={styles.list}>
         {error && <Text style={styles.error}>{error}</Text>}
@@ -88,7 +93,7 @@ export default function ModulesScreen() {
 
       <UnpairSheet
         visible={leaving !== null}
-        moduleName={leaving?.module.displayName ?? ""}
+        moduleName={leaving ? t(leaving.module.displayNameKey) : ""}
         deviceName={leaving?.pairing?.name ?? ""}
         isUnpairing={isUnpairing}
         onCancel={() => setLeaving(null)}

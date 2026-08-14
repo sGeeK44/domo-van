@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text } from "react-native";
 import {
   BorderRadius,
@@ -17,6 +18,7 @@ export type FreeSlotRowProps = {
 };
 
 export function FreeSlotRow({ module, onPress }: FreeSlotRowProps) {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
@@ -26,8 +28,8 @@ export function FreeSlotRow({ module, onPress }: FreeSlotRowProps) {
       style={styles.row}
       onPress={onPress}
     >
-      <Text style={styles.title}>{module.displayName}</Text>
-      <Text style={styles.subtitle}>Emplacement libre · appairer</Text>
+      <Text style={styles.title}>{t(module.displayNameKey)}</Text>
+      <Text style={styles.subtitle}>{t("modules.list.freeSlot")}</Text>
     </Pressable>
   );
 }

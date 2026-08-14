@@ -1,9 +1,10 @@
 import type { LinkState, ModuleSlot } from "@/domain/modules/ModuleSlot";
+import type { TranslationKey } from "@/i18n/keys";
 
 export type ModuleTab = {
   /** Route name under `app/(tabs)/`, which every module names after its key. */
   name: string;
-  title: string;
+  titleKey: TranslationKey;
   icon: string;
   visible: boolean;
   link: LinkState | null;
@@ -11,7 +12,7 @@ export type ModuleTab = {
 
 const DASHBOARD_TAB: ModuleTab = {
   name: "index",
-  title: "Bord",
+  titleKey: "dashboard.tab",
   icon: "home",
   visible: true,
   link: null,
@@ -39,7 +40,7 @@ export function moduleTabs(slots: readonly ModuleSlot[]): readonly ModuleTab[] {
     DASHBOARD_TAB,
     ...slots.map((slot) => ({
       name: slot.module.key,
-      title: slot.module.tabTitle,
+      titleKey: slot.module.tabTitleKey,
       icon: slot.module.tabIcon,
       visible: slot.pairing !== null,
       link: slot.link,

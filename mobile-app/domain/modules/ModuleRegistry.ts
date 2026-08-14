@@ -77,7 +77,8 @@ export class ModuleRegistry implements Observable<readonly ModuleSlot[]> {
     const controller = this.controllerOf(key);
     await controller.claim({
       id: device.id,
-      name: device.name || controller.module.displayName,
+      // a nameless radio leaves the module key as its identity; the row above already names the module
+      name: device.name || controller.module.key,
     });
   }
 

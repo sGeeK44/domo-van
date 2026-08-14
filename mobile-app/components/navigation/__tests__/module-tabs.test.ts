@@ -17,9 +17,7 @@ function slot(
 ): ModuleSlot {
   return {
     module,
-    pairing: paired
-      ? { id: `${module.key}-1`, name: module.displayName }
-      : null,
+    pairing: paired ? { id: `${module.key}-1`, name: module.key } : null,
     link,
   };
 }
@@ -32,15 +30,15 @@ function pairedSlots(): ModuleSlot[] {
   return ALL_MODULES.map((module) => slot(module, true));
 }
 
-function visibleTitles(slots: readonly ModuleSlot[]): string[] {
+function visibleTitleKeys(slots: readonly ModuleSlot[]): string[] {
   return moduleTabs(slots)
     .filter((tab) => tab.visible)
-    .map((tab) => tab.title);
+    .map((tab) => tab.titleKey);
 }
 
 describe("the tabs a module registry asks for", () => {
   it("shows the dashboard alone while no module is paired", () => {
-    expect(visibleTitles(freeSlots())).toEqual(["Bord"]);
+    expect(visibleTitleKeys(freeSlots())).toEqual(["dashboard.tab"]);
   });
 
   it("shows a paired module next to the dashboard", () => {
@@ -50,15 +48,18 @@ describe("the tabs a module registry asks for", () => {
         : candidate,
     );
 
-    expect(visibleTitles(slots)).toEqual(["Bord", "Eau"]);
+    expect(visibleTitleKeys(slots)).toEqual([
+      "dashboard.tab",
+      "modules.water.tab",
+    ]);
   });
 
   it("caps the bar at the dashboard and the three modules, in catalogue order", () => {
-    expect(visibleTitles(pairedSlots())).toEqual([
-      "Bord",
-      "Batt",
-      "Eau",
-      "Chauff",
+    expect(visibleTitleKeys(pairedSlots())).toEqual([
+      "dashboard.tab",
+      "modules.battery.tab",
+      "modules.water.tab",
+      "modules.heater.tab",
     ]);
   });
 

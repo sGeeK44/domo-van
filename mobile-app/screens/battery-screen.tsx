@@ -1,4 +1,5 @@
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -11,6 +12,7 @@ import {
 
 /** Placeholder: the tab has to exist before a later issue fills it. */
 export default function BatteryScreen() {
+  const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = getStyles(colors);
   const router = useRouter();
@@ -19,11 +21,11 @@ export default function BatteryScreen() {
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <PageHeader
-          title="Batterie"
+          title={t("battery.overview.title")}
           onSettingsPress={() => router.push("/battery-settings")}
         />
         <View style={styles.content}>
-          <Text style={styles.text}>Écran batterie à venir.</Text>
+          <Text style={styles.text}>{t("battery.overview.placeholder")}</Text>
         </View>
       </SafeAreaView>
     </View>
