@@ -8,6 +8,7 @@ import {
   GaugeColumn,
   GaugeHero,
   GaugeRow,
+  GaugeSetpointRow,
   GaugeSurface,
   PageHeader,
   type Palette,
@@ -248,6 +249,59 @@ export default function GaugeGalleryScreen() {
             />
           </View>
         </Section>
+
+        <Section title="Setpoint row">
+          <Text style={styles.caption}>
+            Live zone, then the same zone switched off
+          </Text>
+          <View style={styles.zonePair}>
+            <GaugeSetpointRow
+              ratio={0.52}
+              setpointRatio={0.55}
+              markerColor={colors.line.heat}
+              fillColor={colors.fill.heat}
+              label="SALON"
+              value="21°"
+              caption="19.4° · 62 %"
+              onDecrease={() => {}}
+              onIncrease={() => {}}
+              onTogglePower={() => {}}
+            />
+            <GaugeSetpointRow
+              ratio={0.52}
+              setpointRatio={0.55}
+              markerColor={colors.line.heat}
+              fillColor={colors.fill.heat}
+              label="CABINE"
+              value="18°"
+              caption="16.1° · 58 %"
+              inert
+              onDecrease={() => {}}
+              onIncrease={() => {}}
+              onTogglePower={() => {}}
+            />
+          </View>
+          <Text style={styles.caption}>
+            Target at 0 %, on the fill boundary, then at 100 %
+          </Text>
+          <View style={styles.zoneTrio}>
+            {[0, 0.52, 1].map((setpoint) => (
+              <GaugeSetpointRow
+                key={setpoint}
+                ratio={0.52}
+                setpointRatio={setpoint}
+                markerColor={colors.line.heat}
+                fillColor={colors.fill.heat}
+                label="SOUTE"
+                value={`${Math.round(setpoint * 100)} %`}
+                caption="target position"
+                onDecrease={() => {}}
+                onIncrease={() => {}}
+                onTogglePower={() => {}}
+              />
+            ))}
+          </View>
+        </Section>
       </ScrollView>
     </SafeAreaView>
   );
@@ -286,5 +340,14 @@ const makeStyles = (colors: Palette) =>
       flexDirection: "row",
       gap: Spacing.m,
       height: 280,
+    },
+    // a setpoint row is flex: 1, as the heat screen stacks its zones
+    zonePair: {
+      height: 270,
+      gap: Spacing.m,
+    },
+    zoneTrio: {
+      height: 400,
+      gap: Spacing.m,
     },
   });

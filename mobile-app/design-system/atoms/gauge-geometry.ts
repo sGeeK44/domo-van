@@ -5,6 +5,10 @@ export type GaugeAxis = "vertical" | "horizontal";
 
 export type GaugeExtent = Pick<ViewStyle, "width" | "height">;
 export type GaugeLinePosition = Pick<ViewStyle, "left" | "bottom">;
+export type GaugeLineInset = Pick<ViewStyle, "marginLeft" | "marginBottom">;
+
+/** The meniscus and the setpoint marker are both this thick. */
+export const LINE_THICKNESS = 2;
 
 /** A reading out of range, or missing altogether, still has to paint a surface. */
 export function clampRatio(ratio: number): number {
@@ -33,6 +37,13 @@ export function linePosition(
   return axis === "vertical"
     ? { bottom: percent(ratio) }
     : { left: percent(ratio) };
+}
+
+/** A marker at ratio 1 sits at 100 %, entirely outside the clipped surface: pull it back by its own thickness, proportionally, which also centres it on the boundary in between. */
+export function markerInset(ratio: number, axis: GaugeAxis): GaugeLineInset {
+  "worklet";
+  const inset = -LINE_THICKNESS * clampRatio(ratio);
+  return axis === "vertical" ? { marginBottom: inset } : { marginLeft: inset };
 }
 
 /** Read at render time, never from a worklet, hence no directive. A full surface has no boundary left to mark. */
