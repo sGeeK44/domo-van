@@ -11,8 +11,8 @@ import { SlideToConfirm } from "@/design-system/molecules/slide-to-confirm";
 import { ThemeProvider } from "@/design-system/theme/ThemeContext";
 
 const TRACK_WIDTH = 340;
-/** 340 − 2 × Spacing.xs − 68, the travel the knob has inside its track. */
-const TRAVEL = 260;
+/** 340 − 2 × (1.5 border + Spacing.xxs) − 68, the travel the knob has inside its track. */
+const TRAVEL = 261;
 
 function control(onConfirm = () => {}) {
   return (
@@ -49,6 +49,10 @@ function dragTo(distance: number) {
 
 function release() {
   fireEvent.mouseUp(screen.getByTestId("pan-gesture"));
+}
+
+function interrupt() {
+  fireEvent.pointerCancel(screen.getByTestId("pan-gesture"));
 }
 
 function knobOffset(): string {
@@ -101,6 +105,19 @@ describe("a slide-to-confirm control", () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
+  it("confirms nothing when the gesture is cancelled past the threshold", () => {
+    const onConfirm = vi.fn();
+    render(control(onConfirm));
+    measureTrack(TRACK_WIDTH);
+
+    grab();
+    dragTo(TRAVEL * 0.7);
+    interrupt();
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(knobOffset()).toBe("translateX(0px)");
+  });
+
   it("gives up a gesture that stops short, and springs the knob back", () => {
     const onConfirm = vi.fn();
     render(control(onConfirm));
@@ -120,6 +137,19 @@ describe("a slide-to-confirm control", () => {
 
     grab();
     dragTo(TRACK_WIDTH);
+    release();
+
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("confirms nothing when the track collapses under a gesture already past the threshold", () => {
+    const onConfirm = vi.fn();
+    render(control(onConfirm));
+    measureTrack(TRACK_WIDTH);
+
+    grab();
+    dragTo(TRAVEL * 0.7);
+    measureTrack(0);
     release();
 
     expect(onConfirm).not.toHaveBeenCalled();
