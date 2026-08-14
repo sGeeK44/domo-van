@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   BorderRadius,
   Button,
+  GaugeRow,
   GaugeSurface,
   PageHeader,
   type Palette,
@@ -139,6 +140,44 @@ export default function GaugeGalleryScreen() {
           <Button onPress={() => setRatio(ratio === HIGH ? LOW : HIGH)}>
             Toggle level
           </Button>
+        </Section>
+
+        <Section title="Gauge row">
+          <Text style={styles.caption}>Filled, offline, empty slot</Text>
+          <GaugeRow
+            ratio={ratio}
+            icon="water-drop"
+            label="CLEAN WATER"
+            subtitle="72 L / 100 L"
+            value={{ amount: "72", unit: "%" }}
+            onPress={() => setRatio(ratio === HIGH ? LOW : HIGH)}
+            {...water}
+          />
+          <GaugeRow
+            ratio={0}
+            state="hatched"
+            icon="bolt"
+            label="BATTERY"
+            subtitle="Last contact 15:08"
+            subtitleTone="danger"
+            action={{
+              icon: "refresh",
+              label: "RECONNECT",
+              tone: "danger",
+              onPress: () => {},
+            }}
+            {...water}
+          />
+          <GaugeRow
+            ratio={0}
+            state="hatched"
+            icon="local-fire-department"
+            label="HEATER"
+            subtitle="no module"
+            subtitleTone="muted"
+            trailingAdd
+            {...heat}
+          />
         </Section>
       </ScrollView>
     </SafeAreaView>
