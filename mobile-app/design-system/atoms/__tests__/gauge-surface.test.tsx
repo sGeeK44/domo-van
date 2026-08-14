@@ -128,6 +128,16 @@ describe("a gauge surface", () => {
     expect(screen.queryByTestId("gauge-outline")).toBeNull();
   });
 
+  it("overlays the outline rather than insetting the content", () => {
+    const { container } = render(
+      surface({ ratio: 0.4, outline: { color: DANGER } }),
+    );
+    const box = container.firstElementChild as HTMLElement;
+
+    expect(screen.getByTestId("gauge-outline").parentElement).toBe(box);
+    expect(getComputedStyle(box).borderTopWidth).toBe("0px");
+  });
+
   it("paints the level it mounts at, without sweeping up to it", () => {
     render(surface({ ratio: 0.72 }));
 
