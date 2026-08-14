@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   LayoutChangeEvent,
   Pressable,
@@ -44,20 +44,15 @@ export function DrainSlider({
     onStopDrain();
   }, [onStopDrain, translateX]);
 
-  // Reset slider position when draining stops
   const handleDrainStart = useCallback(() => {
     onDrain();
   }, [onDrain]);
 
-  // Reset slider when valve closes
-  const resetSlider = useCallback(() => {
+  // Reading or writing a shared value during render desyncs Reanimated from the Fabric commit.
+  useEffect(() => {
+    if (isDraining) return;
     translateX.value = withSpring(0);
-  }, [translateX]);
-
-  // When isDraining becomes false, reset slider position
-  if (!isDraining && translateX.value !== 0) {
-    resetSlider();
-  }
+  }, [isDraining, translateX]);
 
   const colors = useThemeColor();
   const maxTranslate = containerWidth - HANDLE_SIZE - 8;
@@ -144,7 +139,6 @@ export function DrainSlider({
             exiting={FadeOut}
             style={styles.fullWidthCenter}
           >
-            {/* Nouveau texte de signalement */}
             <Text style={[styles.instruction, { color: "#FF5E3A" }]}>
               Fermeture automatique dans{" "}
               <Text style={{ fontWeight: "900" }}>{remainingSeconds}s</Text>
