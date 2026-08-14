@@ -12,8 +12,8 @@ import {
   FontWeight,
   IconSymbol,
   Opacity,
+  type Palette,
   Spacing,
-  type ThemeColors,
   useThemeColor,
 } from "@/design-system";
 
@@ -35,7 +35,7 @@ export function EmptySlotCard({ title, onPress, style }: EmptySlotCardProps) {
       onPress={onPress}
     >
       <View style={styles.body}>
-        <IconSymbol name="add" size={24} color={colors.text.secondary} />
+        <IconSymbol name="add" size={24} color={colors.textMuted} />
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.hint}>Aucun module</Text>
       </View>
@@ -43,14 +43,14 @@ export function EmptySlotCard({ title, onPress, style }: EmptySlotCardProps) {
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     card: {
       minHeight: 100,
-      borderRadius: BorderRadius.l,
+      borderRadius: BorderRadius.xl,
       borderWidth: 2,
       borderStyle: "dashed",
-      borderColor: colors.neutral["500"],
+      borderColor: colors.dash,
       justifyContent: "center",
       alignItems: "center",
       padding: Spacing.xxl,
@@ -63,12 +63,12 @@ const getStyles = (colors: ThemeColors) =>
       gap: Spacing.xxs,
     },
     title: {
-      color: colors.text.primary,
+      color: colors.text,
       fontSize: FontSize.m,
       fontWeight: FontWeight.semiBold,
     },
     hint: {
-      color: colors.text.secondary,
+      color: colors.textMuted,
       fontSize: FontSize.xs,
     },
   });

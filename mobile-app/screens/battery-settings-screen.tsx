@@ -11,9 +11,9 @@ import { useBatterySystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import {
   FontSize,
+  type Palette,
   SettingsHeader,
   Spacing,
-  type ThemeColors,
   useThemeColor,
 } from "@/design-system";
 import {
@@ -55,7 +55,7 @@ export default function BatterySettingsScreen() {
 
 type BatteryInfoSectionProps = {
   battery: BatterySnapshot;
-  colors: ThemeColors;
+  colors: Palette;
 };
 
 function BatteryInfoSection({ battery, colors }: BatteryInfoSectionProps) {
@@ -161,19 +161,19 @@ function BatteryInfoSection({ battery, colors }: BatteryInfoSectionProps) {
   );
 }
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background.primary,
+      backgroundColor: colors.screen,
     },
   });
 
-const createInfoStyles = (colors: ThemeColors) =>
+const createInfoStyles = (colors: Palette) =>
   StyleSheet.create({
     section: {
       padding: Spacing.l,
-      backgroundColor: colors.background.secondary,
+      backgroundColor: colors.surface,
       marginHorizontal: Spacing.l,
       marginTop: Spacing.l,
       borderRadius: 12,
@@ -181,7 +181,7 @@ const createInfoStyles = (colors: ThemeColors) =>
     sectionTitle: {
       fontSize: FontSize.l,
       fontWeight: "600",
-      color: colors.text.primary,
+      color: colors.text,
       marginBottom: Spacing.m,
     },
     row: {
@@ -191,11 +191,11 @@ const createInfoStyles = (colors: ThemeColors) =>
     },
     label: {
       fontSize: FontSize.m,
-      color: colors.text.secondary,
+      color: colors.textMuted,
     },
     value: {
       fontSize: FontSize.m,
-      color: colors.text.primary,
+      color: colors.text,
       fontWeight: "500",
     },
     alarmRow: {
@@ -205,15 +205,15 @@ const createInfoStyles = (colors: ThemeColors) =>
       marginTop: Spacing.s,
       paddingTop: Spacing.s,
       borderTopWidth: 1,
-      borderTopColor: colors.danger["500"],
+      borderTopColor: colors.danger,
     },
     alarmLabel: {
       fontSize: FontSize.m,
-      color: colors.danger["500"],
+      color: colors.danger,
       fontWeight: "600",
     },
     alarmValue: {
       fontSize: FontSize.m,
-      color: colors.danger["500"],
+      color: colors.danger,
     },
   });

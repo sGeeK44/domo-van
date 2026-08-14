@@ -4,7 +4,7 @@ import {
   FontSize,
   FontWeight,
   IconSymbol,
-  type ThemeColors,
+  type Palette,
   useThemeColor,
 } from "@/design-system";
 import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
@@ -41,10 +41,7 @@ export function HeaterZoneCard({
 
   // Determine temperature color based on difference from setpoint
   const tempDiff = temperatureCelsius - setpointCelsius;
-  const tempColor =
-    tempDiff >= 0
-      ? (colors.heater?.warm ?? "#FF6B35")
-      : (colors.heater?.cold ?? "#42A5F5");
+  const tempColor = tempDiff >= 0 ? colors.line.heat : colors.line.cleanWater;
 
   return (
     <Card
@@ -71,7 +68,7 @@ export function HeaterZoneCard({
             ]}
             hitSlop={8}
           >
-            <IconSymbol name="remove" size={24} color={colors.text.primary} />
+            <IconSymbol name="remove" size={24} color={colors.text} />
           </Pressable>
 
           <View style={styles.setpointDisplay}>
@@ -89,7 +86,7 @@ export function HeaterZoneCard({
             ]}
             hitSlop={8}
           >
-            <IconSymbol name="add" size={24} color={colors.text.primary} />
+            <IconSymbol name="add" size={24} color={colors.text} />
           </Pressable>
         </View>
 
@@ -105,12 +102,12 @@ export function HeaterZoneCard({
           <IconSymbol
             name={isRunning ? "power-settings-new" : "power-off"}
             size={20}
-            color={isRunning ? colors.text.inverse : colors.text.primary}
+            color={isRunning ? colors.onInverse : colors.text}
           />
           <Text
             style={[
               styles.toggleButtonText,
-              { color: isRunning ? colors.text.inverse : colors.text.primary },
+              { color: isRunning ? colors.onInverse : colors.text },
             ]}
           >
             {isRunning ? "ON" : "OFF"}
@@ -121,7 +118,7 @@ export function HeaterZoneCard({
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     // a zone fills the slot the grid gives it
     card: {
@@ -143,7 +140,7 @@ const getStyles = (colors: ThemeColors) =>
     },
     tempLabel: {
       fontSize: FontSize.xs,
-      color: colors.text.secondary,
+      color: colors.textMuted,
       marginTop: -4,
     },
     setpointSection: {
@@ -156,12 +153,12 @@ const getStyles = (colors: ThemeColors) =>
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: colors.background.primary,
+      backgroundColor: colors.screen,
       justifyContent: "center",
       alignItems: "center",
     },
     controlButtonPressed: {
-      backgroundColor: colors.neutral["500"],
+      backgroundColor: colors.off,
     },
     setpointDisplay: {
       alignItems: "center",
@@ -170,11 +167,11 @@ const getStyles = (colors: ThemeColors) =>
     setpointValue: {
       fontSize: FontSize.xl,
       fontWeight: FontWeight.bold,
-      color: colors.text.primary,
+      color: colors.text,
     },
     setpointLabel: {
       fontSize: FontSize.xxs,
-      color: colors.text.secondary,
+      color: colors.textMuted,
     },
     toggleButton: {
       flexDirection: "row",
@@ -186,12 +183,12 @@ const getStyles = (colors: ThemeColors) =>
       borderRadius: 20,
     },
     toggleButtonOn: {
-      backgroundColor: colors.heater?.warm ?? "#FF6B35",
+      backgroundColor: colors.fill.heat,
     },
     toggleButtonOff: {
-      backgroundColor: colors.background.primary,
+      backgroundColor: colors.screen,
       borderWidth: 1,
-      borderColor: colors.neutral["500"],
+      borderColor: colors.border,
     },
     toggleButtonText: {
       fontSize: FontSize.s,

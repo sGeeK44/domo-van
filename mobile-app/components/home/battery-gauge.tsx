@@ -15,10 +15,10 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 import {
-  Colors,
   FontSize,
   FontWeight,
   IconSymbol,
+  type Palette,
   useThemeColor,
 } from "@/design-system";
 
@@ -277,12 +277,12 @@ export function BatteryGauge({
           <IconSymbol
             name="battery-charging-full"
             size={18}
-            color={colors.neutral["500"]}
+            color={colors.textMuted}
           />
           <Text style={styles.indicatorValue}>{displayVoltage}</Text>
         </View>
         <View style={styles.indicator}>
-          <IconSymbol name="bolt" size={18} color={colors.neutral["500"]} />
+          <IconSymbol name="bolt" size={18} color={colors.textMuted} />
           <Text style={styles.indicatorLabel}>Conso:</Text>
           <Text style={styles.indicatorValue}>{consumptionText}</Text>
         </View>
@@ -291,7 +291,7 @@ export function BatteryGauge({
   );
 }
 
-const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       alignItems: "center",
@@ -322,7 +322,7 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
     },
     remainingText: {
       fontSize: FontSize.s,
-      color: colors.neutral["500"],
+      color: colors.textMuted,
       marginTop: 2,
     },
     indicatorsRow: {
@@ -339,11 +339,11 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
     },
     indicatorLabel: {
       fontSize: FontSize.xs,
-      color: colors.neutral["500"],
+      color: colors.textMuted,
     },
     indicatorValue: {
       fontSize: FontSize.s,
-      color: colors.info["500"],
+      color: colors.textSecondary,
       fontWeight: FontWeight.medium,
     },
   });

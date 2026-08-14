@@ -5,8 +5,8 @@ import {
   FontSize,
   FontWeight,
   Opacity,
+  type Palette,
   Spacing,
-  type ThemeColors,
   useThemeColor,
 } from "@/design-system";
 import type { ModuleDescriptor } from "@/domain/modules/ModuleDescriptor";
@@ -32,7 +32,7 @@ export function FreeSlotRow({ module, onPress }: FreeSlotRowProps) {
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     row: {
       gap: Spacing.xxs,
@@ -40,16 +40,16 @@ const getStyles = (colors: ThemeColors) =>
       borderRadius: BorderRadius.m,
       borderWidth: 1,
       borderStyle: "dashed",
-      borderColor: colors.neutral["500"],
+      borderColor: colors.dash,
     },
     title: {
-      color: colors.text.primary,
+      color: colors.text,
       fontSize: FontSize.m,
       fontWeight: `${FontWeight.medium}`,
       opacity: Opacity.subtle,
     },
     subtitle: {
-      color: colors.text.secondary,
+      color: colors.textMuted,
       fontSize: FontSize.xs,
     },
   });

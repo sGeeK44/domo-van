@@ -4,8 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   FontSize,
   PageHeader,
+  type Palette,
   Spacing,
-  type ThemeColors,
   useThemeColor,
 } from "@/design-system";
 
@@ -30,11 +30,11 @@ export default function BatteryScreen() {
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background.primary,
+      backgroundColor: colors.screen,
     },
     safeArea: {
       flex: 1,
@@ -46,7 +46,7 @@ const getStyles = (colors: ThemeColors) =>
       padding: Spacing.xxxl,
     },
     text: {
-      color: colors.text.secondary,
+      color: colors.textMuted,
       fontSize: FontSize.m,
     },
   });

@@ -4,8 +4,8 @@ import { useThemeColor } from "@/design-system/theme/use-theme-color";
 import {
   FontSize,
   FontWeight,
+  type Palette,
   Spacing,
-  type ThemeColors,
 } from "@/design-system/tokens";
 
 export type SettingsHeaderProps = {
@@ -20,7 +20,7 @@ export function SettingsHeader({ title, onBackPress }: SettingsHeaderProps) {
   return (
     <View style={styles.header}>
       <Pressable onPress={onBackPress} hitSlop={10}>
-        <IconSymbol name="arrow-back" size={22} color={colors.text.primary} />
+        <IconSymbol name="arrow-back" size={22} color={colors.text} />
       </Pressable>
       <Text style={styles.title}>{title}</Text>
       <View style={styles.spacer} />
@@ -28,7 +28,7 @@ export function SettingsHeader({ title, onBackPress }: SettingsHeaderProps) {
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     header: {
       flexDirection: "row",
@@ -39,7 +39,7 @@ const getStyles = (colors: ThemeColors) =>
       paddingBottom: Spacing.l,
     },
     title: {
-      color: colors.text.primary,
+      color: colors.text,
       fontSize: FontSize.xl,
       fontWeight: `${FontWeight.extraBold}`,
     },

@@ -22,11 +22,11 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: themeColor["primary"]["500"],
-        tabBarInactiveTintColor: themeColor["neutral"]["500"],
+        tabBarActiveTintColor: themeColor.text,
+        tabBarInactiveTintColor: themeColor.textMuted,
         tabBarStyle: {
-          backgroundColor: themeColor["background"]["secondary"],
-          borderTopColor: themeColor["background"]["primary"],
+          backgroundColor: themeColor.tabBar,
+          borderTopColor: themeColor.border,
         },
         headerShown: false,
       }}

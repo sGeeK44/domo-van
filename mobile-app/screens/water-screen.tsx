@@ -10,7 +10,7 @@ import {
 } from "@/composition/ModuleRegistryProvider";
 import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
-import { Colors, PageHeader, useThemeColor } from "@/design-system";
+import { PageHeader, type Palette, useThemeColor } from "@/design-system";
 import { ValveState } from "@/domain/water/DrainValve";
 import { TankLevelSnapshot } from "@/domain/water/TankLevelSensor";
 
@@ -83,13 +83,13 @@ export default function WaterScreen() {
               name="EAU PROPRE"
               capacity={cleanCapacity}
               percentage={cleanPercentage}
-              color={colors["water"]["clean"]}
+              color={colors.fill.cleanWater}
             />
             <WaterTank
               name="EAU GRISE"
               capacity={greyCapacity}
               percentage={greyPercentage}
-              color={colors["water"]["grey"]}
+              color={colors.fill.greyWater}
             />
           </View>
           <DrainSlider
@@ -104,11 +104,11 @@ export default function WaterScreen() {
   );
 }
 
-const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background.primary,
+      backgroundColor: colors.screen,
     },
     content: {
       flex: 1,

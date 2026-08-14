@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { Pressable, type PressableProps, StyleSheet, View } from "react-native";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { useThemeColor } from "@/design-system/theme/use-theme-color";
-import { type ThemeColors } from "@/design-system/tokens";
+import { type Palette } from "@/design-system/tokens";
 
 export type IconCircleButtonProps = {
   icon: ComponentProps<typeof IconSymbol>["name"];
@@ -22,7 +22,7 @@ export function IconCircleButton({
 }: IconCircleButtonProps) {
   const colors = useThemeColor();
   const styles = getStyles(colors);
-  const resolvedIconColor = iconColor ?? colors.text.primary;
+  const resolvedIconColor = iconColor ?? colors.text;
 
   return (
     <Pressable style={styles.pressable} hitSlop={10} {...props}>
@@ -46,13 +46,13 @@ export function IconCircleButton({
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     pressable: {
       borderRadius: 999,
     },
     circle: {
-      backgroundColor: colors.background.secondary,
+      backgroundColor: colors.surface,
       justifyContent: "center",
       alignItems: "center",
       position: "relative",

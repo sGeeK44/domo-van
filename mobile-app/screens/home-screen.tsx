@@ -27,7 +27,7 @@ import { useObservable } from "@/core/react/useObservable";
 import {
   Button,
   PageHeader,
-  type ThemeColors,
+  type Palette,
   useThemeColor,
 } from "@/design-system";
 import {
@@ -138,7 +138,7 @@ export default function HomeScreen() {
                   waterOnline ? `${Math.round(cleanTank.percentage)}%` : "-"
                 }
                 label="Eau propre"
-                backgroundColor={colors.water.clean}
+                backgroundColor={colors.fill.cleanWater}
                 onPress={() => router.push("/water")}
               />
             </Slot>
@@ -154,9 +154,7 @@ export default function HomeScreen() {
                   heaterOnline ? (heat.isRunning ? "Chauffe" : "Arrêt") : "-"
                 }
                 label={heating ? `> ${heat.setpointCelsius.toFixed(0)}°C` : "-"}
-                backgroundColor={
-                  heating ? colors.heater.warm : colors.neutral["500"]
-                }
+                backgroundColor={heating ? colors.line.heat : colors.off}
                 onPress={() => router.push("/heater")}
               />
             </Slot>
@@ -165,7 +163,7 @@ export default function HomeScreen() {
           {heaterPaired && (
             <EnvironmentCard
               {...environmentReadings(environment, heaterOnline)}
-              backgroundColor={colors.background.secondary}
+              backgroundColor={colors.surface}
             />
           )}
 
@@ -203,11 +201,11 @@ function Slot({ slot, onAdd, onReconnect, style, children }: SlotProps) {
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background.primary,
+      backgroundColor: colors.screen,
     },
     safeArea: {
       flex: 1,

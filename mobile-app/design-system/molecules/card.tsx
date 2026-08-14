@@ -6,7 +6,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { useThemeColor } from "@/design-system/theme/use-theme-color";
-import { FontSize, FontWeight, type ThemeColors } from "@/design-system/tokens";
+import { FontSize, FontWeight, type Palette } from "@/design-system/tokens";
 
 export const Card = ({
   title,
@@ -33,10 +33,10 @@ export const Card = ({
   );
 };
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     card: {
-      backgroundColor: colors.background.secondary,
+      backgroundColor: colors.surface,
       borderRadius: 20,
       padding: 20,
     },
@@ -46,12 +46,12 @@ const getStyles = (colors: ThemeColors) =>
       paddingBottom: 10,
     },
     title: {
-      color: colors.text.primary,
+      color: colors.text,
       fontSize: FontSize.m,
       fontWeight: FontWeight.medium,
     },
     subtitle: {
-      color: colors.text.secondary,
+      color: colors.textMuted,
       fontSize: FontSize.s,
       fontWeight: FontWeight.regular,
     },

@@ -30,7 +30,7 @@ export function StatusBadge({ status, size = 10 }: StatusBadgeProps) {
           height: size,
           borderRadius: size / 2,
           backgroundColor: STATUS_COLORS[status],
-          borderColor: colors.background.secondary,
+          borderColor: colors.surface,
         },
       ]}
     />

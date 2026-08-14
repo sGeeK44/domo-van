@@ -10,11 +10,7 @@ import {
   useModuleSlot,
 } from "@/composition/ModuleRegistryProvider";
 import { useHeaterSystem } from "@/composition/ModuleSystemsProvider";
-import {
-  SettingsHeader,
-  type ThemeColors,
-  useThemeColor,
-} from "@/design-system";
+import { type Palette, SettingsHeader, useThemeColor } from "@/design-system";
 import { HEATER_MODULE } from "@/domain/modules/ModuleDescriptor";
 
 const ZONE_NAMES = ["Cabine", "Cellule", "Soute", "Garage"];
@@ -63,10 +59,10 @@ export default function HeaterSettingsScreen() {
   );
 }
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background.primary,
+      backgroundColor: colors.screen,
     },
   });

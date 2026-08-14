@@ -31,15 +31,15 @@ export function Button({
   const colors = useThemeColor();
   const isPrimary = variant === "primary";
 
-  const textColor = isPrimary ? colors.text.inverse : colors.text.primary;
-  const borderColor = colors.text.primary;
+  const textColor = isPrimary ? colors.onInverse : colors.text;
+  const borderColor = colors.text;
 
   return (
     <Pressable
       style={[
         styles.button,
         isPrimary
-          ? { backgroundColor: colors.primary["500"] }
+          ? { backgroundColor: colors.inverse }
           : {
               borderColor: `${borderColor}${Math.round(Opacity.ghost * 255)
                 .toString(16)

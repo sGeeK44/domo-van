@@ -10,7 +10,7 @@ import {
 } from "@/composition/ModuleRegistryProvider";
 import { useHeaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
-import { Colors, PageHeader, useThemeColor } from "@/design-system";
+import { PageHeader, type Palette, useThemeColor } from "@/design-system";
 import { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
 
 const DEFAULT_ZONE_STATE: HeaterZoneSnapshot = {
@@ -141,11 +141,11 @@ export default function HeaterScreen() {
   );
 }
 
-const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background.primary,
+      backgroundColor: colors.screen,
     },
     content: {
       flex: 1,

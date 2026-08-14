@@ -15,9 +15,9 @@ import Svg, {
 } from "react-native-svg";
 import {
   Card,
-  Colors,
   FontSize,
   FontWeight,
+  type Palette,
   useThemeColor,
 } from "@/design-system";
 
@@ -160,7 +160,7 @@ export const WaterTank = ({
   );
 };
 
-const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     // the two tanks share the row evenly
     card: {
@@ -187,14 +187,14 @@ const getStyles = (colors: typeof Colors.light | typeof Colors.dark) =>
     volumeText: {
       fontSize: FontSize.xl,
       fontWeight: FontWeight.bold,
-      color: colors.info["500"],
+      color: colors.textSecondary,
       textShadowColor: "rgba(0, 0, 0, 0.5)",
       textShadowOffset: { width: 0, height: 1 },
       textShadowRadius: 4,
     },
     percentageText: {
       fontSize: FontSize.xs,
-      color: colors.info["500"],
+      color: colors.textSecondary,
       opacity: 0.8,
     },
   });

@@ -5,7 +5,7 @@ import {
   FontSize,
   FontWeight,
   IconSymbol,
-  type ThemeColors,
+  type Palette,
   useThemeColor,
 } from "@/design-system";
 
@@ -25,14 +25,14 @@ export function EnvironmentIndicator({
 
   return (
     <View style={styles.container}>
-      <IconSymbol name={icon} size={24} color={colors.text.secondary} />
+      <IconSymbol name={icon} size={24} color={colors.textMuted} />
       <Text style={styles.value}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
     </View>
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     container: {
       alignItems: "center",
@@ -41,10 +41,10 @@ const getStyles = (colors: ThemeColors) =>
     value: {
       fontSize: FontSize.l,
       fontWeight: FontWeight.semiBold,
-      color: colors.text.primary,
+      color: colors.text,
     },
     label: {
       fontSize: FontSize.xs,
-      color: colors.text.secondary,
+      color: colors.textMuted,
     },
   });

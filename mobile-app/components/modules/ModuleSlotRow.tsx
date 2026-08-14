@@ -7,8 +7,8 @@ import {
   FontWeight,
   IconSymbol,
   Opacity,
+  type Palette,
   Spacing,
-  type ThemeColors,
   useThemeColor,
 } from "@/design-system";
 import type { LinkState, ModuleSlot } from "@/domain/modules/ModuleSlot";
@@ -43,11 +43,7 @@ export function ModuleSlotRow({
           <Text style={styles.subtitle}>{pairing.id}</Text>
           <Text style={styles.link}>{linkLabel(link)}</Text>
         </View>
-        <IconSymbol
-          name="chevron-right"
-          size={22}
-          color={colors.text.primary}
-        />
+        <IconSymbol name="chevron-right" size={22} color={colors.text} />
       </Pressable>
 
       <Button
@@ -74,13 +70,13 @@ function clockTime(at: number): string {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: Palette) =>
   StyleSheet.create({
     row: {
       gap: Spacing.m,
       padding: Spacing.xl,
       borderRadius: BorderRadius.m,
-      backgroundColor: colors.background.secondary,
+      backgroundColor: colors.surface,
     },
     identity: {
       flexDirection: "row",
@@ -92,17 +88,17 @@ const getStyles = (colors: ThemeColors) =>
       gap: Spacing.xxs,
     },
     title: {
-      color: colors.text.primary,
+      color: colors.text,
       fontSize: FontSize.m,
       fontWeight: `${FontWeight.extraBold}`,
     },
     subtitle: {
-      color: colors.text.secondary,
+      color: colors.textMuted,
       fontSize: FontSize.xs,
       opacity: Opacity.subtle,
     },
     link: {
-      color: colors.text.secondary,
+      color: colors.textMuted,
       fontSize: FontSize.xs,
     },
   });
