@@ -193,6 +193,21 @@ describe("HeaterSystem", () => {
     });
   });
 
+  it("brings an off-grid module target back onto the half-degree grid, and keeps it there", async () => {
+    const transport = new FakeModuleTransport(heaterScenario());
+    const heater = new HeaterSystem(transport);
+    const zoneChannel = transport.channel(ZONE_CHANNELS[CHAMBRE]);
+    zoneChannel.emit("STATUS:T=190;SP=197;RUN=0");
+
+    await heater.adjustZone(CHAMBRE, SETPOINT_STEP_CELSIUS);
+    await heater.adjustZone(CHAMBRE, SETPOINT_STEP_CELSIUS);
+
+    expect(
+      zoneChannel.commands.filter((command) => command.startsWith("SP:")),
+    ).toEqual(["SP:200", "SP:205"]);
+    expect(heater.getZone(CHAMBRE).getValue().setpointCelsius).toBe(20.5);
+  });
+
   it("refuses to take a target outside the range the UI allows", async () => {
     const heater = heaterOnFake();
 
