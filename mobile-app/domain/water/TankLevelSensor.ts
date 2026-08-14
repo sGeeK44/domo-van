@@ -25,6 +25,15 @@ export type TankLevelSnapshot = {
   lastFeedback: Feedback | null;
 };
 
+/** What a tank reads as before the module has answered anything. */
+export const DEFAULT_TANK_SNAPSHOT: TankLevelSnapshot = {
+  capacityLiters: 0,
+  heightMm: 0,
+  percentage: 0,
+  lastDistanceMm: null,
+  lastFeedback: null,
+};
+
 export function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
 }
@@ -65,13 +74,7 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
   private channelUnsub: Unsubscribe | null = null;
 
   constructor(private readonly channel: Channel) {
-    this.state = createObservable<TankLevelSnapshot>({
-      capacityLiters: 0,
-      heightMm: 0,
-      percentage: 0,
-      lastDistanceMm: null,
-      lastFeedback: null,
-    });
+    this.state = createObservable<TankLevelSnapshot>(DEFAULT_TANK_SNAPSHOT);
 
     // Subscribe first, then request config (so the response is not missed).
     this.channelUnsub = this.channel.listen(this.onMessageReceived);

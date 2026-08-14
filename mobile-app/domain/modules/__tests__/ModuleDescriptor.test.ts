@@ -9,6 +9,9 @@ import {
   moduleForAdvertisement,
   WATER_MODULE,
 } from "@/domain/modules/ModuleDescriptor";
+import { createI18n } from "@/i18n/createI18n";
+import type { TranslationKey } from "@/i18n/keys";
+import { SUPPORTED_LANGUAGES } from "@/i18n/language";
 
 describe("ModuleDescriptor", () => {
   it("gives every module a distinct key", () => {
@@ -47,6 +50,42 @@ describe("ModuleDescriptor", () => {
   it("scans the battery on the BMS vendor service, outside the van scheme", () => {
     expect(BATTERY_MODULE.serviceId).toBeNull();
     expect(BATTERY_MODULE.scanServiceUuid).toBe(JK_BMS_SERVICE_UUID);
+  });
+});
+
+describe("the dashboard cards the catalogue declares", () => {
+  const allCards = ALL_MODULES.flatMap((module) => module.cards);
+
+  it("gives the water module two cards, one tank each", () => {
+    expect(WATER_MODULE.cards.map((card) => card.key)).toEqual([
+      "cleanWater",
+      "greyWater",
+    ]);
+  });
+
+  it("counts more cards than modules, since one module can own several", () => {
+    expect(allCards.length).toBeGreaterThan(ALL_MODULES.length);
+    expect(new Set(allCards.map((card) => card.key)).size).toBe(
+      allCards.length,
+    );
+  });
+
+  it("names a key the dictionary answers in every language", () => {
+    const labelKeys: TranslationKey[] = allCards.map((card) => card.labelKey);
+
+    for (const language of SUPPORTED_LANGUAGES) {
+      const { t } = createI18n(language);
+
+      for (const key of labelKeys) {
+        expect(t(key)).not.toBe(key);
+      }
+    }
+  });
+
+  it("names an icon without naming an icon set", () => {
+    for (const card of allCards) {
+      expect(card.icon).not.toBe("");
+    }
   });
 });
 

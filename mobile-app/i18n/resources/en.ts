@@ -101,6 +101,12 @@ export const en: typeof fr = {
     title: "Home",
     addModule: "Add a module",
     emptySlot: { hint: "No module" },
+    cards: {
+      battery: "BATTERY",
+      cleanWater: "CLEAN WATER",
+      greyWater: "GREY WATER",
+      heater: "HEATING",
+    },
     water: { label: "Clean water" },
     heater: {
       running: "Heating",

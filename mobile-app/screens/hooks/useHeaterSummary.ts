@@ -1,18 +1,13 @@
 import { useHeaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
-import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
+import {
+  DEFAULT_ZONE_SNAPSHOT,
+  type HeaterZoneSnapshot,
+} from "@/domain/heater/HeaterZone";
 
 export type HeaterSummary = {
   isRunning: boolean;
   setpointCelsius: number;
-};
-
-const IDLE_ZONE: HeaterZoneSnapshot = {
-  temperatureCelsius: 0,
-  setpointCelsius: 0,
-  isRunning: false,
-  pidConfig: null,
-  lastFeedback: null,
 };
 
 /** What the dashboard says about the heater: heating, and up to which setpoint. */
@@ -31,10 +26,10 @@ export function heaterSummary(
 
 export function useHeaterSummary(): HeaterSummary {
   const heater = useHeaterSystem();
-  const zone0 = useObservable(heater?.zones[0] ?? null, IDLE_ZONE);
-  const zone1 = useObservable(heater?.zones[1] ?? null, IDLE_ZONE);
-  const zone2 = useObservable(heater?.zones[2] ?? null, IDLE_ZONE);
-  const zone3 = useObservable(heater?.zones[3] ?? null, IDLE_ZONE);
+  const zone0 = useObservable(heater?.zones[0] ?? null, DEFAULT_ZONE_SNAPSHOT);
+  const zone1 = useObservable(heater?.zones[1] ?? null, DEFAULT_ZONE_SNAPSHOT);
+  const zone2 = useObservable(heater?.zones[2] ?? null, DEFAULT_ZONE_SNAPSHOT);
+  const zone3 = useObservable(heater?.zones[3] ?? null, DEFAULT_ZONE_SNAPSHOT);
 
   return heaterSummary([zone0, zone1, zone2, zone3]);
 }

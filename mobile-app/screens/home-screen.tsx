@@ -36,29 +36,13 @@ import {
   DEFAULT_BATTERY_SNAPSHOT,
   formatRemainingTime,
 } from "@/domain/battery/BatteryTelemetry";
-import { EnvironmentSnapshot } from "@/domain/heater/EnvironmentData";
+import { DEFAULT_ENVIRONMENT } from "@/domain/heater/EnvironmentData";
 import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
-import { TankLevelSnapshot } from "@/domain/water/TankLevelSensor";
+import { DEFAULT_TANK_SNAPSHOT } from "@/domain/water/TankLevelSensor";
 import { useHeaterSummary } from "@/screens/hooks/useHeaterSummary";
-
-const DEFAULT_ENVIRONMENT: EnvironmentSnapshot = {
-  temperatureCelsius: 0,
-  exteriorTemperatureCelsius: 0,
-  humidity: 0,
-  pressureHPa: 1013.25,
-  lastFeedback: null,
-};
 
 /** A dash is not copy: it stands in for a measurement no module reported. */
 const NO_READING = "-";
-
-const DEFAULT_TANK: TankLevelSnapshot = {
-  capacityLiters: 0,
-  heightMm: 0,
-  percentage: 0,
-  lastDistanceMm: null,
-  lastFeedback: null,
-};
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -80,7 +64,10 @@ export default function HomeScreen() {
   const heaterSystem = useHeaterSystem();
 
   const battery = useObservable(batterySystem, DEFAULT_BATTERY_SNAPSHOT);
-  const cleanTank = useObservable(waterSystem?.cleanTank ?? null, DEFAULT_TANK);
+  const cleanTank = useObservable(
+    waterSystem?.cleanTank ?? null,
+    DEFAULT_TANK_SNAPSHOT,
+  );
   const environment = useObservable(
     heaterSystem?.environment ?? null,
     DEFAULT_ENVIRONMENT,

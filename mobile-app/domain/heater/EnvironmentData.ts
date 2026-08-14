@@ -17,14 +17,18 @@ export type EnvironmentSnapshot = {
   lastFeedback: Feedback | null; // Last outcome to show
 };
 
+/** What the strip reads as before the module has answered anything. */
+export const DEFAULT_ENVIRONMENT: EnvironmentSnapshot = {
+  temperatureCelsius: 0,
+  exteriorTemperatureCelsius: 0,
+  humidity: 0,
+  pressureHPa: 1013.25,
+  lastFeedback: null,
+};
+
 export class EnvironmentData implements Observable<EnvironmentSnapshot> {
-  private readonly state = createObservable<EnvironmentSnapshot>({
-    temperatureCelsius: 0,
-    exteriorTemperatureCelsius: 0,
-    humidity: 0,
-    pressureHPa: 1013.25,
-    lastFeedback: null,
-  });
+  private readonly state =
+    createObservable<EnvironmentSnapshot>(DEFAULT_ENVIRONMENT);
   private channelUnsub: Unsubscribe | null = null;
 
   constructor(private readonly channel: Channel) {

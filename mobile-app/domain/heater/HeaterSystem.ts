@@ -1,5 +1,10 @@
+import { createObservable, type Observable } from "@/core/observable";
 import { AdminModule } from "@/domain/AdminModule";
 import { EnvironmentData } from "@/domain/heater/EnvironmentData";
+import {
+  clampSetpoint,
+  nightTargetCelsius,
+} from "@/domain/heater/HeaterPresets";
 import { HeaterZone } from "@/domain/heater/HeaterZone";
 import type { ModuleTransport } from "@/domain/ports/ModuleTransport";
 
@@ -25,6 +30,10 @@ export class HeaterSystem {
   readonly zones: readonly [HeaterZone, HeaterZone, HeaterZone, HeaterZone];
   readonly environment: EnvironmentData;
 
+  private readonly nightModeState = createObservable(false);
+  /** Night mode is a preset, not a toggle: every other write leaves it. */
+  readonly nightMode: Observable<boolean> = this.nightModeState;
+
   constructor(transport: ModuleTransport) {
     this.admin = new AdminModule(transport.openChannel(CHANNELS.admin));
 
@@ -47,6 +56,48 @@ export class HeaterSystem {
     return this.zones[index];
   }
 
+  /** Adjusting a target starts the zone it belongs to, and leaves night mode. */
+  adjustZone = async (index: number, deltaCelsius: number): Promise<void> => {
+    const zone = this.getZone(index);
+    const target = clampSetpoint(
+      zone.getValue().setpointCelsius + deltaCelsius,
+    );
+
+    this.nightModeState.setValue(false);
+    await zone.setSetpoint(target);
+    if (!zone.getValue().isRunning) {
+      await zone.start();
+    }
+  };
+
+  toggleZone = async (index: number): Promise<void> => {
+    const zone = this.getZone(index);
+
+    this.nightModeState.setValue(false);
+    await (zone.getValue().isRunning ? zone.stop() : zone.start());
+  };
+
+  /** Leaving night mode rewrites nothing: the day targets live in the module. */
+  applyNightMode = async (): Promise<void> => {
+    for (const zone of this.zones) {
+      const target = nightTargetCelsius(zone.zoneIndex);
+      if (target === null) {
+        await zone.stop();
+        continue;
+      }
+      await zone.setSetpoint(target);
+      await zone.start();
+    }
+    this.nightModeState.setValue(true);
+  };
+
+  stopAll = async (): Promise<void> => {
+    this.nightModeState.setValue(false);
+    for (const zone of this.zones) {
+      await zone.stop();
+    }
+  };
+
   resync = () => {
     for (const zone of this.zones) {
       void zone.getStatus().catch(() => {});
@@ -61,5 +112,6 @@ export class HeaterSystem {
       zone.dispose();
     }
     this.environment.dispose();
+    this.nightModeState.destroy();
   };
 }
