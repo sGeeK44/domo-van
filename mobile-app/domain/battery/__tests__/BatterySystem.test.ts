@@ -3,6 +3,7 @@ import { BatterySystem } from "@/domain/battery/BatterySystem";
 import { buildReadAllCommand } from "@/domain/battery/JkBmsProtocol";
 import { FakeBinaryTransport } from "@/infrastructure/fake/FakeBinaryTransport";
 import {
+  BROKEN_SENSE_WIRE,
   CHARGE_MOSFET_OFF,
   CHARGE_MOSFET_ON,
   CURRENT,
@@ -32,6 +33,31 @@ describe("BatterySystem", () => {
       tempMos: 4,
     });
     expect(system.getValue().voltage).toBeCloseTo(13.2, 2);
+    system.dispose();
+  });
+
+  it("keeps a cell the BMS senses at 0 V in its own place", () => {
+    const transport = new FakeBinaryTransport(SILENT);
+    const system = new BatterySystem(transport);
+
+    transport.emit(frame([...BROKEN_SENSE_WIRE]));
+
+    const snapshot = system.getValue();
+    expect(snapshot.cellVoltages).toEqual([3.352, 0, 3.361, 3.338]);
+    expect(snapshot.cellCount).toBe(4);
+    system.dispose();
+  });
+
+  it("spreads the pack over the cells it can still read", () => {
+    const transport = new FakeBinaryTransport(SILENT);
+    const system = new BatterySystem(transport);
+
+    transport.emit(frame([...BROKEN_SENSE_WIRE]));
+
+    const snapshot = system.getValue();
+    expect(snapshot.minCellVoltage).toBeCloseTo(3.338, 3);
+    expect(snapshot.maxCellVoltage).toBeCloseTo(3.361, 3);
+    expect(snapshot.cellDelta).toBeCloseTo(0.023, 3);
     system.dispose();
   });
 

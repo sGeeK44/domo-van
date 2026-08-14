@@ -79,15 +79,21 @@ export const DEFAULT_BATTERY_SNAPSHOT: BatterySnapshot = {
   lastUpdate: null,
 };
 
+/** A cell at 0 V is absent — a broken sense wire — not the weakest of the pack. */
+export function isLiveCell(voltage: number): boolean {
+  return voltage > 0;
+}
+
 /** The cell the detail screen marks. A tie goes to the lowest index. */
 export function weakestCellIndex(
   cellVoltages: readonly number[],
 ): number | null {
-  if (cellVoltages.length === 0) return null;
-
-  let weakest = 0;
-  for (let index = 1; index < cellVoltages.length; index++) {
-    if (cellVoltages[index] < cellVoltages[weakest]) weakest = index;
+  let weakest: number | null = null;
+  for (let index = 0; index < cellVoltages.length; index++) {
+    if (!isLiveCell(cellVoltages[index])) continue;
+    if (weakest === null || cellVoltages[index] < cellVoltages[weakest]) {
+      weakest = index;
+    }
   }
   return weakest;
 }

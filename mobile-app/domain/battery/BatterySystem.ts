@@ -10,6 +10,7 @@ import type { BinaryTransport } from "@/domain/ports/BinaryTransport";
 import {
   BatterySnapshot,
   DEFAULT_BATTERY_SNAPSHOT,
+  isLiveCell,
   parseAlarms,
 } from "./BatteryTelemetry";
 
@@ -98,11 +99,11 @@ function mergeFrames(previous: JkBmsData, incoming: JkBmsData): JkBmsData {
 
 /** Derives the whole snapshot from the raw fields, with no memory of its own. */
 function toSnapshot(data: JkBmsData): BatterySnapshot {
-  const cellVoltages = (data.cellVoltages ?? []).filter((v) => v > 0);
-  const minCellVoltage =
-    cellVoltages.length > 0 ? Math.min(...cellVoltages) : 0;
-  const maxCellVoltage =
-    cellVoltages.length > 0 ? Math.max(...cellVoltages) : 0;
+  // The pack as reported, zeros included: index n is physical cell n + 1.
+  const cellVoltages = data.cellVoltages ?? [];
+  const liveCells = cellVoltages.filter(isLiveCell);
+  const minCellVoltage = liveCells.length > 0 ? Math.min(...liveCells) : 0;
+  const maxCellVoltage = liveCells.length > 0 ? Math.max(...liveCells) : 0;
 
   const percentage = data.soc ?? 0;
   const voltage = data.totalVoltage ?? 0;

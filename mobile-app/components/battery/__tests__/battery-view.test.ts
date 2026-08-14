@@ -94,11 +94,45 @@ describe("the cells of a pack", () => {
     expect(cellBars(pack({ cellVoltages: [] }))).toEqual([]);
   });
 
-  it("counts the cells the BMS declares in its header", () => {
-    expect(cellsHeader(pack({ cellCount: 8 }))).toEqual({
-      key: "battery.detail.cells",
-      params: { cells: 8 },
+  it("counts the bars it draws in its header, not what the pack claims to be", () => {
+    const contradiction = pack({
+      cellVoltages: [3.3, 3.31, 3.29],
+      cellCount: 4,
     });
+
+    expect(cellsHeader(contradiction)).toEqual({
+      key: "battery.detail.cells",
+      params: { cells: 3 },
+    });
+    expect(cellBars(contradiction)).toHaveLength(3);
+  });
+
+  // A sense wire breaks on cell 2: the marker belongs to cell 4, not to its neighbour.
+  it("marks the weakest live cell, and numbers the absent one where it sits", () => {
+    const bars = cellBars(pack({ cellVoltages: [3.352, 0, 3.361, 3.338] }));
+
+    expect(bars.map((bar) => bar.label)).toEqual([
+      { key: "battery.detail.cell", params: { index: 1 } },
+      { key: "battery.detail.cell", params: { index: 2 } },
+      { key: "battery.detail.cell", params: { index: 3 } },
+      { key: "battery.detail.weakestCell", params: { index: 4 } },
+    ]);
+    expect(bars.map((bar) => bar.value)).toEqual([
+      "3.352",
+      "0.000",
+      "3.361",
+      "3.338",
+    ]);
+  });
+
+  it("empties the absent cell's bar without dragging the pack's window down to it", () => {
+    const ratios = cellBars(
+      pack({ cellVoltages: [3.352, 0, 3.361, 3.338] }),
+    ).map((bar) => bar.ratio);
+
+    expect(ratios[1]).toBe(0);
+    expect(ratios[2]).toBeCloseTo(1);
+    expect(ratios[3]).toBeCloseTo(0.6);
   });
 });
 
