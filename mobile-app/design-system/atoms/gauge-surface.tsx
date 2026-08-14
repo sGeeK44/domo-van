@@ -10,12 +10,12 @@ import {
   drawsMeniscus,
   fillExtent,
   type GaugeAxis,
+  LINE_THICKNESS,
   linePosition,
+  markerInset,
 } from "@/design-system/atoms/gauge-geometry";
 import { Hatch } from "@/design-system/atoms/hatch";
 import { Motion } from "@/design-system/tokens";
-
-const LINE_THICKNESS = 2;
 
 export type GaugeSurfaceProps = {
   /** 0..1, clamped. The fill extent along the axis. */
@@ -27,6 +27,7 @@ export type GaugeSurfaceProps = {
   lineColor?: string;
   /** A second 2 px marker, independent of the fill (a setpoint). */
   markerRatio?: number;
+  /** Omitted → the marker is not drawn but keeps its position, so it reappears in place. */
   markerColor?: string;
   /** Replaces the fill with the diagonal hatch: offline, or an empty slot. */
   hatched?: boolean;
@@ -57,7 +58,10 @@ export function GaugeSurface({
 
   const fillStyle = useAnimatedStyle(() => fillExtent(fill.value, axis));
   const meniscusStyle = useAnimatedStyle(() => linePosition(fill.value, axis));
-  const markerStyle = useAnimatedStyle(() => linePosition(marker.value, axis));
+  const markerStyle = useAnimatedStyle(() => ({
+    ...linePosition(marker.value, axis),
+    ...markerInset(marker.value, axis),
+  }));
 
   const vertical = axis === "vertical";
   const lineStyle = vertical ? styles.verticalLine : styles.horizontalLine;
@@ -65,7 +69,10 @@ export function GaugeSurface({
     markerRatio !== undefined && markerColor !== undefined && !hatched;
 
   return (
-    <View style={[styles.surface, style, { borderRadius: radius }]}>
+    <View
+      testID="gauge-surface"
+      style={[styles.surface, style, { borderRadius: radius }]}
+    >
       {hatched ? (
         <Hatch testID="gauge-hatch" style={StyleSheet.absoluteFill} />
       ) : (

@@ -7,6 +7,7 @@ import {
   drawsMeniscus,
   fillExtent,
   linePosition,
+  markerInset,
 } from "@/design-system/atoms/gauge-geometry";
 
 describe("a gauge ratio", () => {
@@ -49,6 +50,34 @@ describe("the line position", () => {
 
   it("rides in from the left on a horizontal gauge", () => {
     expect(linePosition(0.72, "horizontal")).toEqual({ left: "72%" });
+  });
+});
+
+describe("the marker inset", () => {
+  // -0 is what negating zero yields; it lays out as 0, but vitest tells them apart.
+  it("leaves an empty-side marker where it sits: none of it overhangs", () => {
+    expect(markerInset(0, "horizontal")).toEqual({ marginLeft: -0 });
+    expect(markerInset(0, "vertical")).toEqual({ marginBottom: -0 });
+  });
+
+  it("pulls a full-side marker back by its whole thickness, or it is clipped away", () => {
+    expect(markerInset(1, "horizontal")).toEqual({ marginLeft: -2 });
+    expect(markerInset(1, "vertical")).toEqual({ marginBottom: -2 });
+  });
+
+  it("centres the marker on the boundary in between", () => {
+    expect(markerInset(0.5, "horizontal")).toEqual({ marginLeft: -1 });
+    expect(markerInset(0.5, "vertical")).toEqual({ marginBottom: -1 });
+  });
+
+  it("stays proportional across the range", () => {
+    expect(markerInset(0.25, "horizontal")).toEqual({ marginLeft: -0.5 });
+    expect(markerInset(0.75, "horizontal")).toEqual({ marginLeft: -1.5 });
+  });
+
+  it("clamps before it insets", () => {
+    expect(markerInset(1.4, "horizontal")).toEqual({ marginLeft: -2 });
+    expect(markerInset(Number.NaN, "horizontal")).toEqual({ marginLeft: -0 });
   });
 });
 
@@ -109,6 +138,7 @@ describe("the worklet directives", () => {
         "percent",
         "fillExtent",
         "linePosition",
+        "markerInset",
         ...RENDER_TIME_ONLY,
       ]),
     );
