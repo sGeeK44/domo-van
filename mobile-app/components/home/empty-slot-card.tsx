@@ -1,4 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  type StyleProp,
+  StyleSheet,
+  Text,
+  View,
+  type ViewStyle,
+} from "react-native";
 import {
   BorderRadius,
   FontSize,
@@ -13,16 +20,18 @@ import {
 export type EmptySlotCardProps = {
   title: string;
   onPress: () => void;
+  /** How much room the card takes is the caller's layout, not the card's. */
+  style?: StyleProp<ViewStyle>;
 };
 
-export function EmptySlotCard({ title, onPress }: EmptySlotCardProps) {
+export function EmptySlotCard({ title, onPress, style }: EmptySlotCardProps) {
   const colors = useThemeColor();
   const styles = getStyles(colors);
 
   return (
     <Pressable
       accessibilityRole="button"
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, style, pressed && styles.pressed]}
       onPress={onPress}
     >
       <View style={styles.body}>
@@ -37,7 +46,6 @@ export function EmptySlotCard({ title, onPress }: EmptySlotCardProps) {
 const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     card: {
-      flex: 1,
       minHeight: 100,
       borderRadius: BorderRadius.l,
       borderWidth: 2,

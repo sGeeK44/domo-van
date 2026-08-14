@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { ComponentProps } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 import {
   BorderRadius,
   Colors,
@@ -48,7 +48,6 @@ export function StatusCard({
 const getStyles = (_colors: typeof Colors.light | typeof Colors.dark) =>
   StyleSheet.create({
     card: {
-      flex: 1,
       borderRadius: BorderRadius.l,
       padding: 16,
       minHeight: 100,
