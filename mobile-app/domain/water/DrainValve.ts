@@ -87,6 +87,7 @@ export class DrainValve implements Observable<ValveState> {
         position: "unknown",
         remainingSeconds: 0,
         lastClosure: closureBeforeWrite,
+        lastFeedback: { key: "water.feedback.openFailed" },
       }));
     }
   };
@@ -106,6 +107,7 @@ export class DrainValve implements Observable<ValveState> {
         ...prev,
         position: "unknown",
         lastClosure: closureBeforeWrite,
+        lastFeedback: { key: "water.feedback.closeFailed" },
       }));
     }
   };

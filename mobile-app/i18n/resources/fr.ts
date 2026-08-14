@@ -134,7 +134,6 @@ export const fr = {
 
   water: {
     levels: {
-      title: "Niveaux d'Eau",
       cleanTank: "PROPRE",
       greyTank: "GRISE",
       cleanCaption: "cuve {{capacity}} L",
@@ -178,6 +177,8 @@ export const fr = {
     feedback: {
       autoCloseFailed:
         "Erreur lors de la mise à jour de la fermeture automatique.",
+      openFailed: "Erreur lors de l'ouverture de la vanne.",
+      closeFailed: "Erreur lors de la fermeture de la vanne.",
     },
   },
 

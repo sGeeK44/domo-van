@@ -45,6 +45,10 @@ function valveCommands(): string[] {
     .filter((command) => VALVE_COMMANDS.has(command));
 }
 
+function writesSince(mark: number): string[] {
+  return writes.slice(mark).map(({ command }) => command);
+}
+
 function valveChannel(): InstanceType<typeof FakeChannel> {
   const write = writes.find(({ command }) => VALVE_COMMANDS.has(command));
   if (!write) throw new Error("no command reached the valve");
@@ -103,6 +107,7 @@ function pressCloseNow() {
   });
 }
 
+/** Fake time also runs with real time, so a test holding the valve open absorbs an extra tick. */
 function elapse(seconds: number) {
   return act(async () => {
     vi.advanceTimersByTime(seconds * ONE_SECOND);
@@ -129,13 +134,14 @@ function opacityOf(testID: string): number {
 describe("the Eau screen", () => {
   beforeEach(() => {
     writes = [];
-    // Auto-advancing: the module's second still passes on its own, and a test can jump a whole delay.
+    // Auto-advancing: dom-testing-library only spots fake timers behind a global jest, which vitest lacks.
     vi.useFakeTimers({ shouldAdvanceTime: true });
     recordWrites();
   });
 
   afterEach(async () => {
-    // The fake module keeps its relay between tests: leave it as the next test expects to find it.
+    // The fake module keeps its channels between tests: leave them as the next test expects to find them.
+    for (const { channel } of writes) channel.restoreLink();
     if (screen.queryByTestId("drain-close-now")) await pressCloseNow();
     cleanup();
     resetNavigation();
@@ -167,10 +173,11 @@ describe("the Eau screen", () => {
   // The ticket's first acceptance example.
   it("opens nothing on a tap: the valve takes a deliberate gesture", async () => {
     await waterTab();
+    const settled = writes.length;
 
     await tapTheSlider();
 
-    expect(valveCommands()).toEqual([]);
+    expect(writesSince(settled)).toEqual([]);
     expect(countdown()).toBeNull();
     expect(screen.getByTestId("drain-slide")).toBeTruthy();
   });
@@ -191,9 +198,12 @@ describe("the Eau screen", () => {
     await waterTab();
     await slideAllTheWay();
 
-    await elapse(3);
+    // Out of step with the cadence on purpose: a clock of its own would still read 45 s.
+    await act(async () => {
+      valveChannel().emit("COUNTDOWN:7");
+    });
 
-    expect(countdown()).toBe(`${AUTO_CLOSE_SECONDS - 3} s`);
+    expect(countdown()).toBe("7 s");
   });
 
   // The ticket's fourth acceptance example.
@@ -221,6 +231,21 @@ describe("the Eau screen", () => {
 
     expect(countdown()).toBeNull();
     expect(toast()).toBe("Vanne fermée");
+  });
+
+  it("never claims a close that the link dropped, and shows the valve still draining", async () => {
+    await waterTab();
+    await slideAllTheWay();
+    valveChannel().dropLink();
+
+    await pressCloseNow();
+
+    expect(toast()).toBe("Erreur lors de la fermeture de la vanne.");
+
+    await elapse(2);
+
+    expect(screen.getByText("se vide")).toBeTruthy();
+    expect(screen.getByTestId("drain-close-now")).toBeTruthy();
   });
 
   // The ticket's third acceptance example.

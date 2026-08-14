@@ -30,6 +30,11 @@ export class FakeChannel implements Channel {
     this.linkDown = true;
   }
 
+  /** The radio link came back: a channel outlives the test that dropped it. */
+  restoreLink(): void {
+    this.linkDown = false;
+  }
+
   send(command: string): Promise<void> {
     if (this.linkDown) {
       return Promise.reject(new Error(`link is down, dropped: ${command}`));

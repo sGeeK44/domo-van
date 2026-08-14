@@ -6,6 +6,8 @@ export type FeedbackKey =
   | "common.feedback.saved"
   | "modules.admin.failed"
   | "water.feedback.autoCloseFailed"
+  | "water.feedback.openFailed"
+  | "water.feedback.closeFailed"
   | "heater.feedback.setpointFailed"
   | "heater.feedback.startFailed"
   | "heater.feedback.stopFailed"
