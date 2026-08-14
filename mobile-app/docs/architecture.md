@@ -109,8 +109,23 @@ sees a connected device through the `DeviceHandle` port and asks
   turns a `LinkState` into the tone of its dot, the line naming the time of
   last contact and the reconnection offer; `LinkBadge` draws the dot. Three
   surfaces go through them today and cannot drift apart: the tab icon, the
-  dashboard card and the *Eau* / *Chauff* header. The *Modules* row is task T5
-  of issue #3; nothing takes a screen over when its module goes offline.
+  dashboard card, the *Eau* / *Chauff* header and `ModuleScreen`'s takeover.
+  The *Modules* row is task T5 of issue #3.
+- **A module tab is a `ModuleScreen`.** `screens/module-screen.tsx` owns the
+  header and the three states a tab can be in: an unpaired slot shows
+  `ModuleLinkNotice`, an offline or connecting one is taken over entirely by an
+  `OfflineCard` carrying the time of last contact and the reconnection, and an
+  online one renders the screen's own content through `children(system)`. It
+  reads `useModuleSlot` and `useModuleRegistry`, which is why it lives in
+  `screens/` — `components/` may not import `composition/`. Its header carries
+  the module's title and its settings button only: the link already shows as a
+  dot on the tab, and the takeover carries the reconnection. The shell also owns
+  the content padding, so a screen it wraps adds none of its own.
+- **What a module reports reaches the user as a toast.**
+  `screens/hooks/useFeedbackToast.ts` watches a domain object's `lastFeedback`
+  and shows `t(key, params)` when it changes; a module repeating itself is one
+  event, not two toasts. That is the failure path — the confirmation of an
+  action is the screen's own toast, fired where the command is sent.
 - **Import the design system through its barrel** from outside
   `design-system/`, and always through concrete files from inside it — the
   barrel would close a cycle.
