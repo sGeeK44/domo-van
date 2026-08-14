@@ -13,6 +13,10 @@ export default defineConfig({
         __dirname,
         "__mocks__/react-native-ble-plx.ts",
       ),
+      "react-native-svg": path.resolve(
+        __dirname,
+        "__mocks__/react-native-svg.tsx",
+      ),
       "expo-secure-store": path.resolve(
         __dirname,
         "__mocks__/expo-secure-store.ts",

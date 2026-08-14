@@ -6,13 +6,6 @@ export type StatusBadgeProps = {
   size?: number;
 };
 
-const STATUS_COLORS = {
-  connected: "#2ECC71",
-  partial: "#F39C12",
-  disconnected: "#E74C3C",
-  loading: "#F39C12",
-};
-
 /**
  * One view for every status, never a subtree that comes and goes: a link
  * settles in under a frame, and Fabric merges a create with the delete that
@@ -20,6 +13,12 @@ const STATUS_COLORS = {
  */
 export function StatusBadge({ status, size = 10 }: StatusBadgeProps) {
   const colors = useThemeColor();
+  const statusColor = {
+    connected: colors.success,
+    partial: colors.textMuted,
+    disconnected: colors.danger,
+    loading: colors.textMuted,
+  }[status];
 
   return (
     <View
@@ -29,7 +28,7 @@ export function StatusBadge({ status, size = 10 }: StatusBadgeProps) {
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: STATUS_COLORS[status],
+          backgroundColor: statusColor,
           borderColor: colors.surface,
         },
       ]}

@@ -5,7 +5,7 @@ import {
   View,
   type ViewStyle,
 } from "react-native";
-import { useThemeColor } from "@/design-system/theme/use-theme-color";
+import { useStyles } from "@/design-system/theme/use-styles";
 import { FontSize, FontWeight, type Palette } from "@/design-system/tokens";
 
 export const Card = ({
@@ -20,8 +20,7 @@ export const Card = ({
   /** How much room the card takes is the caller's layout, not the card's. */
   style?: StyleProp<ViewStyle>;
 }) => {
-  const colors = useThemeColor();
-  const styles = getStyles(colors);
+  const styles = useStyles(makeStyles);
   return (
     <View style={[styles.card, style]}>
       <View style={styles.header}>
@@ -33,7 +32,7 @@ export const Card = ({
   );
 };
 
-const getStyles = (colors: Palette) =>
+const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     card: {
       backgroundColor: colors.surface,

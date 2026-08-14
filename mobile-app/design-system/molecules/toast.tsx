@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { useThemeColor } from "@/design-system/theme/use-theme-color";
+import { useStyles } from "@/design-system/theme/use-styles";
 import {
   BorderRadius,
   type Palette,
@@ -65,8 +65,7 @@ export function useToast(): Toast {
 }
 
 function ToastSlot({ message }: { message: string }) {
-  const colors = useThemeColor();
-  const styles = getStyles(colors);
+  const styles = useStyles(makeStyles);
 
   return (
     <View style={styles.slot} pointerEvents="none" testID="toast">
@@ -75,7 +74,7 @@ function ToastSlot({ message }: { message: string }) {
   );
 }
 
-const getStyles = (colors: Palette) =>
+const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     slot: {
       position: "absolute",

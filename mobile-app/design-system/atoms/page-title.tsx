@@ -1,5 +1,5 @@
 import { StyleSheet, Text, type TextProps } from "react-native";
-import { useThemeColor } from "@/design-system/theme/use-theme-color";
+import { useStyles } from "@/design-system/theme/use-styles";
 import { type Palette } from "@/design-system/tokens";
 
 export type PageTitleProps = {
@@ -7,8 +7,7 @@ export type PageTitleProps = {
 } & Omit<TextProps, "style">;
 
 export function PageTitle({ children, ...props }: PageTitleProps) {
-  const colors = useThemeColor();
-  const styles = getStyles(colors);
+  const styles = useStyles(makeStyles);
 
   return (
     <Text style={styles.title} {...props}>
@@ -17,7 +16,7 @@ export function PageTitle({ children, ...props }: PageTitleProps) {
   );
 }
 
-const getStyles = (colors: Palette) =>
+const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     title: {
       fontSize: 38,
