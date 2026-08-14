@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { Colors, FontFamilies, TextStyles } from "@/design-system/tokens";
+import {
+  Colors,
+  FontFamilies,
+  MetricUnitSize,
+  type TextStyleName,
+  TextStyles,
+} from "@/design-system/tokens";
 
 type Shape = { [key: string]: Shape | null };
 
@@ -32,6 +38,22 @@ describe("TextStyles", () => {
   it("reaches every weight by family, never by fontWeight", () => {
     for (const [name, style] of entries) {
       expect(style, name).not.toHaveProperty("fontWeight");
+    }
+  });
+});
+
+describe("MetricUnitSize", () => {
+  const entries = Object.entries(MetricUnitSize) as [TextStyleName, number][];
+
+  it("keys a real text style", () => {
+    for (const [name] of entries) {
+      expect(Object.keys(TextStyles), name).toContain(name);
+    }
+  });
+
+  it("stays smaller than the metric it sits in", () => {
+    for (const [name, size] of entries) {
+      expect(size, name).toBeLessThan(TextStyles[name].fontSize);
     }
   });
 });
