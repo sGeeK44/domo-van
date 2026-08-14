@@ -1,115 +1,188 @@
 import { useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StatusBar, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { linkTone, reconnectAction } from "@/components/home/link-view";
-import { DrainSlider } from "@/components/water/drain-slider";
-import { WaterTank } from "@/components/water/water-tank";
-import {
-  useModuleRegistry,
-  useModuleSlot,
-} from "@/composition/ModuleRegistryProvider";
-import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
+import { StyleSheet, View } from "react-native";
+import { DrainSection } from "@/components/water/drain-section";
+import { clockTime, drainedLiters } from "@/components/water/drain-view";
 import { useObservable } from "@/core/react/useObservable";
-import { PageHeader, type Palette, useThemeColor } from "@/design-system";
+import { GaugeColumn, Spacing, useThemeColor, useToast } from "@/design-system";
+import type { ClosureCause } from "@/domain/water/DrainValve";
 import { DEFAULT_VALVE_STATE } from "@/domain/water/DrainValve";
+import type { TankLevelSnapshot } from "@/domain/water/TankLevelSensor";
 import { DEFAULT_TANK_SNAPSHOT } from "@/domain/water/TankLevelSensor";
+import type { WaterSystem } from "@/domain/water/WaterSystem";
+import type { TranslationKey } from "@/i18n/keys";
+import { useFeedbackToast } from "@/screens/hooks/useFeedbackToast";
+import { ModuleScreen } from "@/screens/module-screen";
 
 export default function WaterScreen() {
-  const { t } = useTranslation();
-  const colors = useThemeColor();
-  const styles = getStyles(colors);
   const router = useRouter();
 
-  const { link } = useModuleSlot("water");
-  const { reconnect } = useModuleRegistry();
-  const isConnected = link.status === "online";
-  const waterSystem = useWaterSystem();
+  return (
+    <ModuleScreen
+      moduleKey="water"
+      titleKey="modules.water.tab"
+      onSettingsPress={() => router.push("/water-settings")}
+    >
+      {(system) => <WaterLevels system={system} />}
+    </ModuleScreen>
+  );
+}
 
-  const clean = useObservable(
-    waterSystem?.cleanTank ?? null,
-    DEFAULT_TANK_SNAPSHOT,
-  );
-  const grey = useObservable(
-    waterSystem?.greyTank ?? null,
-    DEFAULT_TANK_SNAPSHOT,
-  );
-  const valve = useObservable(
-    waterSystem?.greyDrainValve ?? null,
-    DEFAULT_VALVE_STATE,
-  );
+/** Where the drain started, so the grey tank can report what it has lost since. */
+type DrainStart = { liters: number; at: Date };
 
-  const handleDrain = () => {
-    void waterSystem?.greyDrainValve.open();
+function WaterLevels({ system }: { system: WaterSystem }) {
+  const { t } = useTranslation();
+  const colors = useThemeColor();
+  const toast = useToast();
+
+  const valveDevice = system.greyDrainValve;
+  const clean = useObservable(system.cleanTank, DEFAULT_TANK_SNAPSHOT);
+  const grey = useObservable(system.greyTank, DEFAULT_TANK_SNAPSHOT);
+  const valve = useObservable(valveDevice, DEFAULT_VALVE_STATE);
+  useFeedbackToast(valveDevice);
+  useAutoClosedToast(valve.lastClosure);
+
+  // The module ticks at 1 Hz, so a COUNTDOWN can still be on the wire when the user closes:
+  // what the user last asked for wins until they ask for the opposite.
+  const [closeRequested, setCloseRequested] = useState(false);
+  const draining = valve.position === "open" && !closeRequested;
+
+  const greyLiters = litersOf(grey);
+  const start = useDrainStart(draining, greyLiters);
+
+  const announce = async (write: Promise<void>, key: TranslationKey) => {
+    await write;
+    // A write that fell through leaves the valve unknown; only one that landed is worth confirming.
+    if (valveDevice.getValue().position !== "unknown") toast.show(t(key));
   };
-  const handleStopDrain = () => {
-    void waterSystem?.greyDrainValve.close();
+
+  const openValve = () => {
+    setCloseRequested(false);
+    void announce(valveDevice.open(), "water.drain.toast.opened");
   };
 
-  // Show 0 when disconnected
-  const cleanCapacity = isConnected ? clean.capacityLiters : 0;
-  const cleanPercentage = isConnected ? clean.percentage : 0;
-  const greyCapacity = isConnected ? grey.capacityLiters : 0;
-  const greyPercentage = isConnected ? grey.percentage : 0;
-
-  // Valve state
-  const isDraining = isConnected && valve.position === "open";
-  const remainingSeconds = isConnected ? valve.remainingSeconds : 0;
+  const closeValve = () => {
+    setCloseRequested(true);
+    void announce(valveDevice.close(), "water.drain.toast.closedNow");
+  };
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="default" />
-      <SafeAreaView style={{ flex: 1 }}>
-        <PageHeader
-          title={t("water.levels.title")}
-          onSettingsPress={() => router.push("/water-settings")}
-          onBluetoothPress={() => void reconnect("water")}
-          bluetoothStatus={linkTone(link)}
-          bluetoothDisabled={reconnectAction(link)?.disabled ?? true}
-        />
-        <View style={styles.content}>
-          <View style={styles.tanksRow}>
-            <WaterTank
-              name={t("water.levels.cleanTank")}
-              capacity={cleanCapacity}
-              percentage={cleanPercentage}
-              color={colors.fill.cleanWater}
-            />
-            <WaterTank
-              name={t("water.levels.greyTank")}
-              capacity={greyCapacity}
-              percentage={greyPercentage}
-              color={colors.fill.greyWater}
-            />
-          </View>
-          <DrainSlider
-            isDraining={isDraining}
-            remainingSeconds={remainingSeconds}
-            onDrain={handleDrain}
-            onStopDrain={handleStopDrain}
+      <View style={styles.tanks}>
+        <View style={[styles.tank, { opacity: draining ? DIMMED : FULL }]}>
+          <GaugeColumn
+            testID="clean-tank"
+            ratio={ratioOf(clean)}
+            fillColor={colors.fill.cleanWater}
+            lineColor={colors.line.cleanWater}
+            label={t("water.levels.cleanTank")}
+            caption={t("water.levels.cleanCaption", {
+              capacity: clean.capacityLiters,
+            })}
+            value={{ amount: String(litersOf(clean)), unit: LITERS }}
+            footer={t("water.levels.cleanFooter", {
+              percentage: Math.round(clean.percentage),
+            })}
           />
         </View>
-      </SafeAreaView>
+        <View style={styles.tank}>
+          <GaugeColumn
+            testID="grey-tank"
+            draining={draining}
+            ratio={ratioOf(grey)}
+            fillColor={colors.fill.greyWater}
+            lineColor={colors.line.greyWater}
+            label={t("water.levels.greyTank")}
+            caption={
+              draining
+                ? t("water.levels.greyDrainingCaption")
+                : t("water.levels.greyCaption", {
+                    capacity: grey.capacityLiters,
+                  })
+            }
+            value={{ amount: String(greyLiters), unit: LITERS }}
+            footer={
+              start
+                ? t("water.levels.greyDrainingFooter", {
+                    liters: drainedLiters(start.liters, greyLiters),
+                    time: clockTime(start.at),
+                  })
+                : t("water.levels.greyFooter", {
+                    percentage: Math.round(grey.percentage),
+                    remaining: grey.capacityLiters - greyLiters,
+                  })
+            }
+          />
+        </View>
+      </View>
+      <DrainSection
+        draining={draining}
+        remainingSeconds={valve.remainingSeconds}
+        autoCloseSeconds={valve.autoCloseSeconds}
+        onOpen={openValve}
+        onCloseNow={closeValve}
+      />
     </View>
   );
 }
 
-const getStyles = (colors: Palette) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.screen,
-    },
-    content: {
-      flex: 1,
-      padding: 20,
-      gap: 20,
-    },
-    tanksRow: {
-      flex: 1,
-      flexDirection: "row",
-      alignSelf: "stretch",
-      backgroundColor: "transparent",
-      gap: 10,
-    },
-  });
+/** The module closed itself: the one closure the user did not ask for, so the one worth saying. */
+function useAutoClosedToast(lastClosure: ClosureCause | null): void {
+  const { t } = useTranslation();
+  const toast = useToast();
+  // Seeded with what is already reported: mounting on a closed valve is not a closure.
+  const reported = useRef(lastClosure);
+
+  useEffect(() => {
+    const previous = reported.current;
+    reported.current = lastClosure;
+    if (lastClosure === "auto" && previous !== "auto") {
+      toast.show(t("water.drain.toast.autoClosed"));
+    }
+  }, [lastClosure, t, toast]);
+}
+
+function useDrainStart(draining: boolean, liters: number): DrainStart | null {
+  const [start, setStart] = useState<DrainStart | null>(null);
+
+  useEffect(() => {
+    setStart((known) => {
+      if (!draining) return null;
+      return known ?? { liters, at: new Date() };
+    });
+  }, [draining, liters]);
+
+  return start;
+}
+
+/** The unit is its own smaller span inside the metric, and reads the same in every language. */
+const LITERS = " L";
+
+function ratioOf(tank: TankLevelSnapshot): number {
+  return tank.percentage / 100;
+}
+
+function litersOf(tank: TankLevelSnapshot): number {
+  return Math.round((tank.percentage / 100) * tank.capacityLiters);
+}
+
+/** The mockup's .55: the sibling stays readable while attention goes to the tank that is draining. */
+const DIMMED = 0.55;
+const FULL = 1;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    gap: Spacing.xxl,
+  },
+  tanks: {
+    flex: 1,
+    flexDirection: "row",
+    gap: Spacing.l,
+  },
+  tank: {
+    flex: 1,
+  },
+});

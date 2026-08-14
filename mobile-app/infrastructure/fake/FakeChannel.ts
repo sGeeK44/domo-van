@@ -1,17 +1,25 @@
-import { createDetachedFanout } from "@/core/fanout";
+import { createFanout, type Fanout, type Source } from "@/core/fanout";
 import type { Listener, Unsubscribe } from "@/core/observable";
 import type { Channel } from "@/domain/ports/Channel";
-import type { ChannelScenario } from "@/infrastructure/fake/scenarios/Scenario";
+import type {
+  ChannelCadence,
+  ChannelScenario,
+} from "@/infrastructure/fake/scenarios/Scenario";
 
 const SILENT: ChannelScenario = () => [];
 
 /** A channel whose peer is a scenario instead of a radio. */
 export class FakeChannel implements Channel {
   readonly commands: string[] = [];
-  private readonly frames = createDetachedFanout<string>();
+  private readonly frames: Fanout<string>;
   private linkDown = false;
 
-  constructor(private readonly scenario: ChannelScenario = SILENT) {}
+  constructor(
+    private readonly scenario: ChannelScenario = SILENT,
+    private readonly cadence?: ChannelCadence,
+  ) {
+    this.frames = createFanout<string>(() => this.startTicking());
+  }
 
   listen(listener: Listener<string>): Unsubscribe {
     return this.frames.add(listener);
@@ -39,5 +47,16 @@ export class FakeChannel implements Channel {
 
   get listenerCount(): number {
     return this.frames.size;
+  }
+
+  /** A module only pushes to someone: the cadence runs while the channel is listened to. */
+  private startTicking(): Source {
+    const cadence = this.cadence;
+    if (!cadence || cadence.intervalMs <= 0) return { remove: () => {} };
+
+    const ticker = setInterval(() => {
+      for (const frame of cadence.next()) this.emit(frame);
+    }, cadence.intervalMs);
+    return { remove: () => clearInterval(ticker) };
   }
 }
