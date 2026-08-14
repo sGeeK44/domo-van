@@ -10,6 +10,14 @@ describe("weakestCellIndex", () => {
     expect(weakestCellIndex([])).toBeNull();
   });
 
+  it("skips a cell sensed at 0 V rather than calling it the weakest", () => {
+    expect(weakestCellIndex([3.352, 0, 3.361, 3.338])).toBe(3);
+  });
+
+  it("points at nothing when every cell is absent", () => {
+    expect(weakestCellIndex([0, 0, 0, 0])).toBeNull();
+  });
+
   it("resolves a tie to the lowest index, so one cell is marked", () => {
     expect(weakestCellIndex([3.35, 3.338, 3.36, 3.338])).toBe(1);
   });

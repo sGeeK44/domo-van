@@ -120,6 +120,15 @@ describe("the battery detail", () => {
     expect(cellLabels()).toEqual(["C1", "C2", "C3", "C4 min"]);
   });
 
+  // A broken sense wire on cell 2: the pack is still 4S, and cell 4 is still the weakest.
+  it("draws the absent cell too, so the header and the bars agree", () => {
+    renderDetail({ cellVoltages: [3.352, 0, 3.361, 3.338], cellCount: 4 });
+
+    expect(screen.getByText(FAKE_CELL_COUNT)).toBeTruthy();
+    expect(cellLabels()).toEqual(["C1", "C2", "C3", "C4 min"]);
+    expect(screen.getByText("0.000")).toBeTruthy();
+  });
+
   it("draws one bar per cell the BMS reports, whatever the pack's size", () => {
     renderDetail({ cellVoltages: [3.3, 3.31, 3.29], cellCount: 3 });
 

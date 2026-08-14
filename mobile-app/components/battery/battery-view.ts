@@ -3,6 +3,7 @@ import {
   type BatterySnapshot,
   calculateRemainingTime,
   formatRemainingTime,
+  isLiveCell,
   weakestCellIndex,
 } from "@/domain/battery/BatteryTelemetry";
 import type { TranslationKey } from "@/i18n/keys";
@@ -31,6 +32,8 @@ export type AlarmBannerView = {
 
 /** The shortest bar of the cluster: a pack within a few mV still reads as several bars. */
 const FLOOR_RATIO = 0.6;
+
+const EMPTY_RATIO = 0;
 
 const MILLIVOLTS_PER_VOLT = 1000;
 const CELL_DECIMALS = 3;
@@ -74,11 +77,12 @@ export function heroAside(battery: BatterySnapshot): {
   };
 }
 
+/** Counted off the same array `cellBars` maps, so the header can never outrun the bars. */
 export function cellsHeader(battery: BatterySnapshot): BatteryCopy {
   // Not named `count`: i18next reads that one as a plural selector.
   return {
     key: "battery.detail.cells",
-    params: { cells: battery.cellCount },
+    params: { cells: battery.cellVoltages.length },
   };
 }
 
@@ -105,8 +109,9 @@ export function cellBars(battery: BatterySnapshot): CellBarView[] {
   if (voltages.length === 0) return [];
 
   const weakest = weakestCellIndex(voltages);
-  const min = Math.min(...voltages);
-  const max = Math.max(...voltages);
+  const liveCells = voltages.filter(isLiveCell);
+  const min = Math.min(...liveCells);
+  const max = Math.max(...liveCells);
 
   return voltages.map((voltage, index) => ({
     id: `cell-${index + 1}`,
@@ -118,7 +123,8 @@ export function cellBars(battery: BatterySnapshot): CellBarView[] {
           : "battery.detail.cell",
       params: { index: index + 1 },
     },
-    ratio: cellRatio(voltage, min, max),
+    // An absent cell sits outside the pack's window: an empty bar, still numbered.
+    ratio: isLiveCell(voltage) ? cellRatio(voltage, min, max) : EMPTY_RATIO,
     value: voltage.toFixed(CELL_DECIMALS),
   }));
 }
