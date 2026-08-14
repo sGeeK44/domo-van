@@ -5,6 +5,7 @@ import {
   BorderRadius,
   Button,
   GaugeBars,
+  GaugeColumn,
   GaugeHero,
   GaugeRow,
   GaugeSurface,
@@ -207,6 +208,45 @@ export default function GaugeGalleryScreen() {
             style={styles.cluster}
           />
         </Section>
+
+        <Section title="Column gauge">
+          <Text style={styles.caption}>
+            Clean tank, then the grey tank draining
+          </Text>
+          <View style={styles.tanks}>
+            <GaugeColumn
+              ratio={ratio}
+              label="CLEAN WATER"
+              caption="100 L tank"
+              value={{ amount: "72", unit: " L" }}
+              footer="4 DAYS LEFT"
+              {...water}
+            />
+            <GaugeColumn
+              draining
+              ratio={LOW}
+              label="GREY WATER"
+              caption="Draining"
+              value={{ amount: "28", unit: " L" }}
+              footer="VALVE OPEN"
+              fillColor={colors.fill.greyWater}
+              lineColor={colors.line.greyWater}
+            />
+          </View>
+          <Text style={styles.caption}>
+            Full tank: the 28 px corners clip the fill
+          </Text>
+          <View style={styles.tanks}>
+            <GaugeColumn
+              ratio={1}
+              label="CLEAN WATER"
+              caption="100 L tank"
+              value={{ amount: "100", unit: " L" }}
+              footer="6 DAYS LEFT"
+              {...water}
+            />
+          </View>
+        </Section>
       </ScrollView>
     </SafeAreaView>
   );
@@ -240,5 +280,10 @@ const makeStyles = (colors: Palette) =>
     },
     cluster: {
       height: 96,
+    },
+    tanks: {
+      flexDirection: "row",
+      gap: Spacing.m,
+      height: 280,
     },
   });
