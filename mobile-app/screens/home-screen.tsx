@@ -1,6 +1,12 @@
 import { useRouter } from "expo-router";
 import { type PropsWithChildren, useMemo } from "react";
-import { StatusBar, StyleSheet, View } from "react-native";
+import {
+  StatusBar,
+  type StyleProp,
+  StyleSheet,
+  View,
+  type ViewStyle,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BatteryGauge } from "@/components/home/battery-gauge";
 import { EmptySlotCard } from "@/components/home/empty-slot-card";
@@ -124,6 +130,7 @@ export default function HomeScreen() {
               slot={waterSlot}
               onAdd={openModules}
               onReconnect={() => void reconnect("water")}
+              style={styles.rowSlot}
             >
               <StatusCard
                 icon="water-drop"
@@ -139,6 +146,7 @@ export default function HomeScreen() {
               slot={heaterSlot}
               onAdd={openModules}
               onReconnect={() => void reconnect("heater")}
+              style={styles.rowSlot}
             >
               <StatusCard
                 icon="local-fire-department"
@@ -174,15 +182,22 @@ type SlotProps = PropsWithChildren<{
   slot: ModuleSlot;
   onAdd: () => void;
   onReconnect: () => void;
+  style?: StyleProp<ViewStyle>;
 }>;
 
-function Slot({ slot, onAdd, onReconnect, children }: SlotProps) {
+function Slot({ slot, onAdd, onReconnect, style, children }: SlotProps) {
   if (!slot.pairing) {
-    return <EmptySlotCard title={slot.module.tabTitle} onPress={onAdd} />;
+    return (
+      <EmptySlotCard
+        title={slot.module.tabTitle}
+        onPress={onAdd}
+        style={style}
+      />
+    );
   }
 
   return (
-    <ModuleCard link={slot.link} onReconnect={onReconnect}>
+    <ModuleCard link={slot.link} onReconnect={onReconnect} style={style}>
       {children}
     </ModuleCard>
   );
@@ -202,12 +217,15 @@ const getStyles = (colors: ThemeColors) =>
       paddingHorizontal: 20,
       gap: 24,
     },
+    // the gauge centres itself, so the card spans the width and keeps a measurable one
     gaugeSection: {
-      alignItems: "center",
       paddingVertical: 10,
     },
     cardsRow: {
       flexDirection: "row",
       gap: 12,
+    },
+    rowSlot: {
+      flex: 1,
     },
   });
