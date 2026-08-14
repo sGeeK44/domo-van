@@ -1,4 +1,10 @@
-import { StyleSheet, Text, View } from "react-native";
+import {
+  type StyleProp,
+  StyleSheet,
+  Text,
+  View,
+  type ViewStyle,
+} from "react-native";
 import { useThemeColor } from "@/design-system/theme/use-theme-color";
 import { FontSize, FontWeight, type ThemeColors } from "@/design-system/tokens";
 
@@ -6,15 +12,18 @@ export const Card = ({
   title,
   subtitle,
   children,
+  style,
 }: {
   title: string;
   subtitle: string;
   children: React.ReactNode;
+  /** How much room the card takes is the caller's layout, not the card's. */
+  style?: StyleProp<ViewStyle>;
 }) => {
   const colors = useThemeColor();
   const styles = getStyles(colors);
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, style]}>
       <View style={styles.header}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
@@ -27,7 +36,6 @@ export const Card = ({
 const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     card: {
-      flex: 1,
       backgroundColor: colors.background.secondary,
       borderRadius: 20,
       padding: 20,
