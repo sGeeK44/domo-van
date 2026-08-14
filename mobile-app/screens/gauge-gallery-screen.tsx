@@ -40,6 +40,7 @@ export default function GaugeGalleryScreen() {
   const colors = useThemeColor();
   const styles = useStyles(makeStyles);
   const [ratio, setRatio] = useState(HIGH);
+  const percent = String(Math.round(ratio * 100));
 
   const water = {
     fillColor: colors.fill.cleanWater,
@@ -159,8 +160,8 @@ export default function GaugeGalleryScreen() {
             ratio={ratio}
             icon="water-drop"
             label="CLEAN WATER"
-            subtitle="72 L / 100 L"
-            value={{ amount: "72", unit: "%" }}
+            subtitle={`${percent} L / 100 L`}
+            value={{ amount: percent, unit: "%" }}
             onPress={() => setRatio(ratio === HIGH ? LOW : HIGH)}
             {...water}
           />
@@ -218,7 +219,7 @@ export default function GaugeGalleryScreen() {
               ratio={ratio}
               label="CLEAN WATER"
               caption="100 L tank"
-              value={{ amount: "72", unit: " L" }}
+              value={{ amount: percent, unit: " L" }}
               footer="4 DAYS LEFT"
               {...water}
             />
