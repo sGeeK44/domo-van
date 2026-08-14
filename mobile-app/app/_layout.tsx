@@ -3,17 +3,39 @@ import {
   DefaultTheme,
   ThemeProvider as NavigationThemeProvider,
 } from "@react-navigation/native";
+import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
 import { AppProviders } from "@/composition/AppProviders";
-import { ThemeProvider, ToastProvider, useTheme } from "@/design-system";
+import {
+  BundledFonts,
+  ThemeProvider,
+  ToastProvider,
+  useTheme,
+} from "@/design-system";
 
 export const unstable_settings = {
   anchor: "(tabs)",
 };
+
+SplashScreen.preventAutoHideAsync();
+
+function useAppReady() {
+  const [fontsLoaded] = useFonts(BundledFonts);
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  return fontsLoaded;
+}
 
 function AppContent() {
   const { colorScheme } = useTheme();
@@ -49,6 +71,12 @@ function AppContent() {
 }
 
 export default function RootLayout() {
+  const ready = useAppReady();
+
+  if (!ready) {
+    return null;
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>

@@ -26,6 +26,14 @@ export default defineConfig({
         __dirname,
         "__mocks__/expo-vector-icons-material.tsx",
       ),
+      "@expo-google-fonts/archivo": path.resolve(
+        __dirname,
+        "__mocks__/expo-google-fonts-archivo.ts",
+      ),
+      "@expo-google-fonts/space-mono": path.resolve(
+        __dirname,
+        "__mocks__/expo-google-fonts-space-mono.ts",
+      ),
     },
   },
   test: {

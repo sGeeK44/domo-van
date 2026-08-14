@@ -105,6 +105,19 @@ export const Colors: Record<ThemeName, Palette> = {
   },
 };
 
+export const FontFamilies = [
+  "Archivo_400Regular",
+  "Archivo_500Medium",
+  "Archivo_600SemiBold",
+  "Archivo_700Bold",
+  "Archivo_800ExtraBold",
+  "Archivo_900Black",
+  "SpaceMono_400Regular",
+  "SpaceMono_700Bold",
+] as const;
+
+export type FontFamily = (typeof FontFamilies)[number];
+
 /** Weights are reached through the family name: Android does not synthesise them for custom faces. */
 export const TextStyles = {
   screenTitle: {
