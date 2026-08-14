@@ -15,8 +15,7 @@ import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner"
 import type { DeviceRepository } from "@/domain/ports/DeviceRepository";
 import { createI18n } from "@/i18n/createI18n";
 
-// The container is built when ContainerProvider is imported, so the switch has
-// to be flipped before that import — hence the dynamic imports below.
+// createContainer reads this switch at import time, hence the dynamic imports below.
 process.env.EXPO_PUBLIC_FAKE_BLE = "1";
 
 const { ContainerProvider, useContainer } = await import(

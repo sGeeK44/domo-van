@@ -8,7 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
-// The container is built when ContainerProvider is imported, so the switch is flipped before it.
+// createContainer reads this switch at import time, hence the dynamic imports below.
 process.env.EXPO_PUBLIC_FAKE_BLE = "1";
 
 const { pairOnly, renderModuleScreen } = await import("./moduleScreenHarness");

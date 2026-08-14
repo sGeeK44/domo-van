@@ -3,8 +3,7 @@ import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { Fragment, StrictMode, useEffect } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 
-// The container is built when ContainerProvider is imported, so the switch has
-// to be flipped before that import — hence the dynamic imports below.
+// createContainer reads this switch at import time, hence the dynamic imports below.
 process.env.EXPO_PUBLIC_FAKE_BLE = "1";
 
 const { ContainerProvider, useContainer } = await import(

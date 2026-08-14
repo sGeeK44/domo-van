@@ -3,7 +3,10 @@ import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // The Map-backed stub the vitest alias substitutes for the native store.
 import { __store } from "@/__mocks__/async-storage";
-import type { PreferencesRepository } from "@/domain/ports/PreferencesRepository";
+import type {
+  Preferences,
+  PreferencesRepository,
+} from "@/domain/ports/PreferencesRepository";
 import { InMemoryPreferencesRepository } from "@/infrastructure/fake/InMemoryPreferencesRepository";
 import { AsyncStoragePreferencesRepository } from "@/infrastructure/storage/AsyncStoragePreferencesRepository";
 
@@ -80,6 +83,36 @@ describe("the persisted theme mode", () => {
     expect(shown()).toBe("splash");
 
     await waitFor(() => expect(shown()).toBe("light:light"));
+  });
+
+  it("reads the store once, even from a repository rebuilt on every render", async () => {
+    let answer = () => {};
+    const load = vi.fn(
+      () =>
+        new Promise<Partial<Preferences>>((resolve) => {
+          answer = () => resolve({ themeMode: "light" });
+        }),
+    );
+
+    function RebuildingBoot() {
+      const { hydrated, initialThemeMode } = useThemePreference({
+        load,
+        save: () => Promise.resolve(),
+      });
+
+      return (
+        <span data-testid="theme">
+          {hydrated ? initialThemeMode : "splash"}
+        </span>
+      );
+    }
+
+    render(<RebuildingBoot />);
+    // Hydrating re-renders, which hands the hook a brand new repository object.
+    await act(async () => answer());
+
+    expect(shown()).toBe("light");
+    expect(load).toHaveBeenCalledTimes(1);
   });
 
   it("survives a store that rejects", async () => {
