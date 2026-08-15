@@ -6,6 +6,7 @@ import {
   ContainerProvider,
   useContainer,
 } from "@/composition/ContainerProvider";
+import { LanguageProvider, useLanguage } from "@/composition/LanguageProvider";
 import {
   ModuleRegistryProvider,
   useModuleRegistry,
@@ -22,6 +23,7 @@ import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
 import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner";
 import type { DeviceInfo } from "@/domain/ports/DeviceRepository";
 import { createI18n } from "@/i18n/createI18n";
+import type { Language } from "@/i18n/language";
 import type { FakeBluetooth } from "@/infrastructure/fake/FakeBluetooth";
 import type { FakeModuleTransport } from "@/infrastructure/fake/FakeModuleTransport";
 import type { FakeTransportFactory } from "@/infrastructure/fake/FakeTransportFactory";
@@ -113,6 +115,33 @@ export function renderModuleScreen(screen: ReactNode): ModulesHarness {
   );
 
   return harness;
+}
+
+type LanguageSwitch = { switchTo: (language: Language) => void };
+
+function LanguageProbe({ control }: { control: LanguageSwitch }) {
+  const { setLanguage } = useLanguage();
+  control.switchTo = setLanguage;
+
+  return null;
+}
+
+/** Wraps a screen in the live language, and hands the test the switch the picker presses. */
+export function switchableLanguage(screen: ReactNode): {
+  tree: ReactNode;
+  switchTo: (language: Language) => void;
+} {
+  const control: LanguageSwitch = { switchTo: unavailable };
+
+  return {
+    tree: (
+      <LanguageProvider initialLanguage="fr" onLanguageChange={() => {}}>
+        <LanguageProbe control={control} />
+        {screen}
+      </LanguageProvider>
+    ),
+    switchTo: (language) => control.switchTo(language),
+  };
 }
 
 /**

@@ -36,6 +36,7 @@ import { DEFAULT_TANK_SNAPSHOT } from "@/domain/water/TankLevelSensor";
 import { useHeaterSummary } from "@/screens/hooks/useHeaterSummary";
 
 const MODULES_ROUTE = "/modules";
+const SETTINGS_ROUTE = "/settings";
 
 /** Every module tab is the route its key names, see components/navigation/module-tabs.ts. */
 const MODULE_ROUTE = {
@@ -68,7 +69,7 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <PageHeader
           title={t("dashboard.title")}
-          onSettingsPress={openModules}
+          onSettingsPress={() => router.push(SETTINGS_ROUTE)}
         />
 
         <View style={styles.content}>

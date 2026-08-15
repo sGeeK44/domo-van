@@ -16,7 +16,9 @@ const { pairOnly, renderModuleScreen } = await import("./moduleScreenHarness");
 const HomeScreen = (await import("@/screens/home-screen")).default;
 const { useHeaterSystem } = await import("@/composition/ModuleSystemsProvider");
 const { FakeBluetooth } = await import("@/infrastructure/fake/FakeBluetooth");
-const { resetNavigation } = await import("@/__mocks__/expo-router");
+const { resetNavigation, routerHistory } = await import(
+  "@/__mocks__/expo-router"
+);
 
 /** A connect the test settles itself: a hanging one cannot tell a guarded press from a queued one. */
 function deferredConnect() {
@@ -183,6 +185,16 @@ describe("the dashboard", () => {
     expect(screen.getAllByText("-")).toHaveLength(4);
     // A free slot still offers the add button, even next to a paired module.
     expect(screen.getByTestId("add-module")).toBeTruthy();
+  });
+
+  // A push, not a replace: acceptance example 4 needs the tab left underneath to come back to.
+  it("pushes the application settings from its gear", async () => {
+    const harness = dashboard();
+    await pairOnly(harness, ["water"]);
+
+    fireEvent.click(screen.getByTestId("page-settings"));
+
+    expect(routerHistory).toEqual([{ method: "push", href: "/settings" }]);
   });
 
   it("marks no level on the heater card while every zone is off", async () => {
