@@ -64,18 +64,6 @@ describe("the Modules screen", () => {
     expect(screen.queryByTestId("module-slot-heater")).toBeNull();
   });
 
-  it("offers the dev gauge gallery, the only way to reach it on a device", async () => {
-    const harness = renderModuleScreen(<ModulesScreen />);
-    await pairOnly(harness, ["water"]);
-
-    fireEvent.click(screen.getByTestId("gauge-gallery-link"));
-
-    expect(routerHistory).toContainEqual({
-      method: "push",
-      href: "/gauge-gallery",
-    });
-  });
-
   it("frees the slot once, when the sheet is confirmed", async () => {
     const unpair = vi.spyOn(ModuleRegistry.prototype, "unpair");
     const harness = renderModuleScreen(<ModulesScreen />);

@@ -141,7 +141,7 @@ describe("the Eau screen", () => {
 
   afterEach(async () => {
     // The fake module keeps its channels between tests: leave them as the next test expects to find them.
-    for (const { channel } of writes) channel.restoreLink();
+    for (const { channel } of writes) channel.restoreWrites();
     if (screen.queryByTestId("drain-close-now")) await pressCloseNow();
     cleanup();
     resetNavigation();
@@ -236,7 +236,7 @@ describe("the Eau screen", () => {
   it("never claims a close that the link dropped, and shows the valve still draining", async () => {
     await waterTab();
     await slideAllTheWay();
-    valveChannel().dropLink();
+    valveChannel().failWrites();
 
     await pressCloseNow();
 

@@ -106,9 +106,7 @@ export const fr = {
       heater: "CHAUFFAGE",
     },
     modules: {
-      battery: "BATTERIE",
       water: "EAU",
-      heater: "CHAUFFAGE",
     },
     empty: {
       body: "Aucun module n'est associé. Ajoute un module pour voir ses niveaux ici.",
@@ -136,9 +134,8 @@ export const fr = {
     levels: {
       cleanTank: "PROPRE",
       greyTank: "GRISE",
-      cleanCaption: "cuve {{capacity}} L",
+      tankCaption: "cuve {{capacity}} L",
       cleanFooter: "{{percentage}} % de la cuve",
-      greyCaption: "cuve {{capacity}} L",
       greyFooter: "{{percentage}} % · {{remaining}} L avant plein",
       greyDrainingCaption: "se vide",
       greyDrainingFooter: "−{{liters}} L depuis {{time}}",

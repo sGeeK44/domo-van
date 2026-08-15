@@ -52,7 +52,7 @@ describe("DrainValve", () => {
 
   it("claims no closure at all when the close it asked for never reached the module", async () => {
     const { valve, channel } = openValve();
-    channel.dropLink();
+    channel.failWrites();
 
     await valve.close();
 
@@ -66,7 +66,7 @@ describe("DrainValve", () => {
   it("still reads as auto-closed when the close it asked for never reached the module", async () => {
     const { valve, channel } = openValve();
     channel.emit("AUTO_CLOSED");
-    channel.dropLink();
+    channel.failWrites();
 
     await valve.close();
 
@@ -79,7 +79,7 @@ describe("DrainValve", () => {
   it("still reads as auto-closed when the opening it asked for never reached the module", async () => {
     const { valve, channel } = openValve();
     channel.emit("AUTO_CLOSED");
-    channel.dropLink();
+    channel.failWrites();
 
     await valve.open();
 

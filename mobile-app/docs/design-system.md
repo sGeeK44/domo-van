@@ -180,8 +180,10 @@ Rules the primitive holds, so no variant has to:
   surface has to be under 100 px for 0.99 to push *most* of the line out, and
   the only ones that short are the `GaugeBars` bars, which draw no meniscus.
 - The meniscus mounts and unmounts on the `ratio` **prop** while its position
-  animates on the shared value: a 0.9 → 1.0 change drops the line at once and
-  the fill then sweeps on unmarked.
+  animates on the shared value, so it is wrong at **both** ends of the sweep: a
+  0.9 → 1.0 change drops the line at once and the fill then sweeps on unmarked,
+  and a 0.3 → 0 change unmounts the boundary for the whole drain rather than at
+  the end of it. Recorded in `architecture.md`, not fixed here.
 
 `Motion` (above) holds the durations. It is **duration-only**: the mockup's
 drain is `1s linear`, the token keeps the second but the sweep runs on
@@ -227,13 +229,14 @@ danger meniscus".
 
 ### Looking at one
 
-`/gauge-gallery` renders every variant and every state, reachable in-app from a
-`__DEV__`-only link at the bottom of the Modules screen. It exists because #5
-lands the family before any screen consumes it, which would otherwise leave the
-rounded-corner clipping unverifiable on a device. **#6 deletes it** once the
-real screens render the gauges.
+The four screens of #6 render every variant between them, so there is no gallery
+route any more: Bord holds the rows and the hatched state, Eau the two columns
+and their draining state, Chauffage the four setpoint rows and their `inert`
+state, and Batterie the hero and the bars. #5 shipped a `__DEV__`-only gallery
+route because it landed the family before any screen consumed it, which left the
+rounded-corner clipping unverifiable on a device; #6 deleted that route.
 
-## The screen components of #6
+## The screen components
 
 Four forms the gauge family does not cover, all domain-free: they take formatted
 strings and colours, and name no tank, zone or cell.
@@ -314,16 +317,20 @@ per-file exception maps bound it, each entry naming the issue that retires it:
 | File | Retired by |
 |---|---|
 | `design-system/tokens.ts` | permanent — the palette itself |
-| `components/home/battery-gauge.tsx` | #6 |
-| `components/water/water-tank.tsx` | #6 |
-| `components/water/drain-slider.tsx` | #6 |
-| `components/modules/UnpairSheet.tsx` | #6 |
+| `components/modules/UnpairSheet.tsx` | #7 — the scrim has no token |
 | `components/water-settings/TankSettingsSection.tsx` | #7 (`ToastAndroid`) |
 | `components/water-settings/ValveSettingsSection.tsx` | #7 (`ToastAndroid`) |
 | `components/heater-settings/HeaterPidSection.tsx` | #7 (`ToastAndroid`) |
 | `components/module-settings/AdminSection.tsx` | #7 (`ToastAndroid`) |
 
-The list shrinks as #6 and #7 rewrite those feature components onto the
-tokens and the toast; once both land, only the permanent `tokens.ts` is left. No
-`design-system/` file other than `tokens.ts` may appear here — a dedicated test
-asserts it.
+#6 emptied the colour half of the list of everything but the scrim, by deleting
+the four feature components that carried a raw hex; once #7 rewrites the *Modules*
+sheet and the four settings sections, only the permanent `tokens.ts` is left.
+
+Two tests keep the list from lying: no `design-system/` file other than
+`tokens.ts` may appear in it, and **this table must name exactly the same files
+as the maps in the test** — an entry deleted from the code and left in the doc
+fails CI, which is how the four dead #6 rows above were caught.
+
+`i18n/__tests__/no-literal-copy.test.ts` runs the same shape over copy. Its
+`ALLOWED` map is **empty** since #6 deleted the gauge gallery.

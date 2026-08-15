@@ -87,10 +87,10 @@ sees a connected device through the `DeviceHandle` port and asks
   the registry inside its mount effect and disposes it on unmount; disposal is
   terminal, so a remount builds a fresh one rather than restarting a corpse.
   Screens read a slot with `useModuleSlot(key)` and act through
-  `useModuleRegistry()`. On the dashboard a free slot is a dashed
-  `EmptySlotCard` towards `/modules`, and an offline one carries the time of
-  its last contact and a *Reconnecter* action — `reconnect(key)` is already a
-  no-op while connecting, so the button only mirrors that state.
+  `useModuleRegistry()`. On the dashboard a free slot is a hatched `GaugeRow`
+  towards `/add-module`, and an offline one carries the time of its last contact
+  and a *Reconnecter* action — `reconnect(key)` is already a no-op while
+  connecting, so the button only mirrors that state.
   `screens/add-module-screen.tsx` is the exception: it still takes `bluetooth`
   from the container to run the pairing scan, which no slot owns.
 - **`composition/ModuleSessions.ts` owns system lifetime**: one instance per
@@ -112,33 +112,8 @@ sees a connected device through the `DeviceHandle` port and asks
   surfaces go through them today and cannot drift apart: the tab icon, the
   dashboard card, the *Eau* / *Chauff* header and `ModuleScreen`'s takeover.
   The *Modules* row is task T5 of issue #3.
-- **A module tab is a `ModuleScreen`.** `screens/module-screen.tsx` owns the
-  header and the three states a tab can be in: an unpaired slot shows
-  `ModuleLinkNotice`, an offline or connecting one is taken over entirely by an
-  `OfflineCard` carrying the time of last contact and the reconnection, and an
-  online one renders the screen's own content through `children(system)`. It
-  reads `useModuleSlot` and `useModuleRegistry`, which is why it lives in
-  `screens/` — `components/` may not import `composition/`. Its header carries
-  the module's title and its settings button only: the link already shows as a
-  dot on the tab, and the takeover carries the reconnection.
-- **The shell owns the whole page frame.** Everything a module tab used to set
-  up for itself now belongs to `ModuleScreen`: the `SafeAreaView`, the
-  `colors.screen` background, the `flex: 1` filling the tab, and the content
-  padding — `Spacing.s` on top, `Spacing.gutter` left and right, nothing at the
-  bottom (`8 / 18 / 0`). A wrapped screen therefore returns a container carrying
-  its `gap`, and none of that frame: no `SafeAreaView`, no `screen`
-  background, no padding. Keeping the padding "because the container is needed
-  for its `gap`" double-pads the tab. The `flex: 1` the shell owns is the one
-  filling the tab; a wrapped screen still lays its own content out with `flex`,
-  which is how a tall `GaugeColumn` gets its height. The rule covers the **online branch**,
-  which is the only one `children` render on: `ModuleLinkNotice` and the takeover
-  sit outside `styles.content` and pad themselves, so a reader scanning
-  `module-screen.tsx` meets those two counter-examples before the rule.
-- **What a module reports reaches the user as a toast.**
-  `screens/hooks/useFeedbackToast.ts` watches a domain object's `lastFeedback`
-  and shows `t(key, params)` when it changes; a module repeating itself is one
-  event, not two toasts. That is the failure path — the confirmation of an
-  action is the screen's own toast, fired where the command is sent.
+- **A module tab is a `ModuleScreen`**, and the screens have their own section
+  below.
 - **Import the design system through its barrel** from outside
   `design-system/`, and always through concrete files from inside it — the
   barrel would close a cycle.
@@ -148,6 +123,79 @@ sees a connected device through the `DeviceHandle` port and asks
   off the route module. `app/(tabs)/_layout.tsx` is a two-liner over
   `screens/tabs-layout.tsx`, because the bar it draws reads the slots and the
   catalogue, which `app/` may not import.
+
+## The screens
+
+`screens/` holds one page component per route, plus the hooks they share. Four
+of them draw the van — Bord, Eau, Chauffage, Batterie — and the three module
+tabs are all the same shell.
+
+### A dashboard card is not a module
+
+`ModuleDescriptor.cards` lists the dashboard cards a module feeds, and the water
+module lists two — clean and grey — while still yielding a single tab. **Card
+count is not module count**, and neither is slot count: an unpaired or offline
+module collapses to **one** hatched card whatever it declares, because there is
+no reading to fill a second one with. That is why `MODULE_LABEL_KEY` exists
+beside the catalogue's own `labelKey`: a single-card module reuses its card's
+label, while water's *EAU PROPRE* and *EAU GRISE* name neither of the collapsed
+card, so it carries `dashboard.modules.water`.
+
+`components/home/dashboard-cards.ts` is the pure function behind the screen:
+`(slots, readings) → DashboardCardView[]`. It owns the
+`DashboardCardKey → fill.*` map, because the domain names no colour, and it
+returns keys and numbers rather than sentences — the screen calls `t()`. The
+environment tile strip below the cards is hidden while **no** module is paired.
+
+### A module tab is a `ModuleScreen`
+
+`screens/module-screen.tsx` owns the header and the three states a tab can be
+in: an unpaired slot shows `ModuleLinkNotice`, an offline or connecting one is
+taken over **entirely** by an `OfflineCard` carrying the time of last contact
+and the reconnection, and an online one renders the screen's own content through
+`children(system)`. It reads `useModuleSlot` and `useModuleRegistry`, which is
+why it lives in `screens/` — `components/` may not import `composition/`. Its
+header carries the module's title and its settings button only: the link already
+shows as a dot on the tab, and the takeover carries the reconnection.
+
+**The shell owns the whole page frame.** Everything a module tab used to set up
+for itself belongs to `ModuleScreen`: the `SafeAreaView`, the `colors.screen`
+background, the `flex: 1` filling the tab, and the content padding —
+`Spacing.s` on top, `Spacing.gutter` left and right, nothing at the bottom
+(`8 / 18 / 0`). A wrapped screen therefore returns a container carrying its
+`gap`, and none of that frame: no `SafeAreaView`, no `screen` background, no
+padding. Keeping the padding "because the container is needed for its `gap`"
+double-pads the tab. The `flex: 1` the shell owns is the one filling the tab; a
+wrapped screen still lays its own content out with `flex`, which is how a tall
+`GaugeColumn` gets its height. The rule covers the **online branch**, the only
+one `children` render on: `ModuleLinkNotice` and the takeover sit outside
+`styles.content` and pad themselves, so a reader scanning `module-screen.tsx`
+meets those two counter-examples before the rule.
+
+### Heater writes go through `HeaterSystem`
+
+`adjustZone(index, ±0.5)`, `toggleZone(index)`, `applyNightMode()` and
+`stopAll()` live on the system; reads stay on the zones. Night mode is a flag
+the screen cannot be trusted to clear, so every one of the four clears it, and
+"any manual adjustment exits night mode" becomes enforceable in one place
+instead of unenforceable in four call sites. `adjustZone` also starts a stopped
+zone and clamps to 5–30 °C, inside `HeaterZone`'s own 0–50 °C firmware backstop.
+
+Night mode is a **preset, not a toggle**: leaving it rewrites nothing. The day
+targets it displaced live in the module, and the app never knew them.
+
+### A toast confirms a coarse action, not every half-degree
+
+The valve (opened, closed, auto-closed), the two heater presets and a
+reconnection each fire one toast. A ± step and a zone power button fire
+**none** — read literally, "every action that reaches a module confirms itself
+through a toast" would fire one per half-degree, and the mockup fires none
+there either. A success toast is the screen's own, fired where the command is
+sent.
+
+The failure path is not the screen's. `screens/hooks/useFeedbackToast.ts`
+watches a domain object's `lastFeedback` and shows `t(key, params)` when it
+changes; a module repeating itself is one event, not two toasts.
 
 ## Copy and translation
 
@@ -165,7 +213,11 @@ source of truth — the mockups are French — and `i18n/resources/en.ts` is a
   `` `modules.${ModuleKey}.name` `` / `` .tab ``. A literal is not an import, so
   `domain-has-no-framework` still holds, and the types stay assignable to
   `TranslationKey` without a cast — renaming a dictionary key breaks the
-  consumer, not silently the UI.
+  consumer, not silently the UI. A domain **test** may import `@/i18n` — every
+  arch rule excludes `__tests__/` — and
+  `domain/modules/__tests__/ModuleDescriptor.test.ts` does, to prove each
+  `labelKey` in the catalogue resolves to a real key. The rule binds shipped
+  code; the assertion belongs next to the catalogue it guards.
 - **A pure helper returns a key, not a sentence.** `components/home/link-view.ts`
   answers `{ key, params }` and `ModuleSlotRow` answers the same shape; the
   component calls `t()`. That keeps the helpers framework-free and their tests
@@ -245,10 +297,9 @@ The app then runs with Bluetooth switched off. It boots already paired: the
 three modules reach *online* on their own, so nothing has to be scanned or
 tapped, and the bar shows all four tabs. Every value on the screens, Bord's
 water and heater cards included, comes from a fake — Bord holds no hardcoded
-reading any more. The water screen still substitutes a zeroed default while its
-module is offline — task T5 of issue #6 retires that, since `ModuleScreen` takes
-the tab over before any reading is asked for. The heater screen no longer does:
-it reads its zones through `useObservable` without a fallback.
+reading any more. A module tab never paints a substituted default: `ModuleScreen`
+takes the tab over before any reading is asked for, so the `DEFAULT_*` snapshots
+the screens pass `useObservable` are seed values, not an offline fallback.
 
 `EXPO_PUBLIC_FAKE_BLE` is read **once**, by `createContainer()`, and it is the
 only branch in the app. Expo inlines `EXPO_PUBLIC_*` at build time, so this is
@@ -300,3 +351,71 @@ firmware answers one command with, exactly as they come off the radio. A
 - `no-orphans` is deliberately off: it would flag
   `design-system/atoms/icon-symbol.ios.tsx`, a platform variant no import
   resolves to. That file is therefore **not** covered by the arch check.
+
+## Recorded, not fixed
+
+Found while reviewing #6 and left deliberately: each is #7 or #8 work, and none
+blocks the hardware validation. Written down so the next reader finds them
+before rediscovering them.
+
+**Behaviour**
+
+- `DrainValve`'s restore-on-failure is **last-write-wins**. An `AUTO_CLOSED`
+  landing while a `CLOSE` write is in flight is overwritten by the stale
+  pre-write value when that write rejects. The clean shape is a conditional
+  revert — restore only if nothing else moved the state meanwhile.
+- **Firmware, not mobile**: `water-module/lib/program/TankValveListner.cpp:30`
+  answers `CLOSE` with `closeValve("CLOSED")` and no `_isOpen` guard, so a tap
+  landing just after an `AUTO_CLOSED` reports the closure as manual.
+- `Feedback` carries no occurrence identity, so two identical failures in a row
+  are one value change and produce one toast: a second failed close is silent.
+- `useFeedbackToast` announces **failures only**. When #7 moves the four
+  settings sections off their hand-rolled `ToastAndroid`, their *Configuration
+  enregistrée* confirmation vanishes unless each section fires its own success
+  toast.
+- `formatRemainingTime` emits unlocalized user-facing copy (`"24h 51m"`) from
+  `domain/battery/BatteryTelemetry.ts`. `no-domain-copy` is a French-spelling
+  detector, so it misses it — this is the "nothing but review enforces that"
+  case that section warns about.
+
+**Rendering**
+
+- `GaugeBars` does not forward `GaugeSurface`'s `hatched` prop, so an absent
+  (0 V) battery cell draws as a flat `0.000` bar instead of a hatched one.
+- `AlarmBanner` clips when all seven battery alarms are joined into its fixed
+  58 px row — exactly when the pack is in trouble and the copy matters most.
+- The meniscus is decided from the `ratio` prop while the fill animates, so it
+  is wrong at both ends of a sweep (see the gauge section of
+  [design-system.md](./design-system.md#gauges)). Planning decision 15 deferred
+  the 0.9 → 1.0 case; #6 found the 0.3 → 0 one, which unmarks the boundary for
+  a whole drain.
+
+**Tests**
+
+- `__mocks__/react-native-gesture-handler.tsx` over-permits activation: it
+  fires `onEnd(true)` on every mouseup, where real RNGH gives no `onEnd` below
+  its 15 px slop. RNGH ships `fireGestureHandler` / `getByGestureTestId` in
+  `jestUtils`, which replay real state sequences.
+- The shared harness has leaked state twice, found independently — a per-device
+  cache in `FakeTransportFactory`, and a broken write outliving its test.
+  `FakeChannel.restoreWrites`' caller loop iterates the write-recording
+  side-channel rather than a registry of channels, so a channel nobody wrote to
+  is never restored.
+
+**The mockup**
+
+- The battery aside is **arithmetically wrong**: it shows `14 h 20` for 164 Ah
+  at −88 W / −6.6 A, which is ~25 h. Two reviewers confirmed it by two routes.
+  The code is right; the mockup should carry the annotation.
+
+## Hardware validation
+
+`adb install` is blocked on the test phone, so every check runs by hand. The
+list lives in the *Definition of done* of issue #6. One item is not in it and
+belongs to whoever runs the pass:
+
+- **Does Bord scroll?** It stacks fixed-height cards — measured at ~590 px for
+  four cards plus the tile strip, against ~560 dp of usable height on a 640 dp
+  phone — and carries no `ScrollView`. Whether the tile strip falls under the
+  tab bar has to be **measured on the real phone**; the mockup's fixed frame
+  cannot answer it.
