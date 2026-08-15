@@ -16,6 +16,7 @@ dark value, so a missing pair is a type error. Read them through `useThemeColor(
 | `screen` | page background |
 | `surface` | card / row background |
 | `sheet` | bottom-sheet background |
+| `scrim` | the dim behind a sheet: what it covers stays visible under it |
 | `chip` | small inset pill background |
 | `inset` | recessed background, equal to `screen` |
 | `off` | inert / switched-off fill |
@@ -72,6 +73,8 @@ carries **no** `fontWeight`. Spread one into a style: `{ ...TextStyles.toast }`.
 | Style | Family | Size / line-height | Use |
 |---|---|---|---|
 | `screenTitle` | Archivo 900 | 26 / 26 | page title |
+| `formTitle` | Archivo 900 | 32 / 33.6 | settings form title |
+| `crumb` | Archivo 800 | 20 / 20 | the module a form belongs to, in its header |
 | `sectionLabel` | Archivo 800 | 12 / 12 | section label |
 | `cardLabel` | Archivo 800 | 13 / 13 | card label |
 | `rowTitle` | Archivo 700 | 16 / 16 | row heading |
@@ -95,6 +98,7 @@ carries **no** `fontWeight`. Spread one into a style: `{ ...TextStyles.toast }`.
 | `monoSmall` | Space Mono 400 | 12 / 14.4 | mono caption |
 | `monoStrong` | Space Mono 700 | 14 / 14 | zone subtitle |
 | `monoValue` | Space Mono 700 | 15 / 18 | gauge reading, column footer |
+| `monoReadout` | Space Mono 700 | 20 / 20 | settings field value, read or typed |
 | `monoMetric` | Space Mono 700 | 26 / 26 | countdown |
 
 `MetricUnitSize` gives the unit span that sits inside a metric — the mockup
@@ -110,6 +114,24 @@ deviation not worth a sixth style:
 |---|---|---|
 | the valve chip's `700 13/1` | `labelStrong` (14 / 14) | +1 px |
 | *GLISSER POUR OUVRIR*'s `.1em` tracking | `buttonMedium`'s `0.84` | −0.56 |
+
+### The settings-kit absorptions
+
+The settings mockups name five type steps; three of them already exist, and two
+of the remaining shorthands land within a pixel of an entry:
+
+| Mockup | Entry | Δ |
+|---|---|---|
+| the field label's `700 11px`, `.1em` mono | `monoLabel` (11 / 11, 1.1) | 0 |
+| the group label's `800 12px`, `.12em` | `sectionLabel` (12 / 12, 1.44) | 0 |
+| the card label's `800 13px`, `.12em` | `cardLabel` (13 / 13, 1.56) | 0 |
+| the unit's `400 13px` mono | `monoSmall` (12 / 14.4) | −1 px |
+| the nav row's subtitle `400 12px` mono | `monoSmall` | 0 |
+| the segments' `800 13px` (langue) and `800 12px` (thème) | `buttonSmall` (12 / 12) | −1 / 0 |
+
+The segments' two horizontal paddings — 16 px on langue, 13 px on thème — collapse
+onto `Spacing.xl` (14) for the same reason: the two rails are one control, and
+the mockup laid them out on separate screens.
 
 ## `useStyles`
 
@@ -293,6 +315,35 @@ the knob travelled. Tests drive it through
 `__mocks__/react-native-gesture-handler.tsx`, which turns a mouse drag into the
 pan callbacks and a `pointercancel` into the cancelled pan.
 
+## The settings form kit
+
+Six shapes the five settings forms and the Réglages screen share. Domain-free
+like the gauges: the caller passes the colour, the copy and the value, already
+formatted.
+
+| Component | Form | Reach for it when |
+|---|---|---|
+| `AccentCard` | `r 20`, `bg surface`, a 5 px bar down the left edge | a group of fields under a label. `accent` is the module's `fill.*`, chosen by the caller |
+| `FieldReadout` | `flex: 1`; a `monoReadout` value and a dim unit | a value the module publishes and the app does not edit |
+| `FieldInput` | h 56, `r 15`, `bg inset`, a 1.5 px border | an editable value. The unit sits **outside** the input, so it is never part of what the user types |
+| `SegmentedControl` | 36 px segments on an `inset` rail | a short closed list — langue, thème |
+| `NavRow` | h 68, `r 18`, a 40 px chip | a row that opens a screen |
+| `SettingsHeader` `variant="crumb"` | back arrow, the crumb, a spacer of the arrow's own width | the header of a settings form; `variant="title"` is the page header the other screens already use |
+
+Rules the kit holds:
+
+- **`invalid` is the mockup's unused slot.** The prototype's field border is
+  always transparent because it has no validation; a form that refuses a value
+  needs a visible one, so `invalid` paints `danger` at the same 1.5 width.
+- **`dimmed` is not `disabled`.** An unpaired module's row goes to
+  `Opacity.faint` and still navigates — the form it opens is what explains the
+  emptiness.
+- **A segment press reports a change, never the state.** Pressing the option
+  already in place calls nothing.
+- **The design system names no module.** `AccentCard` takes `accent` and
+  `NavRow` takes `iconBackground` as colours; the `ModuleKey → fill.*` map lives
+  in `components/`, beside the `DashboardCardKey → fill.*` map.
+
 ## The barrel
 
 Import the design system through `@/design-system` from anywhere outside it, and
@@ -317,15 +368,15 @@ per-file exception maps bound it, each entry naming the issue that retires it:
 | File | Retired by |
 |---|---|
 | `design-system/tokens.ts` | permanent — the palette itself |
-| `components/modules/UnpairSheet.tsx` | #7 — the scrim has no token |
 | `components/water-settings/TankSettingsSection.tsx` | #7 (`ToastAndroid`) |
 | `components/water-settings/ValveSettingsSection.tsx` | #7 (`ToastAndroid`) |
 | `components/heater-settings/HeaterPidSection.tsx` | #7 (`ToastAndroid`) |
 | `components/module-settings/AdminSection.tsx` | #7 (`ToastAndroid`) |
 
 #6 emptied the colour half of the list of everything but the scrim, by deleting
-the four feature components that carried a raw hex; once #7 rewrites the *Modules*
-sheet and the four settings sections, only the permanent `tokens.ts` is left.
+the four feature components that carried a raw hex; #7 gave that scrim the
+`scrim` token, so the colour half is down to the permanent `tokens.ts`. Once the
+four settings sections are rewritten, the toast half goes with them.
 
 Two tests keep the list from lying: no `design-system/` file other than
 `tokens.ts` may appear in it, and **this table must name exactly the same files

@@ -13,6 +13,7 @@ export type Palette = {
   screen: string;
   surface: string;
   sheet: string;
+  scrim: string;
   chip: string;
   inset: string;
   off: string;
@@ -45,6 +46,7 @@ export const Colors: Record<ThemeName, Palette> = {
     screen: "#F2F1EE",
     surface: "#FFFFFF",
     sheet: "#FFFFFF",
+    scrim: "rgba(0, 0, 0, 0.5)",
     chip: "#FFFFFF",
     inset: "#F2F1EE",
     off: "#E4E2DC",
@@ -86,6 +88,7 @@ export const Colors: Record<ThemeName, Palette> = {
     screen: "#101214",
     surface: "#1A1E21",
     sheet: "#1A1E21",
+    scrim: "rgba(0, 0, 0, 0.5)",
     chip: "#1E2226",
     inset: "#101214",
     off: "#23292E",
@@ -144,6 +147,18 @@ export const TextStyles = {
     fontSize: 26,
     lineHeight: 26,
     letterSpacing: -0.6,
+  },
+  formTitle: {
+    fontFamily: "Archivo_900Black",
+    fontSize: 32,
+    lineHeight: 33.6,
+    letterSpacing: -1,
+  },
+  crumb: {
+    fontFamily: "Archivo_800ExtraBold",
+    fontSize: 20,
+    lineHeight: 20,
+    letterSpacing: 0,
   },
   sectionLabel: {
     fontFamily: "Archivo_800ExtraBold",
@@ -281,6 +296,12 @@ export const TextStyles = {
     fontFamily: "SpaceMono_700Bold",
     fontSize: 15,
     lineHeight: 18,
+    letterSpacing: 0,
+  },
+  monoReadout: {
+    fontFamily: "SpaceMono_700Bold",
+    fontSize: 20,
+    lineHeight: 20,
     letterSpacing: 0,
   },
   monoMetric: {
