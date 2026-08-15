@@ -169,13 +169,14 @@ function SaveButton({ save }: { save: SettingsFormSave }) {
   );
 }
 
-/** Clears the 60 px save button and the 18 px under it, so a focused field never hides behind them. */
+// How far above the keyboard the focused field's caret is kept; extraKeyboardSpace is
+// what would pad the scroll instead, and the inline save button needs no clearance.
 const KEYBOARD_OFFSET = 78;
 
-/** The mockup's 60 / 20 save button, and the .04em it sets its label in. */
+/** The mockup's 60 / 20 save button, its label at the .04em of TextStyles.button's 17 px. */
 const SAVE_HEIGHT = 60;
 const SAVE_RADIUS = 20;
-const SAVE_LETTER_SPACING = 0.64;
+const SAVE_LETTER_SPACING = 0.68;
 
 const makeStyles = (colors: Palette) =>
   StyleSheet.create({

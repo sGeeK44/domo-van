@@ -80,17 +80,22 @@ describe("the settings draft", () => {
     expect(form.result.current.values.volume).toBe("120");
   });
 
-  // A refused value must not be what the form re-reads: the module answers, not the draft.
-  it("resumes hydrating even when the save fails", async () => {
+  // A write that threw applied nothing, so throwing away what the user typed would lose it twice.
+  it("keeps the draft when the save throws, and lets the caller see the throw", async () => {
     const form = mountForm(vi.fn(async () => Promise.reject(new Error("no"))));
+    let raised: unknown = null;
 
     act(() => form.result.current.set("volume", "42"));
     await act(async () => {
-      await form.result.current.save().catch(() => {});
+      await form.result.current.save().catch((error) => {
+        raised = error;
+      });
     });
 
-    expect(form.result.current.dirty).toBe(false);
-    expect(form.result.current.values.volume).toBe("100");
+    expect(raised).toBeInstanceOf(Error);
+    expect(form.result.current.dirty).toBe(true);
+    expect(form.result.current.values.volume).toBe("42");
+    expect(form.result.current.saving).toBe(false);
   });
 
   it("sends what is on screen, drafted or reported", async () => {
@@ -114,6 +119,41 @@ describe("the settings draft", () => {
 
     expect(form.result.current.errors.volume).toBe("common.errors.send");
     expect(form.onSave).not.toHaveBeenCalled();
+  });
+
+  // The shell disables its button, but the hook cannot assume every caller's will be.
+  it("refuses a second save while the first is still in flight", async () => {
+    const settles: Array<() => void> = [];
+    const form = mountForm(
+      vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            settles.push(resolve);
+          }),
+      ),
+    );
+
+    let first: Promise<void> = Promise.resolve();
+    act(() => {
+      first = form.result.current.save();
+      void form.result.current.save();
+    });
+
+    expect(form.onSave).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      settles[0]?.();
+      await first;
+    });
+
+    // The guard lifts once the first settles, so the form is saveable again.
+    await act(async () => {
+      const second = form.result.current.save();
+      settles[1]?.();
+      await second;
+    });
+
+    expect(form.onSave).toHaveBeenCalledTimes(2);
   });
 
   it("marks itself saving only while the write is in flight", async () => {

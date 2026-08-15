@@ -6,11 +6,15 @@ import { describe, expect, it } from "vitest";
 // `app/_layout.tsx` cannot be imported under vitest, so the wiring is read as source.
 const ROOT = join(import.meta.dirname, "..", "..");
 const SETTINGS_ROUTES = join(ROOT, "app", "settings");
+const SCREENS = join(ROOT, "screens");
 const LAYOUT = join(ROOT, "app", "_layout.tsx");
 const SHELL = join(ROOT, "screens", "settings-form-screen.tsx");
 
 /** A navigation that does not pop cannot return the user to the surface they came from. */
 const FORBIDDEN_NAVIGATION = ["replace", "dismissTo"];
+
+/** The five forms of #7, whichever of them have landed. */
+const FORM_SCREEN = /-(identity|tanks|pid|info)-screen\.tsx$/;
 
 function parse(file: string): ts.SourceFile {
   return ts.createSourceFile(
@@ -57,6 +61,20 @@ function routeFiles(): string[] {
   return walk(SETTINGS_ROUTES);
 }
 
+/** Everything that could navigate away from a form: the shell, the forms, and their routes. */
+function formSources(): string[] {
+  const forms = readdirSync(SCREENS)
+    .filter((entry) => FORM_SCREEN.test(entry))
+    .map((entry) => join(SCREENS, entry));
+  return [SHELL, ...forms, ...routeFiles()];
+}
+
+function identifiersOf(file: string): string[] {
+  return nodesOf(parse(file))
+    .filter(ts.isIdentifier)
+    .map((node) => node.text);
+}
+
 function importedFrom(file: string, module: string): string[] {
   return nodesOf(parse(file))
     .filter(ts.isImportDeclaration)
@@ -75,11 +93,19 @@ function importedFrom(file: string, module: string): string[] {
 describe("the settings routes", () => {
   // Planning decision 4: the stack does the work, so back returns to the caller.
   it.each(FORBIDDEN_NAVIGATION)("never call %s", (method) => {
-    const offenders = routeFiles().filter((file) =>
+    const offenders = formSources().filter((file) =>
       calledMethodsOf(file).includes(method),
     );
 
     expect(offenders.map((file) => relative(ROOT, file))).toEqual([]);
+  });
+
+  // A two-line re-export can hold no navigation, so the scan has to reach the screens.
+  it("are scanned through the screens that hold the navigation", () => {
+    const scanned = formSources().map((file) => relative(ROOT, file));
+
+    expect(scanned).toContain("screens/settings-form-screen.tsx");
+    expect(scanned).toContain("screens/battery-info-screen.tsx");
   });
 
   it("are re-exports, so no screen logic sits under app/", () => {
@@ -95,6 +121,13 @@ describe("the settings routes", () => {
 
   it("hide the navigator's own header for the whole group", () => {
     expect(jsxTagsOf(join(SETTINGS_ROUTES, "_layout.tsx"))).toEqual(["Stack"]);
+  });
+
+  // An initial route would seat Réglages under every form, and back would land there.
+  it("anchor the group on nothing, so a form pops to whoever pushed it", () => {
+    expect(identifiersOf(join(SETTINGS_ROUTES, "_layout.tsx"))).not.toContain(
+      "initialRouteName",
+    );
   });
 });
 
