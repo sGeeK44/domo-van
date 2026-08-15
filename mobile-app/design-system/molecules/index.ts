@@ -4,6 +4,7 @@ export * from "@/design-system/molecules/card";
 export * from "@/design-system/molecules/device-row";
 export * from "@/design-system/molecules/field-input";
 export * from "@/design-system/molecules/field-readout";
+export * from "@/design-system/molecules/field-row";
 export * from "@/design-system/molecules/form-field";
 export * from "@/design-system/molecules/gauges";
 export * from "@/design-system/molecules/nav-row";

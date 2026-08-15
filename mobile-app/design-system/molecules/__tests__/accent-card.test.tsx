@@ -13,10 +13,10 @@ const ACCENT = "rgb(255, 0, 255)";
 const LABEL = "CUVE PROPRE";
 const CONTENT = "the fields of the card";
 
-function card(theme: ThemeName = "dark") {
+function card(theme: ThemeName = "dark", testID?: string) {
   return (
     <ThemeProvider initialMode={theme}>
-      <AccentCard accent={ACCENT} label={LABEL}>
+      <AccentCard accent={ACCENT} label={LABEL} testID={testID}>
         <Text>{CONTENT}</Text>
       </AccentCard>
     </ThemeProvider>
@@ -53,9 +53,9 @@ describe("an accent card", () => {
   it("paints the edge in the colour the caller chose, on a themed surface", () => {
     render(card());
 
-    expect(paintOf("accent-bar").backgroundColor).toBe(ACCENT);
-    expect(paintOf("accent-bar").width).toBe("5px");
-    expect(paintOf("accent-bar").position).toBe("absolute");
+    expect(paintOf("accent-card-bar").backgroundColor).toBe(ACCENT);
+    expect(paintOf("accent-card-bar").width).toBe("5px");
+    expect(paintOf("accent-card-bar").position).toBe("absolute");
   });
 
   it.each(THEMES)("reads the label in ink over the card in %s", (theme) => {
@@ -63,10 +63,14 @@ describe("an accent card", () => {
     const colors = Colors[theme];
 
     expect(inkOf(LABEL)).toBe(rgb(colors.text));
-    expect(paintOf("accent-bar").backgroundColor).toBe(ACCENT);
-    expect(
-      window.getComputedStyle(screen.getByText(LABEL).parentElement as Element)
-        .backgroundColor,
-    ).toBe(rgb(colors.surface));
+    expect(paintOf("accent-card-bar").backgroundColor).toBe(ACCENT);
+    expect(paintOf("accent-card").backgroundColor).toBe(rgb(colors.surface));
+  });
+
+  it("lets a form holding several cards address one of them", () => {
+    render(card("dark", "card-clean-tank"));
+
+    expect(screen.getByTestId("card-clean-tank")).toBeTruthy();
+    expect(screen.getByTestId("card-clean-tank-bar")).toBeTruthy();
   });
 });

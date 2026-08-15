@@ -7,13 +7,20 @@ export type FieldReadoutProps = {
   /** Already formatted: the field converts nothing. */
   value: string;
   unit?: string;
+  /** A row holding several fields tells them apart with this. */
+  testID?: string;
 };
 
-export function FieldReadout({ label, value, unit }: FieldReadoutProps) {
+export function FieldReadout({
+  label,
+  value,
+  unit,
+  testID = "field-readout",
+}: FieldReadoutProps) {
   const styles = useStyles(makeStyles);
 
   return (
-    <View style={styles.field}>
+    <View testID={testID} style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.reading}>
         <Text style={styles.value}>{value}</Text>

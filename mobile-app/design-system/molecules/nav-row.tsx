@@ -26,6 +26,8 @@ export type NavRowProps = {
   subtitle: string;
   /** The destination is out of reach for now — the row still goes there. */
   dimmed?: boolean;
+  /** A list of rows tells them apart with this. */
+  testID?: string;
   onPress: () => void;
 };
 
@@ -35,6 +37,7 @@ export function NavRow({
   title,
   subtitle,
   dimmed = false,
+  testID = "nav-row",
   onPress,
 }: NavRowProps) {
   const colors = useThemeColor();
@@ -42,7 +45,7 @@ export function NavRow({
 
   return (
     <Pressable
-      testID="nav-row"
+      testID={testID}
       style={[styles.row, dimmed && styles.dimmed]}
       onPress={onPress}
     >

@@ -17,16 +17,23 @@ export type AccentCardProps = {
   /** The caller's colour: the design system names no module. */
   accent: string;
   label: string;
+  /** A form holding several cards tells them apart with this. */
+  testID?: string;
   children: ReactNode;
 };
 
-export function AccentCard({ accent, label, children }: AccentCardProps) {
+export function AccentCard({
+  accent,
+  label,
+  testID = "accent-card",
+  children,
+}: AccentCardProps) {
   const styles = useStyles(makeStyles);
 
   return (
-    <View style={styles.card}>
+    <View testID={testID} style={styles.card}>
       <View
-        testID="accent-bar"
+        testID={`${testID}-bar`}
         style={[styles.accent, { backgroundColor: accent }]}
       />
       <Text style={styles.label}>{label}</Text>
