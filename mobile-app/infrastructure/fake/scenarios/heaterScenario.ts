@@ -13,6 +13,10 @@ type ZoneReading = {
 const PID_WRITE = /^CFG:KP=(\d+);KI=(\d+);KD=(\d+)$/;
 const SETPOINT_WRITE = /^SP:(\d+)$/;
 
+// Sanity bounds the firmware refuses to store beyond, see
+// heater-module/lib/protocol/HeaterCfgProtocol.cpp.
+const MAX_GAIN_HUNDREDTHS = 10000;
+
 const ZONES: readonly ZoneReading[] = [
   { temperatureTenths: 215, setpointTenths: 210, running: true },
   { temperatureTenths: 190, setpointTenths: 195, running: false },
@@ -21,6 +25,10 @@ const ZONES: readonly ZoneReading[] = [
 ];
 
 const ENVIRONMENT_READING = "ENV:T=215;H=450;P=10132;EXT=120";
+
+function outOfGainRange(hundredths: number): boolean {
+  return hundredths <= 0 || hundredths > MAX_GAIN_HUNDREDTHS;
+}
 
 function heaterZoneScenario(zone: ZoneReading): ChannelScenario {
   let setpointTenths = zone.setpointTenths;
@@ -33,11 +41,13 @@ function heaterZoneScenario(zone: ZoneReading): ChannelScenario {
   return (command) => {
     const pidWrite = PID_WRITE.exec(command);
     if (pidWrite) {
-      pid = {
+      const written = {
         kp: Number(pidWrite[1]),
         ki: Number(pidWrite[2]),
         kd: Number(pidWrite[3]),
       };
+      if (Object.values(written).some(outOfGainRange)) return ["ERR_CFG_RANGE"];
+      pid = written;
       return ["OK"];
     }
 

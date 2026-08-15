@@ -5,6 +5,7 @@ import {
   Unsubscribe,
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
+import { ConfirmedWrite } from "@/domain/ConfirmedWrite";
 import { ackFailure, type Feedback, SAVED } from "@/domain/Feedback";
 import {
   PidConfig,
@@ -14,6 +15,7 @@ import {
   parseTemperatureNotification,
 } from "@/domain/heater/HeaterProtocol";
 import { Channel } from "@/domain/ports/Channel";
+import type { WriteOutcome } from "@/domain/SaveOutcome";
 
 export type HeaterZoneSnapshot = {
   temperatureCelsius: number; // Current temperature (e.g., 22.5)
@@ -36,12 +38,16 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
   private readonly state = createObservable<HeaterZoneSnapshot>(
     DEFAULT_ZONE_SNAPSHOT,
   );
+  private readonly writes: ConfirmedWrite;
   private channelUnsub: Unsubscribe | null = null;
 
   constructor(
     private readonly channel: Channel,
     public readonly zoneIndex: number,
+    now: () => number = Date.now,
   ) {
+    this.writes = new ConfirmedWrite(this.channel, now);
+
     // Subscribe to receive status notifications from the module
     this.channelUnsub = this.channel.listen(this.onMessageReceived);
 
@@ -124,28 +130,27 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
     }
   };
 
-  /**
-   * Set PID configuration
-   * @param config PID gains (real values, will be multiplied by 100)
-   */
-  setPidConfig = async (config: PidConfig): Promise<void> => {
+  /** Gains travel ×100, and the snapshot only takes them once the module says it kept them. */
+  setPidConfig = async (config: PidConfig): Promise<WriteOutcome> => {
     const kpRaw = Math.round(config.kp * 100);
     const kiRaw = Math.round(config.ki * 100);
     const kdRaw = Math.round(config.kd * 100);
 
-    this.state.update((prev) => ({
-      ...prev,
-      pidConfig: config,
-    }));
-
-    try {
-      await this.channel.send(`CFG:KP=${kpRaw};KI=${kiRaw};KD=${kdRaw}`);
-    } catch {
+    const outcome = await this.writes.send(
+      `CFG:KP=${kpRaw};KI=${kiRaw};KD=${kdRaw}`,
+    );
+    if (outcome.status === "applied") {
+      this.state.update((prev) => ({ ...prev, pidConfig: config }));
+      return outcome;
+    }
+    // a refusal already came in as an ack, with its code; silence has to name itself
+    if (outcome.status === "timedOut") {
       this.state.update((prev) => ({
         ...prev,
         lastFeedback: { key: "heater.feedback.pidFailed" },
       }));
     }
+    return outcome;
   };
 
   private onMessageReceived = (msg: string) => {
@@ -204,6 +209,7 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
   };
 
   dispose = () => {
+    this.writes.dispose();
     this.channelUnsub?.();
     this.channelUnsub = null;
     this.state.destroy();

@@ -31,6 +31,11 @@ function targets(heater: HeaterSystem): number[] {
   return heater.zones.map((zone) => zone.getValue().setpointCelsius);
 }
 
+const GAINS = { kp: 10, ki: 0.25, kd: 3 };
+const ALL_ZONE_GAINS = [GAINS, GAINS, GAINS, GAINS];
+/** Above the ×100 ceiling the firmware stores, see HeaterCfgProtocol.cpp. */
+const OUT_OF_RANGE_GAINS = { kp: 200, ki: 0.25, kd: 3 };
+
 const STATE_CHANGING_FRAMES: Record<string, string> = {
   [ADMIN]: "OK",
   [ZONE_CHANNELS[0]]: "STATUS:T=999;SP=500;RUN=0",
@@ -139,6 +144,63 @@ describe("HeaterSystem", () => {
       ki: 0.25,
       kd: 3,
     });
+  });
+
+  it("saves the four zones' gains as one form, one write per zone", async () => {
+    const transport = new FakeModuleTransport(heaterScenario());
+    const heater = new HeaterSystem(transport);
+
+    const outcome = await heater.savePidConfig(ALL_ZONE_GAINS);
+
+    expect(outcome).toEqual({ status: "applied" });
+    for (const channelId of ZONE_CHANNELS) {
+      expect(transport.channel(channelId).commands).toContain(
+        "CFG:KP=1000;KI=25;KD=300",
+      );
+    }
+  });
+
+  it("names every zone the module refused, and writes the others anyway", async () => {
+    const transport = new FakeModuleTransport(heaterScenario());
+    const heater = new HeaterSystem(transport);
+
+    const outcome = await heater.savePidConfig([
+      OUT_OF_RANGE_GAINS,
+      GAINS,
+      OUT_OF_RANGE_GAINS,
+      GAINS,
+    ]);
+
+    expect(outcome).toEqual({
+      status: "failed",
+      failures: [
+        {
+          field: "heater.pid.zone1",
+          outcome: { status: "rejected", code: "ERR_CFG_RANGE" },
+        },
+        {
+          field: "heater.pid.zone3",
+          outcome: { status: "rejected", code: "ERR_CFG_RANGE" },
+        },
+      ],
+    });
+    expect(heater.getZone(1).getValue().pidConfig).toEqual(GAINS);
+    expect(heater.getZone(0).getValue().pidConfig).toBeNull();
+  });
+
+  it("saves the heater's identity under the heater's own field keys", async () => {
+    const transport = new FakeModuleTransport(heaterScenario());
+    const heater = new HeaterSystem(transport);
+
+    const outcome = await heater.admin.saveIdentity({
+      name: "Chauffage",
+      pin: "12",
+    });
+
+    expect(outcome).toMatchObject({
+      failures: [{ field: "heater.identity.pin" }],
+    });
+    expect(transport.channel(ADMIN).commands).toContain("NAME:Chauffage");
   });
 
   it("refuses a zone index outside the four the module has", () => {

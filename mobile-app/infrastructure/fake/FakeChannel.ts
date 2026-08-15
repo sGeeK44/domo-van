@@ -13,6 +13,7 @@ export class FakeChannel implements Channel {
   readonly commands: string[] = [];
   private readonly frames: Fanout<string>;
   private writesFail = false;
+  private answersNothing = false;
 
   constructor(
     private readonly scenario: ChannelScenario = SILENT,
@@ -35,11 +36,17 @@ export class FakeChannel implements Channel {
     this.writesFail = false;
   }
 
+  /** The firmware answers every command, so silence is the module gone quiet, not the scenario. */
+  goSilent(): void {
+    this.answersNothing = true;
+  }
+
   send(command: string): Promise<void> {
     if (this.writesFail) {
       return Promise.reject(new Error(`write refused: ${command}`));
     }
     this.commands.push(command);
+    if (this.answersNothing) return Promise.resolve();
     for (const frame of this.scenario(command)) {
       this.emit(frame);
     }

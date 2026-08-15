@@ -5,8 +5,14 @@ import {
   nightTargetCelsius,
   snapSetpoint,
 } from "@/domain/heater/HeaterPresets";
+import type { PidConfig } from "@/domain/heater/HeaterProtocol";
 import { HeaterZone } from "@/domain/heater/HeaterZone";
 import type { ModuleTransport } from "@/domain/ports/ModuleTransport";
+import {
+  type SaveFieldKey,
+  type SaveOutcome,
+  saveFields,
+} from "@/domain/SaveOutcome";
 
 export type HeaterModuleChannel =
   | "admin"
@@ -15,6 +21,13 @@ export type HeaterModuleChannel =
   | "heater_2"
   | "heater_3"
   | "environment";
+
+const PID_FIELDS = [
+  "heater.pid.zone1",
+  "heater.pid.zone2",
+  "heater.pid.zone3",
+  "heater.pid.zone4",
+] as const satisfies readonly SaveFieldKey[];
 
 const CHANNELS: Record<HeaterModuleChannel, string> = {
   admin: "0001",
@@ -34,14 +47,18 @@ export class HeaterSystem {
   /** Night mode is a preset, not a toggle: every other write leaves it. */
   readonly nightMode: Observable<boolean> = this.nightModeState;
 
-  constructor(transport: ModuleTransport) {
-    this.admin = new AdminModule(transport.openChannel(CHANNELS.admin));
+  constructor(transport: ModuleTransport, now: () => number = Date.now) {
+    this.admin = new AdminModule(
+      transport.openChannel(CHANNELS.admin),
+      "heater",
+      now,
+    );
 
     this.zones = [
-      new HeaterZone(transport.openChannel(CHANNELS.heater_0), 0),
-      new HeaterZone(transport.openChannel(CHANNELS.heater_1), 1),
-      new HeaterZone(transport.openChannel(CHANNELS.heater_2), 2),
-      new HeaterZone(transport.openChannel(CHANNELS.heater_3), 3),
+      new HeaterZone(transport.openChannel(CHANNELS.heater_0), 0, now),
+      new HeaterZone(transport.openChannel(CHANNELS.heater_1), 1, now),
+      new HeaterZone(transport.openChannel(CHANNELS.heater_2), 2, now),
+      new HeaterZone(transport.openChannel(CHANNELS.heater_3), 3, now),
     ] as const;
 
     this.environment = new EnvironmentData(
@@ -55,6 +72,18 @@ export class HeaterSystem {
     }
     return this.zones[index];
   }
+
+  /** The Régulation PID form, whole: one write per zone, one field key per zone. */
+  savePidConfig = (gains: readonly PidConfig[]): Promise<SaveOutcome> =>
+    saveFields(
+      gains.map((config, index) => {
+        const zone = this.getZone(index);
+        return {
+          field: PID_FIELDS[index],
+          write: () => zone.setPidConfig(config),
+        };
+      }),
+    );
 
   /** Adjusting a target starts the zone it belongs to, and leaves night mode. */
   adjustZone = async (index: number, deltaCelsius: number): Promise<void> => {
