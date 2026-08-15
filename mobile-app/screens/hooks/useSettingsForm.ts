@@ -40,12 +40,13 @@ export function useSettingsForm<T extends object>({
     if (inFlight.current) return;
     if (Object.keys(errors).length > 0) return;
 
+    const sent = draft;
     inFlight.current = true;
     setSaving(true);
     try {
       await onSave(values);
-      // Reported: the module is the source of truth again, refused value included.
-      setDraft(null);
+      // Only what was sent goes back to the module's word: a keystroke since is newer than it.
+      setDraft((current) => (current === sent ? null : current));
     } finally {
       inFlight.current = false;
       setSaving(false);

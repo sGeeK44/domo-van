@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 // `app/_layout.tsx` cannot be imported under vitest, so the wiring is read as source.
 const ROOT = join(import.meta.dirname, "..", "..");
+const ROUTES = join(ROOT, "app");
 const SETTINGS_ROUTES = join(ROOT, "app", "settings");
 const SCREENS = join(ROOT, "screens");
 const LAYOUT = join(ROOT, "app", "_layout.tsx");
@@ -12,6 +13,9 @@ const SHELL = join(ROOT, "screens", "settings-form-screen.tsx");
 
 /** A navigation that does not pop cannot return the user to the surface they came from. */
 const FORBIDDEN_NAVIGATION = ["replace", "dismissTo"];
+
+/** expo-router reads `anchor ?? initialRouteName`, so both spellings seat a route underneath. */
+const FORBIDDEN_ANCHORS = ["anchor", "initialRouteName"];
 
 /** The five forms of #7, whichever of them have landed. */
 const FORM_SCREEN = /-(identity|tanks|pid|info)-screen\.tsx$/;
@@ -69,6 +73,45 @@ function formSources(): string[] {
   return [SHELL, ...forms, ...routeFiles()];
 }
 
+/** A directory is a route group, a file is a route; `_layout` is neither. */
+function topLevelRoutes(): string[] {
+  return readdirSync(ROUTES)
+    .filter((entry) => !entry.startsWith("_layout."))
+    .map((entry) =>
+      statSync(join(ROUTES, entry)).isDirectory()
+        ? entry
+        : entry.replace(/\.tsx?$/, ""),
+    );
+}
+
+/** Each `<Stack.Screen name=… options={…}/>`, mapped to the options it declares. */
+function stackScreensOf(file: string): Map<string, string> {
+  const screens = nodesOf(parse(file))
+    .filter(
+      (node): node is ts.JsxSelfClosingElement =>
+        ts.isJsxSelfClosingElement(node) &&
+        node.tagName.getText() === "Stack.Screen",
+    )
+    .map((element) => {
+      const attributes = element.attributes.properties.filter(
+        ts.isJsxAttribute,
+      );
+      const named = (attribute: string) =>
+        attributes.find((candidate) => candidate.name.getText() === attribute)
+          ?.initializer;
+      const name = named("name");
+      const options = named("options");
+      return [
+        name && ts.isStringLiteral(name) ? name.text : "",
+        options && ts.isJsxExpression(options)
+          ? (options.expression?.getText() ?? "")
+          : "",
+      ] as const;
+    });
+
+  return new Map(screens);
+}
+
 function identifiersOf(file: string): string[] {
   return nodesOf(parse(file))
     .filter(ts.isIdentifier)
@@ -123,11 +166,24 @@ describe("the settings routes", () => {
     expect(jsxTagsOf(join(SETTINGS_ROUTES, "_layout.tsx"))).toEqual(["Stack"]);
   });
 
-  // An initial route would seat Réglages under every form, and back would land there.
-  it("anchor the group on nothing, so a form pops to whoever pushed it", () => {
+  // An anchored group would seat Réglages under every form, and back would land there.
+  it.each(FORBIDDEN_ANCHORS)("are anchored on no %s", (anchor) => {
     expect(identifiersOf(join(SETTINGS_ROUTES, "_layout.tsx"))).not.toContain(
-      "initialRouteName",
+      anchor,
     );
+  });
+});
+
+describe("the root stack", () => {
+  // A route with no entry inherits headerShown: true, and wears a native bar over its own header.
+  it("declares every route under app/, with no native header", () => {
+    const declared = stackScreensOf(LAYOUT);
+
+    expect(topLevelRoutes().length).toBeGreaterThan(0);
+    for (const route of topLevelRoutes()) {
+      expect(declared.has(route), `no Stack.Screen for "${route}"`).toBe(true);
+      expect(declared.get(route), route).toContain("headerShown: false");
+    }
   });
 });
 
