@@ -19,6 +19,7 @@ export const fr = {
     },
     feedback: {
       saved: "Configuration enregistrée",
+      sent: "Configuration envoyée au module",
       notAnswered: "Le module n'a pas confirmé",
       unreachable: "Module non joignable",
     },
@@ -220,12 +221,18 @@ export const fr = {
       nightOn: "Mode nuit — cibles abaissées",
       allStopped: "Toutes les zones arrêtées",
     },
+    pid: {
+      crumb: "Chauffage",
+      title: "Régulation PID",
+      intro:
+        "Chaque zone a ses propres coefficients. Kp corrige l'écart courant, Ki rattrape l'erreur accumulée, Kd amortit les à-coups.",
+      card: "PID · {{zone}}",
+      invalidGain: "Chaque coefficient doit être un nombre entre 0.01 et 100.",
+      rejected: "{{zone}} : valeur refusée par le module ({{code}})",
+      notAnswered: "{{zone}} : le module n'a pas confirmé",
+    },
     settings: {
       title: "Chauffage",
-      zone1: "Cabine",
-      zone2: "Cellule",
-      zone3: "Soute",
-      zone4: "Garage",
       pidSection: "Configuration PID - {{zone}}",
       savePid: "Enregistrer PID",
       sendingPid: "Envoi configuration PID…",

@@ -21,6 +21,7 @@ export const en: typeof fr = {
     },
     feedback: {
       saved: "Configuration saved",
+      sent: "Configuration sent to the module",
       notAnswered: "The module did not confirm",
       unreachable: "Module unreachable",
     },
@@ -221,12 +222,18 @@ export const en: typeof fr = {
       nightOn: "Night mode — targets lowered",
       allStopped: "All zones stopped",
     },
+    pid: {
+      crumb: "Heating",
+      title: "PID regulation",
+      intro:
+        "Each zone has its own coefficients. Kp corrects the current error, Ki catches up the accumulated one, Kd damps the swings.",
+      card: "PID · {{zone}}",
+      invalidGain: "Every coefficient must be a number between 0.01 and 100.",
+      rejected: "{{zone}}: value refused by the module ({{code}})",
+      notAnswered: "{{zone}}: the module did not confirm",
+    },
     settings: {
       title: "Heating",
-      zone1: "Cab",
-      zone2: "Cabin",
-      zone3: "Hold",
-      zone4: "Garage",
       pidSection: "PID configuration - {{zone}}",
       savePid: "Save PID",
       sendingPid: "Sending PID configuration…",
