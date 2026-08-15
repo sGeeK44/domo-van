@@ -6,7 +6,12 @@ import {
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
 import { ConfirmedWrite } from "@/domain/ConfirmedWrite";
-import { ackFailure, type Feedback, SAVED } from "@/domain/Feedback";
+import {
+  ackFailure,
+  type Feedback,
+  SAVED,
+  unansweredWrite,
+} from "@/domain/Feedback";
 import {
   PidConfig,
   parsePidConfigMessage,
@@ -143,12 +148,9 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
       this.state.update((prev) => ({ ...prev, pidConfig: config }));
       return outcome;
     }
-    // a refusal already came in as an ack, with its code; silence has to name itself
-    if (outcome.status === "timedOut") {
-      this.state.update((prev) => ({
-        ...prev,
-        lastFeedback: { key: "heater.feedback.pidFailed" },
-      }));
+    const failure = unansweredWrite(outcome);
+    if (failure) {
+      this.state.update((prev) => ({ ...prev, lastFeedback: failure }));
     }
     return outcome;
   };

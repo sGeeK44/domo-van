@@ -22,6 +22,9 @@ export type HeaterModuleChannel =
   | "heater_3"
   | "environment";
 
+/** One set of gains per zone, in zone order — the form has no partial shape. */
+export type ZoneGains = readonly [PidConfig, PidConfig, PidConfig, PidConfig];
+
 const PID_FIELDS = [
   "heater.pid.zone1",
   "heater.pid.zone2",
@@ -74,15 +77,12 @@ export class HeaterSystem {
   }
 
   /** The Régulation PID form, whole: one write per zone, one field key per zone. */
-  savePidConfig = (gains: readonly PidConfig[]): Promise<SaveOutcome> =>
+  savePidConfig = (gains: ZoneGains): Promise<SaveOutcome> =>
     saveFields(
-      gains.map((config, index) => {
-        const zone = this.getZone(index);
-        return {
-          field: PID_FIELDS[index],
-          write: () => zone.setPidConfig(config),
-        };
-      }),
+      this.zones.map((zone, index) => ({
+        field: PID_FIELDS[index],
+        write: () => zone.setPidConfig(gains[index]),
+      })),
     );
 
   /** Adjusting a target starts the zone it belongs to, and leaves night mode. */

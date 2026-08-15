@@ -6,6 +6,12 @@ import {
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
 import { ConfirmedWrite } from "@/domain/ConfirmedWrite";
+import {
+  ackFailure,
+  type Feedback,
+  SAVED,
+  unansweredWrite,
+} from "@/domain/Feedback";
 import { Channel } from "@/domain/ports/Channel";
 import {
   type IdentityOwner,
@@ -18,6 +24,7 @@ import {
 export type AdminSnapshot = {
   success: boolean;
   error: string | null;
+  lastFeedback: Feedback | null;
 };
 
 export type ModuleIdentity = {
@@ -38,6 +45,7 @@ export class AdminModule implements Observable<AdminSnapshot> {
     this.state = createObservable<AdminSnapshot>({
       success: false,
       error: null,
+      lastFeedback: null,
     });
     this.writes = new ConfirmedWrite(this.channel, now);
 
@@ -53,32 +61,49 @@ export class AdminModule implements Observable<AdminSnapshot> {
 
   private onMessageReceived = (msg: string) => {
     const ack = parseAckMessage(msg);
+    if (!ack) return;
     this.state.update((prev) => {
       return {
         ...prev,
-        success: ack?.type === "ok",
-        error: ack?.type === "error" ? ack.code : null,
+        success: ack.type === "ok",
+        error: ack.type === "error" ? ack.code : null,
+        lastFeedback: ack.type === "ok" ? SAVED : ackFailure(ack.code),
       };
     });
   };
 
   setName(name: string): Promise<WriteOutcome> {
-    return this.writes.send(`NAME:${name}`);
+    return this.report(this.writes.send(`NAME:${name}`));
   }
 
   setPin(pin: string): Promise<WriteOutcome> {
-    return this.writes.send(`PIN:${pin}`);
+    return this.report(this.writes.send(`PIN:${pin}`));
   }
 
+  /** Name and pin travel as one command: the module reboots on the ack, so a second write would be lost. */
   saveIdentity(identity: ModuleIdentity): Promise<SaveOutcome> {
     return saveFields([
-      { field: this.field("name"), write: () => this.setName(identity.name) },
-      { field: this.field("pin"), write: () => this.setPin(identity.pin) },
+      {
+        field: `${this.owner}.identity` satisfies SaveFieldKey,
+        write: () =>
+          this.report(
+            this.writes.send(`ID:NAME=${identity.name};PIN=${identity.pin}`),
+          ),
+      },
     ]);
   }
 
-  private field(part: "name" | "pin"): SaveFieldKey {
-    return `${this.owner}.identity.${part}`;
+  private async report(sending: Promise<WriteOutcome>): Promise<WriteOutcome> {
+    const outcome = await sending;
+    const failure = unansweredWrite(outcome);
+    if (failure) {
+      this.state.update((prev) => ({
+        ...prev,
+        success: false,
+        lastFeedback: failure,
+      }));
+    }
+    return outcome;
   }
 
   dispose = () => {

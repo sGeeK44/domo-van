@@ -5,7 +5,7 @@ import {
   MIN_SETPOINT_CELSIUS,
   SETPOINT_STEP_CELSIUS,
 } from "@/domain/heater/HeaterPresets";
-import { HeaterSystem } from "@/domain/heater/HeaterSystem";
+import { HeaterSystem, type ZoneGains } from "@/domain/heater/HeaterSystem";
 import { FakeModuleTransport } from "@/infrastructure/fake/FakeModuleTransport";
 import { heaterScenario } from "@/infrastructure/fake/scenarios/heaterScenario";
 
@@ -32,7 +32,7 @@ function targets(heater: HeaterSystem): number[] {
 }
 
 const GAINS = { kp: 10, ki: 0.25, kd: 3 };
-const ALL_ZONE_GAINS = [GAINS, GAINS, GAINS, GAINS];
+const ALL_ZONE_GAINS: ZoneGains = [GAINS, GAINS, GAINS, GAINS];
 /** Above the ×100 ceiling the firmware stores, see HeaterCfgProtocol.cpp. */
 const OUT_OF_RANGE_GAINS = { kp: 200, ki: 0.25, kd: 3 };
 
@@ -188,6 +188,27 @@ describe("HeaterSystem", () => {
     expect(heater.getZone(0).getValue().pidConfig).toBeNull();
   });
 
+  it("refuses a gain the firmware would not read as a number", async () => {
+    const transport = new FakeModuleTransport(heaterScenario());
+    const heater = new HeaterSystem(transport);
+
+    const outcome = await heater.savePidConfig([
+      { ...GAINS, kp: -1 },
+      GAINS,
+      GAINS,
+      GAINS,
+    ]);
+
+    expect(outcome).toMatchObject({
+      failures: [
+        {
+          field: "heater.pid.zone1",
+          outcome: { status: "rejected", code: "ERR_CFG_NUM" },
+        },
+      ],
+    });
+  });
+
   it("saves the heater's identity under the heater's own field keys", async () => {
     const transport = new FakeModuleTransport(heaterScenario());
     const heater = new HeaterSystem(transport);
@@ -197,10 +218,10 @@ describe("HeaterSystem", () => {
       pin: "12",
     });
 
-    expect(outcome).toMatchObject({
-      failures: [{ field: "heater.identity.pin" }],
-    });
-    expect(transport.channel(ADMIN).commands).toContain("NAME:Chauffage");
+    expect(outcome).toMatchObject({ failures: [{ field: "heater.identity" }] });
+    expect(transport.channel(ADMIN).commands).toEqual([
+      "ID:NAME=Chauffage;PIN=12",
+    ]);
   });
 
   it("refuses a zone index outside the four the module has", () => {

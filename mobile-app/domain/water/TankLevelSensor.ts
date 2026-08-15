@@ -6,7 +6,7 @@ import {
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
 import { ConfirmedWrite } from "@/domain/ConfirmedWrite";
-import { type Feedback, SAVED } from "@/domain/Feedback";
+import { type Feedback, SAVED, unansweredWrite } from "@/domain/Feedback";
 import { Channel } from "@/domain/ports/Channel";
 import type { WriteOutcome } from "@/domain/SaveOutcome";
 import {
@@ -68,8 +68,18 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
     const outcome = await this.writes.send(
       `CFG:V=${config.volumeLiters};H=${config.heightMm}`,
     );
-    if (outcome.status === "applied") this.applyConfig(config);
+    if (outcome.status === "applied") {
+      this.applyConfig(config);
+      return outcome;
+    }
+    this.report(outcome);
     return outcome;
+  }
+
+  private report(outcome: WriteOutcome): void {
+    const failure = unansweredWrite(outcome);
+    if (!failure) return;
+    this.state.update((prev) => ({ ...prev, lastFeedback: failure }));
   }
 
   private readonly state: ReturnType<

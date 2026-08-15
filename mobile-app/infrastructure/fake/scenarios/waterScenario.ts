@@ -11,14 +11,25 @@ type TankReading = {
   distanceMm: number;
 };
 
-const TANK_CONFIG_WRITE = /^CFG:V=(\d+);H=(\d+)$/;
-const VALVE_CONFIG_WRITE = /^CFG:T=(\d+)$/;
-
 // Sanity bounds the firmware refuses to store beyond, see
 // water-module/lib/protocol/{TankCfgProtocol,ValveCfgProtocol}.cpp.
 const MAX_VOLUME_LITERS = 5000;
 const MAX_HEIGHT_MM = 10000;
 const MAX_AUTO_CLOSE_SECONDS = 300;
+
+function fieldOf(command: string, key: string): string {
+  const written = new RegExp(`${key}=([^;]*)`).exec(command);
+  return written ? written[1] : "";
+}
+
+function isWholeNumber(value: string): boolean {
+  return /^\d+$/.test(value);
+}
+
+function outOfRange(value: string, max: number): boolean {
+  const written = Number(value);
+  return written <= 0 || written > max;
+}
 
 const CLEAN_TANK_AT_72_PERCENT: TankReading = {
   volumeLiters: 100,
@@ -42,19 +53,30 @@ function tankScenario(reading: TankReading): ChannelScenario {
   let heightMm = reading.heightMm;
 
   return (command) => {
-    const written = TANK_CONFIG_WRITE.exec(command);
-    if (written) {
-      const writtenVolume = Number(written[1]);
-      const writtenHeight = Number(written[2]);
-      if (writtenVolume > MAX_VOLUME_LITERS || writtenHeight > MAX_HEIGHT_MM) {
-        return ["ERR_CFG_RANGE"];
-      }
-      volumeLiters = writtenVolume;
-      heightMm = writtenHeight;
-      return ["OK"];
+    if (command === "CFG?") {
+      return [
+        `CFG:V=${volumeLiters};H=${heightMm}`,
+        String(reading.distanceMm),
+      ];
     }
-    if (command !== "CFG?") return [];
-    return [`CFG:V=${volumeLiters};H=${heightMm}`, String(reading.distanceMm)];
+    if (!command.startsWith("CFG:")) return [];
+
+    const writtenVolume = fieldOf(command, "V");
+    const writtenHeight = fieldOf(command, "H");
+    if (!writtenVolume || !writtenHeight) return ["ERR_CFG_FMT"];
+    if (!isWholeNumber(writtenVolume) || !isWholeNumber(writtenHeight)) {
+      return ["ERR_CFG_NUM"];
+    }
+    if (
+      outOfRange(writtenVolume, MAX_VOLUME_LITERS) ||
+      outOfRange(writtenHeight, MAX_HEIGHT_MM)
+    ) {
+      return ["ERR_CFG_RANGE"];
+    }
+
+    volumeLiters = Number(writtenVolume);
+    heightMm = Number(writtenHeight);
+    return ["OK"];
   };
 }
 
@@ -63,11 +85,14 @@ function drainValveScript(): ChannelScript {
   let remainingSeconds = 0;
 
   const respond: ChannelScenario = (command) => {
-    const written = VALVE_CONFIG_WRITE.exec(command);
-    if (written) {
-      const writtenSeconds = Number(written[1]);
-      if (writtenSeconds > MAX_AUTO_CLOSE_SECONDS) return ["ERR_CFG_RANGE"];
-      autoCloseSeconds = writtenSeconds;
+    if (command !== "CFG?" && command.startsWith("CFG:")) {
+      const writtenSeconds = fieldOf(command, "T");
+      if (!writtenSeconds) return ["ERR_CFG_FMT"];
+      if (!isWholeNumber(writtenSeconds)) return ["ERR_CFG_NUM"];
+      if (outOfRange(writtenSeconds, MAX_AUTO_CLOSE_SECONDS)) {
+        return ["ERR_CFG_RANGE"];
+      }
+      autoCloseSeconds = Number(writtenSeconds);
       return ["OK"];
     }
     switch (command) {

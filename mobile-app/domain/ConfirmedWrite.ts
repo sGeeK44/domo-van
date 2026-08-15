@@ -6,6 +6,7 @@ import {
   APPLIED,
   rejectedWrite,
   TIMED_OUT,
+  UNREACHABLE,
   type WriteOutcome,
 } from "@/domain/SaveOutcome";
 
@@ -20,7 +21,7 @@ class PendingAck {
 
   constructor(
     private readonly now: () => number,
-    private readonly onSettled: () => void,
+    private readonly onSettled: (outcome: WriteOutcome) => void,
   ) {
     this.outcome = new Promise<WriteOutcome>((resolve) => {
       this.answer = resolve;
@@ -31,7 +32,7 @@ class PendingAck {
     if (this.settled) return;
     this.settled = true;
     this.clearTimer();
-    this.onSettled();
+    this.onSettled(outcome);
     this.answer(outcome);
   }
 
@@ -64,6 +65,9 @@ export class ConfirmedWrite {
   private readonly queue = new SerialQueue();
   private readonly unlisten: Unsubscribe;
   private pending: PendingAck | null = null;
+  /** Acks a timed-out write may still owe us: they answer a command nobody is waiting for any more. */
+  private owedAcks = 0;
+  private disposed = false;
 
   constructor(
     private readonly channel: Channel,
@@ -79,22 +83,25 @@ export class ConfirmedWrite {
   }
 
   dispose(): void {
+    this.disposed = true;
     this.unlisten();
-    this.pending?.settle(TIMED_OUT);
+    this.pending?.settle(UNREACHABLE);
   }
 
   private async sendNow(command: string): Promise<WriteOutcome> {
+    if (this.disposed) return UNREACHABLE;
+
     // the ack can land inside send(), so the write is pending before it leaves
-    const pending = new PendingAck(this.now, () => {
+    const pending = new PendingAck(this.now, (outcome) => {
       this.pending = null;
+      if (outcome.status === "timedOut") this.owedAcks += 1;
     });
     this.pending = pending;
 
     try {
       await this.channel.send(command);
     } catch {
-      // a write the radio refused gets no answer either
-      pending.settle(TIMED_OUT);
+      pending.settle(UNREACHABLE);
       return pending.outcome;
     }
 
@@ -105,6 +112,11 @@ export class ConfirmedWrite {
   private onFrame = (frame: string) => {
     const ack = parseAckMessage(frame);
     if (!ack) return;
+    // a late ack answers the write that gave up on it, never the one in flight
+    if (this.owedAcks > 0) {
+      this.owedAcks -= 1;
+      return;
+    }
     this.pending?.settle(ack.type === "ok" ? APPLIED : rejectedWrite(ack.code));
   };
 }

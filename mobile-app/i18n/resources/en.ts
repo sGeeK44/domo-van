@@ -21,6 +21,8 @@ export const en: typeof fr = {
     },
     feedback: {
       saved: "Configuration saved",
+      notAnswered: "The module did not confirm",
+      unreachable: "Module unreachable",
     },
   },
 
