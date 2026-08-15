@@ -75,7 +75,7 @@ function PresetButton({
     <Pressable
       testID={testID}
       accessibilityRole="button"
-      aria-pressed={active}
+      aria-selected={active}
       style={[styles.button, active ? styles.buttonActive : styles.buttonIdle]}
       onPress={onPress}
     >
