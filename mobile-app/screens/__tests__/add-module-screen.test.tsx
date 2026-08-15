@@ -13,7 +13,9 @@ import type { DiscoveredBluetoothDevice } from "@/domain/ports/BluetoothScanner"
 // createContainer reads this switch at import time, hence the dynamic imports below.
 process.env.EXPO_PUBLIC_FAKE_BLE = "1";
 
-const { pairOnly, renderModuleScreen } = await import("./moduleScreenHarness");
+const { pairOnly, renderModuleScreen, switchableLanguage } = await import(
+  "./moduleScreenHarness"
+);
 const { default: AddModuleScreen } = await import(
   "@/screens/add-module-screen"
 );
@@ -23,6 +25,9 @@ const { resetNavigation, routerHistory } = await import(
   "@/__mocks__/expo-router"
 );
 const { WATER_MODULE } = await import("@/domain/modules/ModuleDescriptor");
+const { NotConnectedError } = await import(
+  "@/infrastructure/session/NotConnectedError"
+);
 
 const WATER_DEVICE = "discovered-fake-water";
 const SCAN_TIMEOUT_MS = 30_000;
@@ -207,6 +212,27 @@ describe("the Ajouter screen", () => {
     });
 
     expect(routerHistory).not.toContainEqual({ method: "back" });
+  });
+
+  // Acceptance example 7 says every screen, so a failure already on screen switches too.
+  it("re-reads a displayed pairing failure in the language chosen after it", async () => {
+    const { tree, switchTo } = switchableLanguage(<AddModuleScreen />);
+    const harness = renderModuleScreen(tree);
+    await pairOnly(harness, []);
+    vi.spyOn(ModuleRegistry.prototype, "pair").mockRejectedValue(
+      new NotConnectedError(),
+    );
+
+    await act(async () => {
+      fireEvent.click(await screen.findByTestId("pair-fake-water"));
+    });
+    expect(screen.getByText("Module non connecté.")).toBeTruthy();
+
+    await act(async () => {
+      switchTo("en");
+    });
+
+    expect(screen.getByText("Module not connected.")).toBeTruthy();
   });
 
   it("says nothing was found once a fruitless scan ends", async () => {

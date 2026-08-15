@@ -352,5 +352,32 @@ export const fr = {
         valve: "Vanne de vidange",
       },
     },
+    title: "Réglages",
+    groups: {
+      modules: "MODULES",
+      application: "APPLICATION",
+    },
+    rows: {
+      modules: "Modules associés",
+      modulesSubtitle: "{{paired}} sur {{slots}} emplacements",
+      water: "Eau",
+      waterSubtitle: "volumes, hauteurs, vanne",
+      heater: "Chauffage",
+      heaterSubtitle: "coefficients PID par zone",
+      battery: "Batterie",
+      batterySubtitle: "informations, lecture seule",
+    },
+    language: {
+      label: "Langue",
+      fr: "FR",
+      en: "EN",
+    },
+    theme: {
+      label: "Thème",
+      auto: "Auto",
+      dark: "Sombre",
+      light: "Clair",
+    },
+    version: "Domo-Van {{version}}",
   },
 };

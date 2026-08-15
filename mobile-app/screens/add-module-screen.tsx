@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { errorMessage } from "@/components/error-message";
+import { type ErrorReport, errorMessage } from "@/components/error-message";
 import { DiscoveredModuleRow } from "@/components/modules";
 import { useContainer } from "@/composition/ContainerProvider";
 import {
@@ -40,7 +40,7 @@ export default function AddModuleScreen() {
   const [found, setFound] = useState<readonly DiscoveredBluetoothDevice[]>([]);
   const [isScanning, setIsScanning] = useState(true);
   const [pairingId, setPairingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorReport | null>(null);
   const isMounted = useRef(true);
   const stopRunningScan = useRef(() => {});
 
@@ -70,7 +70,7 @@ export default function AddModuleScreen() {
       .catch((cause: unknown) => {
         if (cancelled) return;
         setIsScanning(false);
-        setError(errorMessage(cause, t, "modules.add.scanFailed"));
+        setError({ cause, fallbackKey: "modules.add.scanFailed" });
       });
 
     // the radio only starts scanning once the permission round-trip resolves, which outlives both the timeout and the screen
@@ -88,7 +88,7 @@ export default function AddModuleScreen() {
       clearTimeout(timer);
       stopRadio();
     };
-  }, [bluetooth, t]);
+  }, [bluetooth]);
 
   useEffect(() => {
     scan();
@@ -111,7 +111,7 @@ export default function AddModuleScreen() {
       if (isMounted.current) router.back();
     } catch (cause: unknown) {
       if (isMounted.current)
-        setError(errorMessage(cause, t, "modules.add.pairFailed"));
+        setError({ cause, fallbackKey: "modules.add.pairFailed" });
     } finally {
       if (isMounted.current) setPairingId(null);
     }
@@ -128,7 +128,11 @@ export default function AddModuleScreen() {
         <Text style={styles.status}>
           {t(isScanning ? "modules.add.scanning" : "modules.add.scanned")}
         </Text>
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && (
+          <Text style={styles.error}>
+            {errorMessage(error.cause, t, error.fallbackKey)}
+          </Text>
+        )}
 
         {found.map((device) => (
           <DiscoveredModuleRow

@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { errorMessage } from "@/components/error-message";
+import { type ErrorReport, errorMessage } from "@/components/error-message";
 import { FreeSlotRow, ModuleSlotRow, UnpairSheet } from "@/components/modules";
 import {
   useModuleRegistry,
@@ -45,7 +45,7 @@ export default function ModulesScreen() {
 
   const [leaving, setLeaving] = useState<ModuleSlot | null>(null);
   const [isUnpairing, setIsUnpairing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorReport | null>(null);
 
   const occupied = slots.filter((slot) => slot.pairing !== null);
   const free = slots.filter((slot) => slot.pairing === null);
@@ -65,7 +65,7 @@ export default function ModulesScreen() {
       setLeaving(null);
     } catch (cause: unknown) {
       // the slot is already free in memory but storage still holds the pairing, so it would come back at the next launch
-      setError(errorMessage(cause, t, "modules.list.unpairFailed"));
+      setError({ cause, fallbackKey: "modules.list.unpairFailed" });
     } finally {
       setIsUnpairing(false);
     }
@@ -79,7 +79,11 @@ export default function ModulesScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.list}>
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && (
+          <Text style={styles.error}>
+            {errorMessage(error.cause, t, error.fallbackKey)}
+          </Text>
+        )}
         {occupied.map((slot) => (
           <ModuleSlotRow
             key={slot.module.key}

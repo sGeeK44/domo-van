@@ -353,5 +353,32 @@ export const en: typeof fr = {
         valve: "Drain valve",
       },
     },
+    title: "Settings",
+    groups: {
+      modules: "MODULES",
+      application: "APPLICATION",
+    },
+    rows: {
+      modules: "Paired modules",
+      modulesSubtitle: "{{paired}} of {{slots}} slots",
+      water: "Water",
+      waterSubtitle: "volumes, heights, valve",
+      heater: "Heating",
+      heaterSubtitle: "PID coefficients per zone",
+      battery: "Battery",
+      batterySubtitle: "information, read-only",
+    },
+    language: {
+      label: "Language",
+      fr: "FR",
+      en: "EN",
+    },
+    theme: {
+      label: "Theme",
+      auto: "Auto",
+      dark: "Dark",
+      light: "Light",
+    },
+    version: "Domo-Van {{version}}",
   },
 };

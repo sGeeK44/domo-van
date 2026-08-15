@@ -11,7 +11,9 @@ import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 // createContainer reads this switch at import time, hence the dynamic imports below.
 process.env.EXPO_PUBLIC_FAKE_BLE = "1";
 
-const { pairOnly, renderModuleScreen } = await import("./moduleScreenHarness");
+const { pairOnly, renderModuleScreen, switchableLanguage } = await import(
+  "./moduleScreenHarness"
+);
 const { default: ModulesScreen } = await import("@/screens/modules-screen");
 const { ModuleRegistry } = await import("@/domain/modules/ModuleRegistry");
 const { InMemoryDeviceRepository } = await import(
@@ -99,6 +101,32 @@ describe("the Modules screen", () => {
     expect(screen.getByText("Trousseau inaccessible.")).toBeTruthy();
     expect(screen.getByTestId("unpair-confirm")).toBeTruthy();
     expect(escaped).toEqual([]);
+  });
+
+  // Acceptance example 7 says every screen, so a failure already on screen switches too.
+  it("re-reads a displayed unpairing failure in the language chosen after it", async () => {
+    watchUnhandledRejections();
+    const { tree, switchTo } = switchableLanguage(<ModulesScreen />);
+    const harness = renderModuleScreen(tree);
+    await pairOnly(harness, ["water"]);
+    // A native store answers with what it likes; anything but an Error falls back to the key.
+    vi.spyOn(
+      InMemoryDeviceRepository.prototype,
+      "clearLastDevice",
+    ).mockRejectedValue("SecureStore is unavailable");
+
+    await openUnpairSheet("water");
+    await confirmUnpair();
+    await act(async () => {
+      await flush();
+    });
+    expect(screen.getByText("La dissociation a échoué.")).toBeTruthy();
+
+    await act(async () => {
+      switchTo("en");
+    });
+
+    expect(screen.getByText("Unpairing failed.")).toBeTruthy();
   });
 
   it("keeps the paired module when the sheet is cancelled", async () => {
