@@ -87,7 +87,7 @@ const getStyles = (colors: Palette) =>
     backdrop: {
       flex: 1,
       justifyContent: "flex-end",
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      backgroundColor: colors.scrim,
     },
     sheet: {
       padding: Spacing.xxl,
