@@ -184,6 +184,27 @@ zone and clamps to 5–30 °C, inside `HeaterZone`'s own 0–50 °C firmware bac
 Night mode is a **preset, not a toggle**: leaving it rewrites nothing. The day
 targets it displaced live in the module, and the app never knew them.
 
+### A confirmed write owns its channel's acks
+
+`ConfirmedWrite` correlates an ack with a command **by position**: the module
+answers in order, and nothing in the protocol names the command an `OK` belongs
+to. So a channel may only ever have one source of writes in flight.
+
+`setSetpoint`, `start` and `stop` bypass it — they are the piloting path, and
+their latency budget is a half-degree press — while `HeaterCfgProtocol` answers
+`OK` to `SP:`, `START` and `STOP` as well as to `CFG:`. **Piloting and a PID
+save must therefore never be live on the same mounted surface**: a `START`
+landing while `CFG:KP=…` waits would settle the save as *applied*, and the
+module's real answer — possibly `ERR_CFG_RANGE` — would then settle nothing.
+The zone tab and the PID form are separate routes, which is what makes this
+hold today; `HeaterSystem.test.ts` pins the behaviour so a change is visible.
+
+A timed-out write leaves the channel **owing** an answer. `ConfirmedWrite`
+swallows that many acks before settling anything again, and forgets a debt one
+timeout window old — an ack that is truly lost would otherwise spend every
+later write's answer for the lifetime of the pairing. `resync()` clears the
+debt outright: a reconnected module owes nothing.
+
 ### A toast confirms a coarse action, not every half-degree
 
 The valve (opened, closed, auto-closed), the two heater presets and a

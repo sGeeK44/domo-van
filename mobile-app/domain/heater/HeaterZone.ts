@@ -1,3 +1,4 @@
+import { sinceBoot } from "@/core/clock";
 import {
   createObservable,
   Listener,
@@ -49,7 +50,7 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
   constructor(
     private readonly channel: Channel,
     public readonly zoneIndex: number,
-    now: () => number = Date.now,
+    now: () => number = sinceBoot,
   ) {
     this.writes = new ConfirmedWrite(this.channel, now);
 
@@ -72,6 +73,8 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
 
   /** Request PID configuration */
   getPidConfig = (): Promise<void> => this.channel.send("CFG?");
+
+  resync = (): void => this.writes.forgetOwedAcks();
 
   /** Request current setpoint */
   getSetpoint = (): Promise<void> => this.channel.send("SP?");

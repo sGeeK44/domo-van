@@ -188,6 +188,25 @@ describe("HeaterSystem", () => {
     expect(heater.getZone(0).getValue().pidConfig).toBeNull();
   });
 
+  // Pins the invariant docs/architecture.md states: piloting and a PID save may not share a surface,
+  // because a START's OK would settle the save. A change here means the invariant has to be re-read.
+  it("lets a piloting ack settle a PID save, which is why the two never share a screen", async () => {
+    const transport = new FakeModuleTransport({});
+    const zone = new HeaterSystem(transport).getZone(0);
+    const zoneChannel = transport.channel(ZONE_CHANNELS[0]);
+
+    const saving = zone.setPidConfig(GAINS);
+    await zone.start();
+    zoneChannel.emit("OK");
+
+    expect(await saving).toEqual({ status: "applied" });
+    expect(zoneChannel.commands).toEqual([
+      "STATUS?",
+      "CFG:KP=1000;KI=25;KD=300",
+      "START",
+    ]);
+  });
+
   it("refuses a gain the firmware would not read as a number", async () => {
     const transport = new FakeModuleTransport(heaterScenario());
     const heater = new HeaterSystem(transport);

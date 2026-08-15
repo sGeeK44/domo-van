@@ -1,3 +1,4 @@
+import { sinceBoot } from "@/core/clock";
 import {
   createObservable,
   Listener,
@@ -48,7 +49,7 @@ export class DrainValve implements Observable<ValveState> {
 
   constructor(
     private readonly channel: Channel,
-    now: () => number = Date.now,
+    now: () => number = sinceBoot,
   ) {
     this.writes = new ConfirmedWrite(this.channel, now);
 
@@ -66,6 +67,11 @@ export class DrainValve implements Observable<ValveState> {
 
   getConfig = (): Promise<void> => {
     return this.channel.send("CFG?");
+  };
+
+  resync = (): Promise<void> => {
+    this.writes.forgetOwedAcks();
+    return this.getConfig();
   };
 
   /** The delay the countdown runs on only changes once the module says it kept it. */

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, ToastAndroid, View } from "react-native";
-import { errorMessage } from "@/components/error-message";
 import { FormField, Spacing } from "@/design-system";
 import type { AdminModule } from "@/domain/AdminModule";
 import type { TranslationKey } from "@/i18n/keys";
@@ -49,12 +48,12 @@ export function AdminSection({ adminModule, deviceName }: Props) {
   }, [deviceName]);
 
   useEffect(() => {
-    const sub = adminModule.subscribe((msg) => {
-      if (msg.success) {
+    const sub = adminModule.subscribe(({ success, lastFeedback }) => {
+      if (success) {
         showToast(t("modules.admin.restarted"));
-      } else if (msg.error) {
-        showToast(t("modules.admin.failed", { message: msg.error }));
+        return;
       }
+      if (lastFeedback) showToast(t(lastFeedback.key, lastFeedback.params));
     });
 
     return () => {
@@ -70,13 +69,8 @@ export function AdminSection({ adminModule, deviceName }: Props) {
     }
     setSendingName(true);
     showToast(t("modules.admin.sendingName"));
-    try {
-      await adminModule.setName(adminName.trim());
-    } catch (e) {
-      showToast(errorMessage(e, t, "common.errors.send"));
-    } finally {
-      setSendingName(false);
-    }
+    await adminModule.setName(adminName.trim());
+    setSendingName(false);
   };
 
   const handleSavePin = async () => {
@@ -87,13 +81,8 @@ export function AdminSection({ adminModule, deviceName }: Props) {
     }
     setSendingPin(true);
     showToast(t("modules.admin.sendingPin"));
-    try {
-      await adminModule.setPin(adminPin);
-    } catch (e) {
-      showToast(errorMessage(e, t, "common.errors.send"));
-    } finally {
-      setSendingPin(false);
-    }
+    await adminModule.setPin(adminPin);
+    setSendingPin(false);
   };
 
   return (
