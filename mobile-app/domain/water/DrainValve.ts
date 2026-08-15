@@ -5,8 +5,10 @@ import {
   Unsubscribe,
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
+import { ConfirmedWrite } from "@/domain/ConfirmedWrite";
 import { ackFailure, type Feedback, SAVED } from "@/domain/Feedback";
 import { Channel } from "@/domain/ports/Channel";
+import type { WriteOutcome } from "@/domain/SaveOutcome";
 import {
   parseCountdownMessage,
   parseValveConfigMessage,
@@ -36,9 +38,15 @@ export const DEFAULT_VALVE_STATE: ValveState = {
 
 export class DrainValve implements Observable<ValveState> {
   private readonly state = createObservable<ValveState>(DEFAULT_VALVE_STATE);
+  private readonly writes: ConfirmedWrite;
   private channelUnsub: Unsubscribe | null = null;
 
-  constructor(private readonly channel: Channel) {
+  constructor(
+    private readonly channel: Channel,
+    now: () => number = Date.now,
+  ) {
+    this.writes = new ConfirmedWrite(this.channel, now);
+
     // Subscribe first, then request config
     this.channelUnsub = this.channel.listen(this.onMessageReceived);
     this.channel.send("CFG?").catch(() => {
@@ -55,20 +63,21 @@ export class DrainValve implements Observable<ValveState> {
     return this.channel.send("CFG?");
   };
 
-  setAutoCloseTime = async (seconds: number): Promise<void> => {
-    this.state.update((prev) => ({
-      ...prev,
-      autoCloseSeconds: seconds,
-    }));
-    try {
-      await this.channel.send(`CFG:T=${seconds}`);
-    } catch {
-      // Revert on failure
+  /** The delay the countdown runs on only changes once the module says it kept it. */
+  setAutoCloseTime = async (seconds: number): Promise<WriteOutcome> => {
+    const outcome = await this.writes.send(`CFG:T=${seconds}`);
+    if (outcome.status === "applied") {
+      this.state.update((prev) => ({ ...prev, autoCloseSeconds: seconds }));
+      return outcome;
+    }
+    // a refusal already came in as an ack, with its code; silence has to name itself
+    if (outcome.status === "timedOut") {
       this.state.update((prev) => ({
         ...prev,
         lastFeedback: { key: "water.feedback.autoCloseFailed" },
       }));
     }
+    return outcome;
   };
 
   open = async () => {
@@ -159,6 +168,7 @@ export class DrainValve implements Observable<ValveState> {
   };
 
   dispose = () => {
+    this.writes.dispose();
     this.channelUnsub?.();
     this.channelUnsub = null;
     this.state.destroy();

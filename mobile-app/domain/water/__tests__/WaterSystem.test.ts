@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Observable } from "@/core/observable";
-import { WaterSystem } from "@/domain/water/WaterSystem";
+import { DEFAULT_WRITE_TIMEOUT_MS } from "@/domain/ConfirmedWrite";
+import { SAVED } from "@/domain/Feedback";
+import {
+  type TankAndValveConfig,
+  WaterSystem,
+} from "@/domain/water/WaterSystem";
 import { FakeModuleTransport } from "@/infrastructure/fake/FakeModuleTransport";
 import { waterScenario } from "@/infrastructure/fake/scenarios/waterScenario";
 
@@ -16,7 +21,17 @@ const STATE_CHANGING_FRAMES: Record<string, string> = {
   [GREY_VALVE]: "COUNTDOWN:7",
 };
 
+const NEW_CONFIG: TankAndValveConfig = {
+  cleanTank: { volumeLiters: 120, heightMm: 112 },
+  greyTank: { volumeLiters: 90, heightMm: 150 },
+  autoCloseSeconds: 60,
+};
+
 describe("WaterSystem", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("exposes a clean tank level of 72 % without any BLE hardware", () => {
     const transport = new FakeModuleTransport(waterScenario());
 
@@ -76,7 +91,7 @@ describe("WaterSystem", () => {
     });
   });
 
-  it("counts down the delay the module kept when it refused a longer one", async () => {
+  it("keeps the delay the module kept when it refused a longer one", async () => {
     const transport = new FakeModuleTransport(waterScenario());
     const water = new WaterSystem(transport);
     await water.greyDrainValve.setAutoCloseTime(400);
@@ -84,7 +99,7 @@ describe("WaterSystem", () => {
     await water.greyDrainValve.open();
 
     expect(water.greyDrainValve.getValue()).toMatchObject({
-      autoCloseSeconds: 400,
+      autoCloseSeconds: 45,
       remainingSeconds: 45,
     });
   });
@@ -116,7 +131,7 @@ describe("WaterSystem", () => {
     });
   });
 
-  it("recomputes the level from the config it just wrote", async () => {
+  it("recomputes the level from the config the module acknowledged", async () => {
     const transport = new FakeModuleTransport(waterScenario());
     const water = new WaterSystem(transport);
 
@@ -129,17 +144,124 @@ describe("WaterSystem", () => {
     });
   });
 
-  it("takes back the config the module kept when it refused the write", async () => {
+  it("keeps the config the module reported when it refuses the write", async () => {
     const transport = new FakeModuleTransport(waterScenario());
     const water = new WaterSystem(transport);
 
-    await water.cleanTank.setConfig("120", "20000");
-    await water.cleanTank.getConfig();
+    const outcome = await water.cleanTank.setConfig("120", "20000");
 
+    expect(outcome).toEqual({ status: "rejected", code: "ERR_CFG_RANGE" });
     expect(water.cleanTank.getValue()).toMatchObject({
       capacityLiters: 100,
       heightMm: 200,
       percentage: 72,
+    });
+  });
+
+  it("saves the tanks and the valve as one form, one write per field", async () => {
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport);
+
+    const outcome = await water.saveTankAndValveConfig(NEW_CONFIG);
+
+    expect(outcome).toEqual({ status: "applied" });
+    expect(transport.channel(CLEAN_TANK).commands).toEqual([
+      "CFG?",
+      "CFG:V=120;H=112",
+    ]);
+    expect(transport.channel(GREY_TANK).commands).toEqual([
+      "CFG?",
+      "CFG:V=90;H=150",
+    ]);
+    expect(transport.channel(GREY_VALVE).commands).toEqual([
+      "CFG?",
+      "CFG:T=60",
+    ]);
+  });
+
+  it("holds every saved value the module kept", async () => {
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport);
+
+    await water.saveTankAndValveConfig(NEW_CONFIG);
+
+    expect(water.cleanTank.getValue()).toMatchObject({
+      capacityLiters: 120,
+      heightMm: 112,
+    });
+    expect(water.greyTank.getValue()).toMatchObject({
+      capacityLiters: 90,
+      heightMm: 150,
+    });
+    expect(water.greyDrainValve.getValue().autoCloseSeconds).toBe(60);
+  });
+
+  it("names every field the module refused, and writes the others anyway", async () => {
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport);
+
+    const outcome = await water.saveTankAndValveConfig({
+      ...NEW_CONFIG,
+      cleanTank: { volumeLiters: 120, heightMm: 20_000 },
+      autoCloseSeconds: 400,
+    });
+
+    expect(outcome).toEqual({
+      status: "failed",
+      failures: [
+        {
+          field: "water.cleanTank",
+          outcome: { status: "rejected", code: "ERR_CFG_RANGE" },
+        },
+        {
+          field: "water.valve",
+          outcome: { status: "rejected", code: "ERR_CFG_RANGE" },
+        },
+      ],
+    });
+    expect(transport.channel(GREY_TANK).commands).toContain("CFG:V=90;H=150");
+    expect(water.greyTank.getValue().capacityLiters).toBe(90);
+  });
+
+  it("reports a save the module never answered, without a real wait", async () => {
+    vi.useFakeTimers();
+    const clock = { millis: 0 };
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport, () => clock.millis);
+    transport.channel(GREY_VALVE).goSilent();
+
+    const saving = water.saveTankAndValveConfig(NEW_CONFIG);
+    await vi.advanceTimersByTimeAsync(0);
+    clock.millis += DEFAULT_WRITE_TIMEOUT_MS;
+    await vi.advanceTimersByTimeAsync(DEFAULT_WRITE_TIMEOUT_MS);
+
+    await expect(saving).resolves.toEqual({
+      status: "failed",
+      failures: [{ field: "water.valve", outcome: { status: "timedOut" } }],
+    });
+  });
+
+  it("saves the water identity under the water's own field keys", async () => {
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport);
+
+    const outcome = await water.admin.saveIdentity({ name: "Eau", pin: "12" });
+
+    expect(outcome).toMatchObject({
+      failures: [{ field: "water.identity.pin" }],
+    });
+    expect(transport.channel(ADMIN).commands).toContain("NAME:Eau");
+  });
+
+  it("takes an ack answering no write of ours as feedback, and nothing else", () => {
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport);
+
+    transport.channel(GREY_VALVE).emit("OK");
+
+    expect(water.greyDrainValve.getValue()).toMatchObject({
+      lastFeedback: SAVED,
+      autoCloseSeconds: 45,
     });
   });
 

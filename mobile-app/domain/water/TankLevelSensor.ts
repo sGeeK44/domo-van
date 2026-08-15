@@ -5,8 +5,10 @@ import {
   Unsubscribe,
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
+import { ConfirmedWrite } from "@/domain/ConfirmedWrite";
 import { type Feedback, SAVED } from "@/domain/Feedback";
 import { Channel } from "@/domain/ports/Channel";
+import type { WriteOutcome } from "@/domain/SaveOutcome";
 import {
   parseDistanceMessage,
   parseTankConfigMessage,
@@ -54,27 +56,34 @@ export function distanceToPercentage(
 }
 
 export class TankLevelSensor implements Observable<TankLevelSnapshot> {
-  async setConfig(volumeLiters: string, heightMm: string): Promise<void> {
-    const newVolume = Number(volumeLiters);
-    const newHeight = Number(heightMm);
-    this.state.update((prev) => {
-      return {
-        ...prev,
-        capacityLiters: newVolume,
-        heightMm: newHeight,
-        percentage: distanceToPercentage(prev.lastDistanceMm ?? 0, newHeight),
-      };
+  setConfig(volumeLiters: string, heightMm: string): Promise<WriteOutcome> {
+    return this.saveConfig({
+      volumeLiters: Number(volumeLiters),
+      heightMm: Number(heightMm),
     });
-    return this.channel.send(`CFG:V=${volumeLiters};H=${heightMm}`);
+  }
+
+  /** The snapshot only takes the new config once the module says it kept it. */
+  async saveConfig(config: TankConfig): Promise<WriteOutcome> {
+    const outcome = await this.writes.send(
+      `CFG:V=${config.volumeLiters};H=${config.heightMm}`,
+    );
+    if (outcome.status === "applied") this.applyConfig(config);
+    return outcome;
   }
 
   private readonly state: ReturnType<
     typeof createObservable<TankLevelSnapshot>
   >;
+  private readonly writes: ConfirmedWrite;
   private channelUnsub: Unsubscribe | null = null;
 
-  constructor(private readonly channel: Channel) {
+  constructor(
+    private readonly channel: Channel,
+    now: () => number = Date.now,
+  ) {
     this.state = createObservable<TankLevelSnapshot>(DEFAULT_TANK_SNAPSHOT);
+    this.writes = new ConfirmedWrite(this.channel, now);
 
     // Subscribe first, then request config (so the response is not missed).
     this.channelUnsub = this.channel.listen(this.onMessageReceived);
@@ -93,20 +102,24 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
     return this.state.subscribe(listener);
   };
 
+  private applyConfig(config: TankConfig): void {
+    this.state.update((prev) => {
+      return {
+        ...prev,
+        capacityLiters: config.volumeLiters,
+        heightMm: config.heightMm,
+        percentage: distanceToPercentage(
+          prev.lastDistanceMm ?? 0,
+          config.heightMm,
+        ),
+      };
+    });
+  }
+
   private onMessageReceived = (msg: string) => {
     const cfg = parseTankConfigMessage(msg);
     if (cfg) {
-      this.state.update((prev) => {
-        return {
-          ...prev,
-          capacityLiters: cfg.volumeLiters,
-          heightMm: cfg.heightMm,
-          percentage: distanceToPercentage(
-            prev.lastDistanceMm ?? 0,
-            cfg.heightMm,
-          ),
-        };
-      });
+      this.applyConfig(cfg);
       return;
     }
 
@@ -135,6 +148,7 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
   };
 
   dispose = () => {
+    this.writes.dispose();
     this.channelUnsub?.();
     this.channelUnsub = null;
     this.state.destroy();
