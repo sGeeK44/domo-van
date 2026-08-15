@@ -38,6 +38,19 @@ export function saveReport(outcome: SaveOutcome, copy: SaveCopy): SaveReport {
   };
 }
 
+/** `save()` rethrows what the write threw, so a press that dropped it would report nothing at all. */
+export function savePress(
+  form: { save: () => Promise<void>; saving: boolean },
+  onFailure: () => void,
+): { onPress: () => void; busy: boolean } {
+  return {
+    onPress: () => {
+      form.save().catch(onFailure);
+    },
+    busy: form.saving,
+  };
+}
+
 export function saveMessage(
   outcome: SaveOutcome,
   copy: SaveCopy,

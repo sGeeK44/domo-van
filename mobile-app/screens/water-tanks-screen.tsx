@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import {
   type SaveCopy,
   saveMessage,
+  savePress,
 } from "@/components/water-settings/save-report";
 import { TankAndValveCards } from "@/components/water-settings/TankAndValveCards";
 import {
@@ -12,7 +13,11 @@ import {
 import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import { useToast } from "@/design-system";
-import type { SaveFailure, SaveFieldKey } from "@/domain/SaveOutcome";
+import type {
+  SaveFailure,
+  SaveFieldKey,
+  SaveOutcome,
+} from "@/domain/SaveOutcome";
 import { DEFAULT_VALVE_STATE } from "@/domain/water/DrainValve";
 import { DEFAULT_TANK_SNAPSHOT } from "@/domain/water/TankLevelSensor";
 import type { WaterSystem } from "@/domain/water/WaterSystem";
@@ -36,7 +41,11 @@ const SAVE_COPY: SaveCopy = {
 };
 
 export default function WaterTanksScreen() {
-  const form = useTankAndValveForm(useWaterSystem());
+  const { t } = useTranslation();
+  const toast = useToast();
+  const form = useTankAndValveForm(useWaterSystem(), (outcome) =>
+    toast.show(saveMessage(outcome, SAVE_COPY, t)),
+  );
 
   return (
     <SettingsFormScreen
@@ -45,7 +54,7 @@ export default function WaterTanksScreen() {
       titleKey="water.tanks.title"
       introKey="water.tanks.intro"
       noteKey="water.tanks.note"
-      save={{ onPress: () => void form.save(), busy: form.saving }}
+      save={savePress(form, () => toast.show(t("common.errors.send")))}
     >
       {() => (
         <TankAndValveCards
@@ -61,9 +70,8 @@ export default function WaterTanksScreen() {
 /** Five fields over three channels, saved as one action and reported as one sentence. */
 function useTankAndValveForm(
   system: WaterSystem | null,
+  announce: (outcome: SaveOutcome) => void,
 ): SettingsForm<TankAndValveDraft> {
-  const { t } = useTranslation();
-  const toast = useToast();
   const clean = useObservable(system?.cleanTank ?? null, DEFAULT_TANK_SNAPSHOT);
   const grey = useObservable(system?.greyTank ?? null, DEFAULT_TANK_SNAPSHOT);
   const valve = useObservable(
@@ -83,10 +91,7 @@ function useTankAndValveForm(
     // The outcome is what is announced: save() resolves the same whether it wrote or refused to.
     onSave: async (values) => {
       if (!system) return;
-      const outcome = await system.saveTankAndValveConfig(
-        tankAndValveConfig(values),
-      );
-      toast.show(saveMessage(outcome, SAVE_COPY, t));
+      announce(await system.saveTankAndValveConfig(tankAndValveConfig(values)));
     },
   });
 }
