@@ -179,6 +179,44 @@ export const fr = {
       openFailed: "Erreur lors de l'ouverture de la vanne.",
       closeFailed: "Erreur lors de la fermeture de la vanne.",
     },
+    identity: {
+      crumb: "Eau",
+      title: "Identité du module",
+      intro:
+        "Le nom sert à reconnaître le module dans la liste. Le PIN protège l'accès. Après enregistrement le module redémarre et se reconnecte seul.",
+      nameCard: "NOM DU MODULE",
+      name: "NOM",
+      pinCard: "CODE PIN",
+      pin: "PIN À 6 CHIFFRES",
+    },
+    tanks: {
+      crumb: "Eau",
+      title: "Mesure des cuves",
+      intro:
+        "Le capteur mesure une distance ; il lui faut le volume et la hauteur intérieure de chaque cuve pour la convertir en litres.",
+      note: "Volume et hauteur doivent être des entiers positifs. Durée de vanne ≤ 300 s.",
+      cleanTank: "CUVE PROPRE",
+      greyTank: "CUVE GRISE",
+      volume: "VOLUME",
+      emptyHeight: "HAUTEUR VIDE",
+      valve: "VANNE DE VIDANGE",
+      autoClose: "FERMETURE AUTO",
+    },
+    save: {
+      sent: "Configuration envoyée au module",
+      refused: "{{field}} : valeur refusée par le module.",
+      notConfirmed:
+        "{{field}} : le module n'a pas confirmé. Configuration non appliquée.",
+      unreachable: "{{field}} : module injoignable. Connecte-le et réessaie.",
+      fields: {
+        identity: "Identité du module",
+        name: "Nom du module",
+        pin: "Code PIN",
+        cleanTank: "Cuve propre",
+        greyTank: "Cuve grise",
+        valve: "Vanne de vidange",
+      },
+    },
   },
 
   heater: {

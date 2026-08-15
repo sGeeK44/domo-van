@@ -141,16 +141,27 @@ describe("the Modules screen", () => {
     expect(routerStack).toEqual(["/(tabs)", "/modules"]);
   });
 
-  it("opens the module's own settings from its row", async () => {
+  // Planning decision 12: the identity form's only way in.
+  it("opens the module's identity form from its row", async () => {
     const harness = renderModuleScreen(<ModulesScreen />);
     await pairOnly(harness, ["water"]);
 
-    fireEvent.click(screen.getByTestId("module-settings-water"));
+    fireEvent.click(screen.getByTestId("module-edit-water"));
 
     expect(routerHistory).toContainEqual({
       method: "push",
-      href: "/water-settings",
+      href: "/settings/water-identity",
     });
+  });
+
+  // The JK BMS is third-party hardware with no admin channel, so it has no identity to edit.
+  it("offers no identity to edit on the battery row", async () => {
+    const harness = renderModuleScreen(<ModulesScreen />);
+    await pairOnly(harness, ["battery"]);
+
+    expect(screen.getByTestId("module-slot-battery")).toBeTruthy();
+    expect(screen.queryByTestId("module-edit-battery")).toBeNull();
+    expect(screen.getByTestId("unpair-battery")).toBeTruthy();
   });
 
   it("sends a free slot to the Ajouter screen", async () => {
