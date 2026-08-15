@@ -28,9 +28,11 @@ vi.mock("@/i18n/createI18n", async () => {
   };
 });
 
-const { LanguageProvider, useLanguage } = await import(
-  "@/composition/LanguageProvider"
-);
+// createContainer reads this switch at import time, hence the dynamic imports below.
+process.env.EXPO_PUBLIC_FAKE_BLE = "1";
+
+const { AppProviders } = await import("@/composition/AppProviders");
+const { useLanguage } = await import("@/composition/LanguageProvider");
 const { useAppPreferences } = await import("@/composition/useAppPreferences");
 
 let setLanguage: (language: Language) => void = () => {
@@ -47,19 +49,19 @@ function Probe() {
   );
 }
 
-/** The wiring `app/_layout.tsx` performs: hydrate above the provider, persist below it. */
+/** The wiring `app/_layout.tsx` performs: hydrate above the providers, persist below them. */
 function Boot({ repository }: { repository: PreferencesRepository }) {
   const { hydrated, initialLanguage, saveLanguage } =
     useAppPreferences(repository);
   if (!hydrated) return <span data-testid="app">splash</span>;
 
   return (
-    <LanguageProvider
+    <AppProviders
       initialLanguage={initialLanguage}
       onLanguageChange={saveLanguage}
     >
       <Probe />
-    </LanguageProvider>
+    </AppProviders>
   );
 }
 
@@ -134,10 +136,13 @@ describe("the persisted language", () => {
 
   it("survives a store that rejects", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const unavailable = new Error("store unavailable");
     const broken: PreferencesRepository = {
-      load: () => Promise.reject(new Error("store unavailable")),
-      save: () => Promise.reject(new Error("store unavailable")),
+      load: () => Promise.reject(unavailable),
+      save: () => Promise.reject(unavailable),
     };
+    const reported = () =>
+      warn.mock.calls.filter(([, error]) => error === unavailable).length;
 
     await boot(broken);
     expect(shown()).toBe("fr:Bord");
@@ -145,7 +150,7 @@ describe("the persisted language", () => {
     await act(async () => setLanguage("en"));
 
     expect(shown()).toBe("en:Home");
-    await waitFor(() => expect(warn).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(reported()).toBe(2));
     warn.mockRestore();
   });
 });

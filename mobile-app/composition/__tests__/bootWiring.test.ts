@@ -9,7 +9,7 @@ const ROOT = join(import.meta.dirname, "..", "..");
 const LAYOUT = "app/_layout.tsx";
 const BOOT_GATE = "useAppReady";
 const THEMED_PROVIDER = "ThemeProvider";
-const LANGUAGE_PROPS = ["initialLanguage", "onLanguageChange"];
+const LANGUAGE_PROVIDER = "AppProviders";
 
 function parse(file: string): ts.SourceFile {
   return ts.createSourceFile(
@@ -57,47 +57,35 @@ function attributeValue(attribute: ts.JsxAttribute): string {
     : initializer.getText();
 }
 
-function propsOf(attributes: ts.JsxAttribute[]): Map<string, string> {
-  return new Map(
-    attributes.map((attribute) => [
-      attribute.name.getText(),
-      attributeValue(attribute),
-    ]),
-  );
-}
-
-/** Each `<ThemeProvider prop={…}>` attribute, mapped to the expression it is given. */
-function themeProviderProps(nodes: ts.Node[]): Map<string, string> {
+/** Each `<Tag prop={…}>` attribute, mapped to the expression it is given. */
+function propsGivenTo(nodes: ts.Node[], tag: string): Map<string, string> {
   const openings = nodes.filter(
     (node): node is ts.JsxOpeningElement | ts.JsxSelfClosingElement =>
       (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&
-      node.tagName.getText() === THEMED_PROVIDER,
+      node.tagName.getText() === tag,
   );
 
-  return propsOf(
+  return new Map(
     openings
       .flatMap((opening) => opening.attributes.properties)
-      .filter(ts.isJsxAttribute),
-  );
-}
-
-/** The language props, wherever in the layout they are handed down. */
-function languageProps(nodes: ts.Node[]): Map<string, string> {
-  return propsOf(
-    nodes
       .filter(ts.isJsxAttribute)
-      .filter((attribute) => LANGUAGE_PROPS.includes(attribute.name.getText())),
+      .map((attribute) => [
+        attribute.name.getText(),
+        attributeValue(attribute),
+      ]),
   );
 }
 
 describe("the boot wires persistence to the theme and the language", () => {
   const nodes = nodesOf(parse(LAYOUT));
   const outputs = bootGateOutputs(nodes);
-  const props = themeProviderProps(nodes);
+  const props = propsGivenTo(nodes, THEMED_PROVIDER);
+  const language = propsGivenTo(nodes, LANGUAGE_PROVIDER);
 
-  it("finds the boot gate and the provider it claims to guard", () => {
+  it("finds the boot gate and the providers it claims to guard", () => {
     expect(outputs.length).toBeGreaterThan(0);
     expect(props.size).toBeGreaterThan(0);
+    expect(language.size).toBeGreaterThan(0);
   });
 
   it("hydrates the provider from the gate, so no frame paints in the wrong mode", () => {
@@ -109,8 +97,6 @@ describe("the boot wires persistence to the theme and the language", () => {
   });
 
   it("hydrates the language from the gate too, so no frame paints in the wrong one", () => {
-    const language = languageProps(nodes);
-
     expect(outputs).toContain(language.get("initialLanguage"));
     expect(outputs).toContain(language.get("onLanguageChange"));
   });
