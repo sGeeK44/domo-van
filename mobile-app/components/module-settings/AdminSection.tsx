@@ -69,8 +69,11 @@ export function AdminSection({ adminModule, deviceName }: Props) {
     }
     setSendingName(true);
     showToast(t("modules.admin.sendingName"));
-    await adminModule.setName(adminName.trim());
-    setSendingName(false);
+    try {
+      await adminModule.setName(adminName.trim());
+    } finally {
+      setSendingName(false);
+    }
   };
 
   const handleSavePin = async () => {
@@ -81,8 +84,11 @@ export function AdminSection({ adminModule, deviceName }: Props) {
     }
     setSendingPin(true);
     showToast(t("modules.admin.sendingPin"));
-    await adminModule.setPin(adminPin);
-    setSendingPin(false);
+    try {
+      await adminModule.setPin(adminPin);
+    } finally {
+      setSendingPin(false);
+    }
   };
 
   return (

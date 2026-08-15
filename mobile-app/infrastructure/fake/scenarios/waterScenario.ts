@@ -17,6 +17,9 @@ const MAX_VOLUME_LITERS = 5000;
 const MAX_HEIGHT_MM = 10000;
 const MAX_AUTO_CLOSE_SECONDS = 300;
 
+/** A height the fake module hears and never answers, so a save can be seen timing out with no hardware. */
+const SILENT_HEIGHT_MM = 9999;
+
 function fieldOf(command: string, key: string): string {
   const written = new RegExp(`${key}=([^;]*)`).exec(command);
   return written ? written[1] : "";
@@ -64,6 +67,8 @@ function tankScenario(reading: TankReading): ChannelScenario {
     const writtenVolume = fieldOf(command, "V");
     const writtenHeight = fieldOf(command, "H");
     if (!writtenVolume || !writtenHeight) return ["ERR_CFG_FMT"];
+    // the fakes' one deliberate lie: the only way to reach the timeout path off-vehicle
+    if (Number(writtenHeight) === SILENT_HEIGHT_MM) return [];
     if (!isWholeNumber(writtenVolume) || !isWholeNumber(writtenHeight)) {
       return ["ERR_CFG_NUM"];
     }

@@ -6,7 +6,7 @@ import {
   Unsubscribe,
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
-import { ConfirmedWrite } from "@/domain/ConfirmedWrite";
+import { CONFIG_READBACK, ConfirmedWrite } from "@/domain/ConfirmedWrite";
 import {
   ackFailure,
   type Feedback,
@@ -51,7 +51,7 @@ export class DrainValve implements Observable<ValveState> {
     private readonly channel: Channel,
     now: () => number = sinceBoot,
   ) {
-    this.writes = new ConfirmedWrite(this.channel, now);
+    this.writes = new ConfirmedWrite(this.channel, CONFIG_READBACK, now);
 
     // Subscribe first, then request config
     this.channelUnsub = this.channel.listen(this.onMessageReceived);
@@ -69,21 +69,17 @@ export class DrainValve implements Observable<ValveState> {
     return this.channel.send("CFG?");
   };
 
-  resync = (): Promise<void> => {
-    this.writes.forgetOwedAcks();
-    return this.getConfig();
-  };
-
   /** The delay the countdown runs on only changes once the module says it kept it. */
   setAutoCloseTime = async (seconds: number): Promise<WriteOutcome> => {
     const outcome = await this.writes.send(`CFG:T=${seconds}`);
     if (outcome.status === "applied") {
       this.state.update((prev) => ({ ...prev, autoCloseSeconds: seconds }));
-      return outcome;
     }
-    const failure = unansweredWrite(outcome);
-    if (failure) {
-      this.state.update((prev) => ({ ...prev, lastFeedback: failure }));
+
+    const feedback =
+      outcome.status === "applied" ? SAVED : unansweredWrite(outcome);
+    if (feedback) {
+      this.state.update((prev) => ({ ...prev, lastFeedback: feedback }));
     }
     return outcome;
   };
@@ -165,10 +161,13 @@ export class DrainValve implements Observable<ValveState> {
 
     const ack = parseAckMessage(msg);
     if (ack) {
-      this.state.update((prev) => ({
-        ...prev,
-        lastFeedback: ack.type === "ok" ? SAVED : ackFailure(ack.code),
-      }));
+      // success is the write's to claim, not a stray OK's
+      if (ack.type === "error") {
+        this.state.update((prev) => ({
+          ...prev,
+          lastFeedback: ackFailure(ack.code),
+        }));
+      }
       return;
     }
 
