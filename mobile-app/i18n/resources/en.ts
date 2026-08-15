@@ -180,6 +180,44 @@ export const en: typeof fr = {
       openFailed: "Failed to open the valve.",
       closeFailed: "Failed to close the valve.",
     },
+    identity: {
+      crumb: "Water",
+      title: "Module identity",
+      intro:
+        "The name is what tells the module apart in the list. The PIN protects access to it. The module restarts after saving and reconnects on its own.",
+      nameCard: "MODULE NAME",
+      name: "NAME",
+      pinCard: "PIN CODE",
+      pin: "6-DIGIT PIN",
+    },
+    tanks: {
+      crumb: "Water",
+      title: "Tank measurement",
+      intro:
+        "The sensor measures a distance; it needs the volume and the inner height of each tank to turn it into litres.",
+      note: "Volume and height must be positive whole numbers. Valve delay ≤ 300 s.",
+      cleanTank: "CLEAN TANK",
+      greyTank: "GREY TANK",
+      volume: "VOLUME",
+      emptyHeight: "EMPTY HEIGHT",
+      valve: "DRAIN VALVE",
+      autoClose: "AUTO-CLOSE",
+    },
+    save: {
+      sent: "Configuration sent to the module",
+      refused: "{{field}}: value refused by the module.",
+      notConfirmed:
+        "{{field}}: the module did not confirm. Configuration not applied.",
+      unreachable: "{{field}}: module unreachable. Connect it and try again.",
+      fields: {
+        identity: "Module identity",
+        name: "Module name",
+        pin: "PIN code",
+        cleanTank: "Clean tank",
+        greyTank: "Grey tank",
+        valve: "Drain valve",
+      },
+    },
   },
 
   heater: {

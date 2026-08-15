@@ -17,15 +17,12 @@ import type { TranslationKey } from "@/i18n/keys";
 
 export type ModuleSlotRowProps = {
   slot: ModuleSlot;
-  onOpenSettings: () => void;
+  /** Absent on a module with no admin channel: the JK BMS has no identity to edit. */
+  onEdit?: () => void;
   onUnpair: () => void;
 };
 
-export function ModuleSlotRow({
-  slot,
-  onOpenSettings,
-  onUnpair,
-}: ModuleSlotRowProps) {
+export function ModuleSlotRow({ slot, onEdit, onUnpair }: ModuleSlotRowProps) {
   const { t } = useTranslation();
   const colors = useThemeColor();
   const styles = useMemo(() => getStyles(colors), [colors]);
@@ -34,21 +31,29 @@ export function ModuleSlotRow({
 
   if (!pairing) return null;
 
+  const identity = (
+    <View style={styles.text}>
+      <Text style={styles.title}>{t(module.displayNameKey)}</Text>
+      <Text style={styles.subtitle}>{pairing.name}</Text>
+      <Text style={styles.subtitle}>{pairing.id}</Text>
+      <Text style={styles.link}>{t(state.key, state.params)}</Text>
+    </View>
+  );
+
   return (
     <View testID={`module-slot-${module.key}`} style={styles.row}>
-      <Pressable
-        testID={`module-settings-${module.key}`}
-        style={styles.identity}
-        onPress={onOpenSettings}
-      >
-        <View style={styles.text}>
-          <Text style={styles.title}>{t(module.displayNameKey)}</Text>
-          <Text style={styles.subtitle}>{pairing.name}</Text>
-          <Text style={styles.subtitle}>{pairing.id}</Text>
-          <Text style={styles.link}>{t(state.key, state.params)}</Text>
-        </View>
-        <IconSymbol name="chevron-right" size={22} color={colors.text} />
-      </Pressable>
+      {onEdit ? (
+        <Pressable
+          testID={`module-edit-${module.key}`}
+          style={styles.identity}
+          onPress={onEdit}
+        >
+          {identity}
+          <IconSymbol name="chevron-right" size={22} color={colors.text} />
+        </Pressable>
+      ) : (
+        <View style={styles.identity}>{identity}</View>
+      )}
 
       <Button
         testID={`unpair-${module.key}`}

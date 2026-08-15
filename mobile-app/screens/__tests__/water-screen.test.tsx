@@ -9,7 +9,9 @@ const { pairOnly, renderModuleScreen } = await import("./moduleScreenHarness");
 const { default: WaterScreen } = await import("@/screens/water-screen");
 const { ToastProvider } = await import("@/design-system");
 const { FakeChannel } = await import("@/infrastructure/fake/FakeChannel");
-const { resetNavigation } = await import("@/__mocks__/expo-router");
+const { resetNavigation, routerHistory } = await import(
+  "@/__mocks__/expo-router"
+);
 
 /** What the water scenario feeds, see infrastructure/fake/scenarios/waterScenario.ts. */
 const CLEAN_TANK = { capacityLiters: 100, percentage: 72, liters: 72 };
@@ -270,5 +272,18 @@ describe("the Eau screen", () => {
     expect(opacityOf("clean-tank")).toBe(0.55);
     expect(opacityOf("grey-tank")).toBe(OPAQUE);
     expect(screen.getByText("se vide")).toBeTruthy();
+  });
+
+  // Acceptance example 4 rests on this being a push: back has to pop to the tab.
+  it("pushes the tank form from its header, leaving the tab on the stack", async () => {
+    await waterTab();
+
+    fireEvent.click(screen.getByTestId("page-settings"));
+
+    expect(routerHistory).toContainEqual({
+      method: "push",
+      href: "/settings/water-tanks",
+    });
+    expect(routerHistory.map(({ method }) => method)).not.toContain("replace");
   });
 });

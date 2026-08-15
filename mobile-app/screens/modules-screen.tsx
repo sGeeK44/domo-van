@@ -19,11 +19,18 @@ import {
 import type { ModuleKey } from "@/domain/modules/ModuleDescriptor";
 import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
 
-const SETTINGS_ROUTE = {
-  water: "/water-settings",
+/** The only way into an identity form — and the JK BMS has no admin channel to reach. */
+const IDENTITY_ROUTE = {
+  water: "/settings/water-identity",
+  // T6 moves this to /settings/heater-identity, the route it is the one to create.
   heater: "/heater-settings",
-  battery: "/battery-settings",
 } as const;
+
+type EditableModule = keyof typeof IDENTITY_ROUTE;
+
+function hasIdentityForm(key: ModuleKey): key is EditableModule {
+  return key in IDENTITY_ROUTE;
+}
 
 const DASHBOARD_ROUTE = "/(tabs)";
 
@@ -78,7 +85,7 @@ export default function ModulesScreen() {
           <ModuleSlotRow
             key={slot.module.key}
             slot={slot}
-            onOpenSettings={() => router.push(SETTINGS_ROUTE[slot.module.key])}
+            onEdit={editIdentity(router, slot.module.key)}
             onUnpair={() => setLeaving(slot)}
           />
         ))}
@@ -101,6 +108,16 @@ export default function ModulesScreen() {
       />
     </SafeAreaView>
   );
+}
+
+type Router = ReturnType<typeof useRouter>;
+
+function editIdentity(
+  router: Router,
+  key: ModuleKey,
+): (() => void) | undefined {
+  if (!hasIdentityForm(key)) return undefined;
+  return () => router.push(IDENTITY_ROUTE[key]);
 }
 
 type NavigationSnapshot = {
