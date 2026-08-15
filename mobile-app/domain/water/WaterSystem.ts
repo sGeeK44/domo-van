@@ -70,10 +70,9 @@ export class WaterSystem {
     ]);
 
   resync = () => {
-    this.admin.resync();
-    void this.cleanTank.resync().catch(() => {});
-    void this.greyTank.resync().catch(() => {});
-    void this.greyDrainValve.resync().catch(() => {});
+    void this.cleanTank.getConfig().catch(() => {});
+    void this.greyTank.getConfig().catch(() => {});
+    void this.greyDrainValve.getConfig().catch(() => {});
   };
 
   dispose = () => {

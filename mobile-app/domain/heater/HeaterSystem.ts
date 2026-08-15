@@ -127,9 +127,7 @@ export class HeaterSystem {
   };
 
   resync = () => {
-    this.admin.resync();
     for (const zone of this.zones) {
-      zone.resync();
       void zone.getStatus().catch(() => {});
       void zone.getPidConfig().catch(() => {});
     }

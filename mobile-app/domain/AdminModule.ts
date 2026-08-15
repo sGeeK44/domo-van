@@ -49,15 +49,13 @@ export class AdminModule implements Observable<AdminSnapshot> {
       error: null,
       lastFeedback: null,
     });
-    this.writes = new ConfirmedWrite(this.channel, now);
+    // No readback: the admin channel answers ERR_UNKNOWN_CMD to any query, and its write reboots the module.
+    this.writes = new ConfirmedWrite(this.channel, null, now);
 
-    // Subscribe first, then request config (so the response is not missed).
     this.channelUnsub = this.channel.listen(this.onMessageReceived);
   }
 
   getValue = () => this.state.getValue();
-
-  resync = (): void => this.writes.forgetOwedAcks();
 
   subscribe = (listener: Listener<AdminSnapshot>): Unsubscribe => {
     return this.state.subscribe(listener);

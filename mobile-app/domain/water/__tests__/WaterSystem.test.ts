@@ -258,8 +258,11 @@ describe("WaterSystem", () => {
 
     const saving = water.saveTankAndValveConfig(NEW_CONFIG);
     await vi.advanceTimersByTimeAsync(0);
-    clock.millis += DEFAULT_WRITE_TIMEOUT_MS;
-    await vi.advanceTimersByTimeAsync(DEFAULT_WRITE_TIMEOUT_MS);
+    // one window for the write, one for the readback the silent module ignores too
+    for (let window = 0; window < 2; window += 1) {
+      clock.millis += DEFAULT_WRITE_TIMEOUT_MS;
+      await vi.advanceTimersByTimeAsync(DEFAULT_WRITE_TIMEOUT_MS);
+    }
 
     await expect(saving).resolves.toEqual({
       status: "failed",
@@ -280,15 +283,59 @@ describe("WaterSystem", () => {
     expect(transport.channel(ADMIN).commands).toEqual(["ID:NAME=Eau;PIN=12"]);
   });
 
-  it("takes an ack answering no write of ours as feedback, and nothing else", () => {
+  it("lets no stray OK claim a save nobody asked for", () => {
     const transport = new FakeModuleTransport(waterScenario());
     const water = new WaterSystem(transport);
 
     transport.channel(GREY_VALVE).emit("OK");
 
     expect(water.greyDrainValve.getValue()).toMatchObject({
-      lastFeedback: SAVED,
+      lastFeedback: null,
       autoCloseSeconds: 45,
+    });
+  });
+
+  it("says saved only when its own write was the one acknowledged", async () => {
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport);
+
+    await water.greyDrainValve.setAutoCloseTime(60);
+
+    expect(water.greyDrainValve.getValue()).toMatchObject({
+      lastFeedback: SAVED,
+      autoCloseSeconds: 60,
+    });
+  });
+
+  it("holds the last written config after a save whose ack was lost", async () => {
+    vi.useFakeTimers();
+    const clock = { millis: 0 };
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport, () => clock.millis);
+    const channel = transport.channel(CLEAN_TANK);
+
+    channel.goSilent();
+    const lost = water.cleanTank.saveConfig({
+      volumeLiters: 120,
+      heightMm: 112,
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    clock.millis += DEFAULT_WRITE_TIMEOUT_MS;
+    await vi.advanceTimersByTimeAsync(DEFAULT_WRITE_TIMEOUT_MS);
+    channel.speakAgain();
+    channel.emit("CFG:V=120;H=112");
+    expect(await lost).toEqual({ status: "applied" });
+
+    for (const volume of [130, 140, 150, 160, 170, 180]) {
+      const healthy = await water.cleanTank.saveConfig({
+        volumeLiters: volume,
+        heightMm: 112,
+      });
+      expect(healthy).toEqual({ status: "applied" });
+    }
+    expect(water.cleanTank.getValue()).toMatchObject({
+      capacityLiters: 180,
+      heightMm: 112,
     });
   });
 

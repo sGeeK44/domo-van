@@ -6,7 +6,7 @@ import {
   Unsubscribe,
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
-import { ConfirmedWrite } from "@/domain/ConfirmedWrite";
+import { CONFIG_READBACK, ConfirmedWrite } from "@/domain/ConfirmedWrite";
 import {
   ackFailure,
   type Feedback,
@@ -74,18 +74,17 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
     const outcome = await this.writes.send(
       `CFG:V=${config.volumeLiters};H=${config.heightMm}`,
     );
-    if (outcome.status === "applied") {
-      this.applyConfig(config);
-      return outcome;
-    }
+    if (outcome.status === "applied") this.applyConfig(config);
     this.report(outcome);
     return outcome;
   }
 
+  /** The snapshot says what the write reported: a refusal already came in as a frame. */
   private report(outcome: WriteOutcome): void {
-    const failure = unansweredWrite(outcome);
-    if (!failure) return;
-    this.state.update((prev) => ({ ...prev, lastFeedback: failure }));
+    const feedback =
+      outcome.status === "applied" ? SAVED : unansweredWrite(outcome);
+    if (!feedback) return;
+    this.state.update((prev) => ({ ...prev, lastFeedback: feedback }));
   }
 
   private readonly state: ReturnType<
@@ -99,7 +98,7 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
     now: () => number = sinceBoot,
   ) {
     this.state = createObservable<TankLevelSnapshot>(DEFAULT_TANK_SNAPSHOT);
-    this.writes = new ConfirmedWrite(this.channel, now);
+    this.writes = new ConfirmedWrite(this.channel, CONFIG_READBACK, now);
 
     // Subscribe first, then request config (so the response is not missed).
     this.channelUnsub = this.channel.listen(this.onMessageReceived);
@@ -112,11 +111,6 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
 
   getConfig(): Promise<void> {
     return this.channel.send("CFG?");
-  }
-
-  resync(): Promise<void> {
-    this.writes.forgetOwedAcks();
-    return this.getConfig();
   }
 
   subscribe = (listener: Listener<TankLevelSnapshot>): Unsubscribe => {
@@ -158,10 +152,13 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
     }
     const ack = parseAckMessage(msg);
     if (ack) {
-      this.state.update((prev) => ({
-        ...prev,
-        lastFeedback: ack.type === "ok" ? SAVED : ackFailure(ack.code),
-      }));
+      // success is the write's to claim, not a stray OK's
+      if (ack.type === "error") {
+        this.state.update((prev) => ({
+          ...prev,
+          lastFeedback: ackFailure(ack.code),
+        }));
+      }
       return;
     }
     console.log("Unknown message:", msg);

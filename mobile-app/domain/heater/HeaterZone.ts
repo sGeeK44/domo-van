@@ -6,7 +6,7 @@ import {
   Unsubscribe,
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
-import { ConfirmedWrite } from "@/domain/ConfirmedWrite";
+import { CONFIG_READBACK, ConfirmedWrite } from "@/domain/ConfirmedWrite";
 import {
   ackFailure,
   type Feedback,
@@ -52,7 +52,7 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
     public readonly zoneIndex: number,
     now: () => number = sinceBoot,
   ) {
-    this.writes = new ConfirmedWrite(this.channel, now);
+    this.writes = new ConfirmedWrite(this.channel, CONFIG_READBACK, now);
 
     // Subscribe to receive status notifications from the module
     this.channelUnsub = this.channel.listen(this.onMessageReceived);
@@ -73,8 +73,6 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
 
   /** Request PID configuration */
   getPidConfig = (): Promise<void> => this.channel.send("CFG?");
-
-  resync = (): void => this.writes.forgetOwedAcks();
 
   /** Request current setpoint */
   getSetpoint = (): Promise<void> => this.channel.send("SP?");
@@ -149,11 +147,12 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
     );
     if (outcome.status === "applied") {
       this.state.update((prev) => ({ ...prev, pidConfig: config }));
-      return outcome;
     }
-    const failure = unansweredWrite(outcome);
-    if (failure) {
-      this.state.update((prev) => ({ ...prev, lastFeedback: failure }));
+
+    const feedback =
+      outcome.status === "applied" ? SAVED : unansweredWrite(outcome);
+    if (feedback) {
+      this.state.update((prev) => ({ ...prev, lastFeedback: feedback }));
     }
     return outcome;
   };
@@ -203,10 +202,13 @@ export class HeaterZone implements Observable<HeaterZoneSnapshot> {
 
     const ack = parseAckMessage(msg);
     if (ack) {
-      this.state.update((prev) => ({
-        ...prev,
-        lastFeedback: ack.type === "ok" ? SAVED : ackFailure(ack.code),
-      }));
+      // success is the write's to claim, not a stray OK's
+      if (ack.type === "error") {
+        this.state.update((prev) => ({
+          ...prev,
+          lastFeedback: ackFailure(ack.code),
+        }));
+      }
       return;
     }
 

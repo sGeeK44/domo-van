@@ -199,11 +199,23 @@ module's real answer — possibly `ERR_CFG_RANGE` — would then settle nothing.
 The zone tab and the PID form are separate routes, which is what makes this
 hold today; `HeaterSystem.test.ts` pins the behaviour so a change is visible.
 
-A timed-out write leaves the channel **owing** an answer. `ConfirmedWrite`
-swallows that many acks before settling anything again, and forgets a debt one
-timeout window old — an ack that is truly lost would otherwise spend every
-later write's answer for the lifetime of the pairing. `resync()` clears the
-debt outright: a reconnected module owes nothing.
+**A write with no answer is verified, not guessed.** An ack is a single
+unacknowledged notification and is lost far more easily than the write itself,
+so concluding *failed* from silence would report a save the module applied. On
+a timeout `ConfirmedWrite` sends the channel's readback — `CFG?`, which every
+config protocol answers with the very command that set the value — and settles
+`applied` when the module echoes what we wrote, `timedOut` when it echoes
+anything else or says nothing at all. The readback frame flows through the
+leaf's own listener on the way, so the snapshot ends on the module's real value
+either way. The cost is a worst case of two windows, ~6 s, before a save
+reports.
+
+Bookkeeping the acks a timed-out write is still owed was tried first and
+removed: positional correlation cannot tell a late ack from a lost one, and
+guessing wrong in that direction poisons every later write on the channel.
+`AdminModule` is the one channel with no readback — `AdminProtocol` answers
+`ERR_UNKNOWN_CMD` to any query and the write reboots the module by design — so
+there a timeout stays the honest answer.
 
 ### A toast confirms a coarse action, not every half-degree
 
@@ -344,7 +356,13 @@ What the fake serves:
 
 The fakes are firmware, not fixtures: they answer commands and keep what they
 are told. Writing a setpoint and reading it back returns the new value, and a
-write out of the firmware's range answers `ERR_CFG_RANGE`. That is why
+write out of the firmware's range answers `ERR_CFG_RANGE`.
+
+They carry **one deliberate lie**: a tank height of **9999 mm** is heard and
+never answered. Real firmware answers every command, so silence is a radio
+condition, not a scenario — but without it the timeout path (write, no ack,
+readback, *the configuration was not applied*) cannot be reached off-vehicle,
+and that path is the one the whole save reporting rests on. That is why
 `FakeTransportFactory` serves **one transport per (device, service)** — a
 second one would be a second module, with no memory of the first.
 

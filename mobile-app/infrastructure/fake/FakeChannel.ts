@@ -41,6 +41,11 @@ export class FakeChannel implements Channel {
     this.answersNothing = true;
   }
 
+  /** Undoes `goSilent`: a module that went quiet is heard from again once the link recovers. */
+  speakAgain(): void {
+    this.answersNothing = false;
+  }
+
   send(command: string): Promise<void> {
     if (this.writesFail) {
       return Promise.reject(new Error(`write refused: ${command}`));
