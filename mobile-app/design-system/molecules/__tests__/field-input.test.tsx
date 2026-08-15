@@ -67,6 +67,13 @@ describe("an editable field", () => {
     expect(onChangeText).toHaveBeenCalledWith(TYPED);
   });
 
+  it("lets a row holding three fields address one of them", () => {
+    render(field({ testID: "field-kp" }));
+
+    expect(screen.getByTestId("field-kp")).toBeTruthy();
+    expect(screen.getByTestId("field-kp-box")).toBeTruthy();
+  });
+
   it("forwards the keyboard the caller asked for", () => {
     render(field({ inputProps: { keyboardType: "numeric" } }));
 
@@ -81,15 +88,17 @@ describe("an editable field", () => {
 
     expect(inkOf(LABEL)).toBe(rgb(colors.textMuted));
     expect(inkOf(UNIT)).toBe(rgb(colors.textMuted));
-    expect(paintOf("field-input").backgroundColor).toBe(rgb(colors.inset));
-    expect(paintOf("field-input").borderTopColor).not.toBe(rgb(colors.danger));
+    expect(paintOf("field-input-box").backgroundColor).toBe(rgb(colors.inset));
+    expect(paintOf("field-input-box").borderTopColor).not.toBe(
+      rgb(colors.danger),
+    );
   });
 
   it.each(THEMES)("outlines a value the form refuses in %s", (theme) => {
     render(field({ invalid: true }, theme));
     const colors = Colors[theme];
 
-    expect(paintOf("field-input").borderTopColor).toBe(rgb(colors.danger));
-    expect(paintOf("field-input").borderTopWidth).toBe("1.5px");
+    expect(paintOf("field-input-box").borderTopColor).toBe(rgb(colors.danger));
+    expect(paintOf("field-input-box").borderTopWidth).toBe("1.5px");
   });
 });

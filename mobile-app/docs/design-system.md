@@ -53,14 +53,18 @@ faces; a weight is reached by naming the face, never through `fontWeight`
 ### The radius absorption
 
 `BorderRadius` is deliberately coarse: 15 mockup values were normalised into 8
-steps. The gauge mockups' 16 / 22 / 26 are **absorbed**, not re-added — the
-deviation is at most 2 px and the hierarchy holds (bar < setpoint row <
-dashboard row < column / hero). Do not re-add them.
+steps. The gauge mockups' 16 / 22 / 26 and the settings mockups' 11 / 13 / 14
+are **absorbed**, not re-added — the deviation is at most 2 px and the hierarchy
+holds (segment < chip < field box / bar < setpoint row < dashboard row < column
+/ hero). Do not re-add them.
 
 | Mockup | Token | Δ | Form |
 |---|---|---|---|
+| 11 | `BorderRadius.s` = 12 | +1 | segment |
+| 13 | `BorderRadius.s` = 12 | −1 | nav row chip |
+| 14 | `BorderRadius.m` = 15 | +1 | field box, segment rail |
 | 16 | `BorderRadius.m` = 15 | −1 | cell bar |
-| 22 | `BorderRadius.xl` = 20 | −2 | setpoint row |
+| 22 | `BorderRadius.xl` = 20 | −2 | setpoint row, accent card |
 | 24 | `BorderRadius.xxl` = 24 | 0 | dashboard row |
 | 26 | `BorderRadius.xxxl` = 28 | +2 | column, hero, offline card |
 
@@ -117,8 +121,10 @@ deviation not worth a sixth style:
 
 ### The settings-kit absorptions
 
-The settings mockups name five type steps; three of them already exist, and two
-of the remaining shorthands land within a pixel of an entry:
+#7 T2 names five new type steps; the 11 px mono field label and the 12 px group
+label are entries the scale already holds, so only three were added —
+`formTitle`, `crumb` and `monoReadout`. Six of the settings shorthands land on an
+entry already there, four of them exactly:
 
 | Mockup | Entry | Δ |
 |---|---|---|
@@ -129,9 +135,10 @@ of the remaining shorthands land within a pixel of an entry:
 | the nav row's subtitle `400 12px` mono | `monoSmall` | 0 |
 | the segments' `800 13px` (langue) and `800 12px` (thème) | `buttonSmall` (12 / 12) | −1 / 0 |
 
-The segments' two horizontal paddings — 16 px on langue, 13 px on thème — collapse
-onto `Spacing.xl` (14) for the same reason: the two rails are one control, and
-the mockup laid them out on separate screens.
+Two spacings absorb the same way. The segments' two horizontal paddings — 16 px
+on langue, 13 px on thème — collapse onto `Spacing.xl` (14): the two rails are
+one control, and the mockup laid them out on separate screens. The field's
+`gap 7` takes `Spacing.xs` (6), the step below it.
 
 ## `useStyles`
 
@@ -317,18 +324,34 @@ pan callbacks and a `pointercancel` into the cancelled pan.
 
 ## The settings form kit
 
-Six shapes the five settings forms and the Réglages screen share. Domain-free
+The shapes the five settings forms and the Réglages screen share. Domain-free
 like the gauges: the caller passes the colour, the copy and the value, already
 formatted.
 
 | Component | Form | Reach for it when |
 |---|---|---|
 | `AccentCard` | `r 20`, `bg surface`, a 5 px bar down the left edge | a group of fields under a label. `accent` is the module's `fill.*`, chosen by the caller |
+| `FieldRow` | `flex-direction: row`, `gap 10`, clear of the accent bar | one or more fields on a line — three `flex: 1` fields split the card in three |
 | `FieldReadout` | `flex: 1`; a `monoReadout` value and a dim unit | a value the module publishes and the app does not edit |
 | `FieldInput` | h 56, `r 15`, `bg inset`, a 1.5 px border | an editable value. The unit sits **outside** the input, so it is never part of what the user types |
 | `SegmentedControl` | 36 px segments on an `inset` rail | a short closed list — langue, thème |
 | `NavRow` | h 68, `r 18`, a 40 px chip | a row that opens a screen |
-| `SettingsHeader` `variant="crumb"` | back arrow, the crumb, a spacer of the arrow's own width | the header of a settings form; `variant="title"` is the page header the other screens already use |
+| `SettingsHeader` | three variants, below | any page that is not a tab |
+
+`SettingsHeader` carries the three headers the app has, and no fourth one is
+hand-rolled on a screen:
+
+| Variant | Form | Page |
+|---|---|---|
+| `title` | back arrow 22, the title, a spacer of the arrow's width | the pages that already shipped — Modules, add a module |
+| `crumb` | back arrow 24, the module's name in `crumb`, the same spacer | a settings form |
+| `close` | a `close` glyph 26 in `textMuted`, then the title in `screenTitle` | Réglages, which no form opened: it closes to Bord rather than going back, so nothing balances the title |
+
+Each component takes an optional `testID` that overrides its default, and the
+one part worth painting differently derives from it — `${testID}-bar` for the
+card's accent, `${testID}-box` for the field's border. `SegmentedControl` keys
+its own segments by value (`segment-auto`). A PID card holds three fields on one
+row and Réglages four nav rows: without this the second one is unaddressable.
 
 Rules the kit holds:
 

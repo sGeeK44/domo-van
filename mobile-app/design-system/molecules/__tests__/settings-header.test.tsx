@@ -8,7 +8,9 @@ import { Colors, Spacing, type ThemeName } from "@/design-system/tokens";
 const THEMES: ThemeName[] = ["light", "dark"];
 
 const CRUMB = "Eau";
+const PAGE = "Réglages";
 const BACK_GLYPH = "arrow-back";
+const CLOSE_GLYPH = "close";
 
 function header(
   props: Partial<Parameters<typeof SettingsHeader>[0]> = {},
@@ -69,6 +71,24 @@ describe("a settings header", () => {
 
     expect(paintOf("settings-header").paddingTop).toBe(`${Spacing.s}px`);
     expect(paintOf("settings-header").paddingLeft).toBe(`${Spacing.xxl}px`);
+  });
+
+  it.each(THEMES)("closes a page instead of going back, in %s", (theme) => {
+    render(header({ variant: "close", title: PAGE }, theme));
+    const colors = Colors[theme];
+
+    expect(inkOf(CLOSE_GLYPH)).toBe(rgb(colors.textMuted));
+    expect(inkOf(PAGE)).toBe(rgb(colors.text));
+    expect(screen.queryByText(BACK_GLYPH)).toBeNull();
+  });
+
+  // the glyph is not a back arrow, so there is nothing to centre the title against
+  it("keeps the closing title beside its glyph, balanced by nothing", () => {
+    render(header({ variant: "close", title: PAGE }));
+
+    expect(screen.getByTestId("settings-header").children).toHaveLength(2);
+    expect(paintOf("settings-header").gap).toBe(`${Spacing.xl}px`);
+    expect(paintOf("settings-header").paddingTop).toBe(`${Spacing.xxl}px`);
   });
 
   it("returns to wherever the form was opened from", () => {

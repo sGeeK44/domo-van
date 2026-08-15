@@ -31,16 +31,17 @@ export function FieldInput({
   unit,
   onChangeText,
   invalid = false,
+  testID = "field-input",
   inputProps,
 }: FieldInputProps) {
   const colors = useThemeColor();
   const styles = useStyles(makeStyles);
 
   return (
-    <View style={styles.field}>
+    <View testID={testID} style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <View
-        testID="field-input"
+        testID={`${testID}-box`}
         style={[styles.box, invalid ? styles.boxInvalid : styles.boxIdle]}
       >
         <TextInput

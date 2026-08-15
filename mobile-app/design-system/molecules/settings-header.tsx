@@ -10,12 +10,18 @@ import {
   TextStyles,
 } from "@/design-system/tokens";
 
-/** `crumb` names the module a settings form belongs to; `title` names the page itself. */
-export type SettingsHeaderVariant = "title" | "crumb";
+/**
+ * `title` names the page, `crumb` the module a settings form belongs to, and
+ * `close` leaves a page that is not part of the stack under it.
+ */
+export type SettingsHeaderVariant = "title" | "crumb" | "close";
 
-const BACK_SIZE: Record<SettingsHeaderVariant, number> = {
-  title: 22,
-  crumb: 24,
+type Glyph = { name: "arrow-back" | "close"; size: number; muted: boolean };
+
+const GLYPHS: Record<SettingsHeaderVariant, Glyph> = {
+  title: { name: "arrow-back", size: 22, muted: false },
+  crumb: { name: "arrow-back", size: 24, muted: false },
+  close: { name: "close", size: 26, muted: true },
 };
 
 export type SettingsHeaderProps = {
@@ -31,19 +37,29 @@ export function SettingsHeader({
 }: SettingsHeaderProps) {
   const colors = useThemeColor();
   const styles = useStyles(makeStyles);
-  const isCrumb = variant === "crumb";
-  const backSize = BACK_SIZE[variant];
+  const glyph = GLYPHS[variant];
+  const layout = {
+    title: styles.titleHeader,
+    crumb: styles.crumbHeader,
+    close: styles.closeHeader,
+  }[variant];
+  const heading = {
+    title: styles.title,
+    crumb: styles.crumb,
+    close: styles.closeTitle,
+  }[variant];
 
   return (
-    <View
-      testID="settings-header"
-      style={[styles.header, isCrumb && styles.crumbHeader]}
-    >
+    <View testID="settings-header" style={[styles.header, layout]}>
       <Pressable onPress={onBackPress} hitSlop={10}>
-        <IconSymbol name="arrow-back" size={backSize} color={colors.text} />
+        <IconSymbol
+          name={glyph.name}
+          size={glyph.size}
+          color={glyph.muted ? colors.textMuted : colors.text}
+        />
       </Pressable>
-      <Text style={isCrumb ? styles.crumb : styles.title}>{title}</Text>
-      <View style={{ width: backSize }} />
+      <Text style={heading}>{title}</Text>
+      {variant !== "close" && <View style={{ width: glyph.size }} />}
     </View>
   );
 }
@@ -53,14 +69,23 @@ const makeStyles = (colors: Palette) =>
     header: {
       flexDirection: "row",
       alignItems: "center",
+    },
+    titleHeader: {
       justifyContent: "space-between",
       paddingHorizontal: Spacing.xxl,
       paddingTop: Spacing.s,
       paddingBottom: Spacing.l,
     },
     crumbHeader: {
+      justifyContent: "space-between",
       paddingHorizontal: Spacing.gutter,
       paddingTop: Spacing.xxl,
+      paddingBottom: Spacing.l,
+    },
+    closeHeader: {
+      gap: Spacing.xl,
+      paddingHorizontal: Spacing.gutter,
+      paddingVertical: Spacing.xxl,
     },
     title: {
       color: colors.text,
@@ -69,6 +94,10 @@ const makeStyles = (colors: Palette) =>
     },
     crumb: {
       ...TextStyles.crumb,
+      color: colors.text,
+    },
+    closeTitle: {
+      ...TextStyles.screenTitle,
       color: colors.text,
     },
   });
