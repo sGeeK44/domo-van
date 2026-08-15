@@ -20,9 +20,16 @@ function shapeOf(value: object): Shape {
   );
 }
 
+const THEMES = ["light", "dark"] as const;
+
 describe("Colors", () => {
   it("gives every token a light and a dark value", () => {
     expect(shapeOf(Colors.light)).toEqual(shapeOf(Colors.dark));
+  });
+
+  // A chip is drawn on a surface row: one theme collapsing the two paints an invisible square.
+  it.each(THEMES)("keeps a chip off the row it sits on, in %s", (theme) => {
+    expect(Colors[theme].chip).not.toBe(Colors[theme].surface);
   });
 });
 
