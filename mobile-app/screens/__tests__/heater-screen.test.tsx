@@ -88,8 +88,9 @@ function nightModeButton() {
   return screen.getByTestId("preset-night-mode");
 }
 
+/** React Native only aliases aria-selected onto accessibilityState; aria-pressed reaches no view manager. */
 function pressedState(button: Element): string | null {
-  return button.getAttribute("aria-pressed");
+  return button.getAttribute("aria-selected");
 }
 
 describe("the Chauffage tab", () => {
