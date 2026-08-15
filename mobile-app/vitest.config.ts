@@ -27,6 +27,10 @@ export default defineConfig({
         __dirname,
         "__mocks__/react-native-reanimated.tsx",
       ),
+      "react-native-keyboard-controller": path.resolve(
+        __dirname,
+        "__mocks__/react-native-keyboard-controller.tsx",
+      ),
       "expo-secure-store": path.resolve(
         __dirname,
         "__mocks__/expo-secure-store.ts",

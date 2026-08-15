@@ -1,4 +1,3 @@
-import type { ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import { IconCircleButton } from "@/design-system/atoms/icon-circle-button";
 import { PageTitle } from "@/design-system/atoms/page-title";
@@ -6,30 +5,16 @@ import {
   StatusBadge,
   type StatusBadgeProps,
 } from "@/design-system/atoms/status-badge";
-import { type ThemeMode, useTheme } from "@/design-system/theme/ThemeContext";
 import { Spacing } from "@/design-system/tokens";
 
-/** Auto stays on the ring: a two-way flip would strand the user on a fixed scheme. */
-const NEXT_THEME_MODE: Record<ThemeMode, ThemeMode> = {
-  auto: "light",
-  light: "dark",
-  dark: "auto",
-};
-
-/** The icon names the mode, not the resolved scheme, so Auto reads as Auto. */
-const THEME_MODE_ICON: Record<
-  ThemeMode,
-  ComponentProps<typeof IconCircleButton>["icon"]
-> = {
-  auto: "brightness-auto",
-  light: "light-mode",
-  dark: "dark-mode",
-};
+/** The mockup gives every header one chip: `settings` on Bord, `tune` on a module tab. */
+export type SettingsIcon = "settings" | "tune";
 
 export type PageHeaderProps = {
   title: string;
-  /** A page with nothing to configure keeps the theme button and drops this one. */
+  /** A page with nothing to configure drops this button. */
   onSettingsPress?: () => void;
+  settingsIcon?: SettingsIcon;
   /** A page whose modules each show their own status has no global button. */
   onBluetoothPress?: () => void;
   bluetoothStatus?: StatusBadgeProps["status"];
@@ -39,21 +24,15 @@ export type PageHeaderProps = {
 export function PageHeader({
   title,
   onSettingsPress,
+  settingsIcon = "settings",
   onBluetoothPress,
   bluetoothStatus,
   bluetoothDisabled = false,
 }: PageHeaderProps) {
-  const { themeMode, setThemeMode } = useTheme();
-
   return (
     <View style={styles.header}>
       <PageTitle>{title}</PageTitle>
       <View style={styles.buttons}>
-        <IconCircleButton
-          testID="theme-mode"
-          icon={THEME_MODE_ICON[themeMode]}
-          onPress={() => setThemeMode(NEXT_THEME_MODE[themeMode])}
-        />
         {onBluetoothPress && bluetoothStatus && (
           <IconCircleButton
             icon="bluetooth"
@@ -64,7 +43,11 @@ export function PageHeader({
           </IconCircleButton>
         )}
         {onSettingsPress && (
-          <IconCircleButton icon="settings" onPress={onSettingsPress} />
+          <IconCircleButton
+            testID="page-settings"
+            icon={settingsIcon}
+            onPress={onSettingsPress}
+          />
         )}
       </View>
     </View>

@@ -7,6 +7,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-reanimated";
 
 import { AppProviders } from "@/composition/AppProviders";
@@ -39,18 +40,8 @@ function AppContent() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="modules" options={{ headerShown: false }} />
           <Stack.Screen name="add-module" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="water-settings"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="heater-settings"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="battery-settings"
-            options={{ headerShown: false }}
-          />
+          {/* One entry for the whole group: app/settings/_layout.tsx hides each form's header. */}
+          <Stack.Screen name="settings" options={{ headerShown: false }} />
         </Stack>
       </ToastProvider>
       <StatusBar style="auto" />
@@ -73,17 +64,19 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider
-        initialMode={initialThemeMode}
-        onModeChange={saveThemeMode}
-      >
-        <AppProviders
-          initialLanguage={initialLanguage}
-          onLanguageChange={saveLanguage}
+      <KeyboardProvider>
+        <ThemeProvider
+          initialMode={initialThemeMode}
+          onModeChange={saveThemeMode}
         >
-          <AppContent />
-        </AppProviders>
-      </ThemeProvider>
+          <AppProviders
+            initialLanguage={initialLanguage}
+            onLanguageChange={saveLanguage}
+          >
+            <AppContent />
+          </AppProviders>
+        </ThemeProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

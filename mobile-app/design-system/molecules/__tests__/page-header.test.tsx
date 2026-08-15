@@ -1,55 +1,60 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { SettingsIcon } from "@/design-system/molecules/page-header";
 import { PageHeader } from "@/design-system/molecules/page-header";
 import { ThemeProvider } from "@/design-system/theme/ThemeContext";
 
-// Until the three-mode picker of #7 ships, this button is the only theme control.
-function renderHeader() {
-  const onModeChange = vi.fn();
+function renderHeader(settingsIcon?: SettingsIcon) {
+  const onSettingsPress = vi.fn();
   render(
-    <ThemeProvider onModeChange={onModeChange}>
-      <PageHeader title="Eau" onSettingsPress={() => {}} />
+    <ThemeProvider>
+      <PageHeader
+        title="Eau"
+        onSettingsPress={onSettingsPress}
+        settingsIcon={settingsIcon}
+      />
     </ThemeProvider>,
   );
 
-  return { onModeChange };
+  return { onSettingsPress };
 }
 
-function pressTheme() {
-  fireEvent.click(screen.getByTestId("theme-mode"));
+function chipGlyph(): string {
+  return screen.getByTestId("page-settings").textContent ?? "";
 }
 
-function icon(): string {
-  return screen.getByTestId("theme-mode").textContent ?? "";
-}
-
-describe("the header theme button", () => {
+describe("the header settings chip", () => {
   afterEach(cleanup);
 
-  it("cycles auto → light → dark → auto, so Auto stays reachable", () => {
-    const { onModeChange } = renderHeader();
-    expect(icon()).toBe("brightness-auto");
+  // The mockup gives Bord the gear and a module tab the sliders.
+  it("draws the glyph the page names", () => {
+    renderHeader("tune");
 
-    pressTheme();
-    expect(icon()).toBe("light-mode");
-
-    pressTheme();
-    expect(icon()).toBe("dark-mode");
-
-    pressTheme();
-    expect(icon()).toBe("brightness-auto");
-    expect(onModeChange.mock.calls.flat()).toEqual(["light", "dark", "auto"]);
+    expect(chipGlyph()).toBe("tune");
   });
 
-  it("stays on a page with nothing to configure", () => {
+  it("draws the gear when the page names none", () => {
+    renderHeader();
+
+    expect(chipGlyph()).toBe("settings");
+  });
+
+  it("hands the press back to the page", () => {
+    const { onSettingsPress } = renderHeader("tune");
+
+    fireEvent.click(screen.getByTestId("page-settings"));
+
+    expect(onSettingsPress).toHaveBeenCalledTimes(1);
+  });
+
+  it("carries no chip on a page with nothing to configure", () => {
     render(
       <ThemeProvider>
-        <PageHeader title="Gauge gallery" />
+        <PageHeader title="Bord" />
       </ThemeProvider>,
     );
 
-    expect(screen.getByTestId("theme-mode")).toBeTruthy();
-    expect(screen.queryByText("settings")).toBeNull();
+    expect(screen.queryByTestId("page-settings")).toBeNull();
   });
 });

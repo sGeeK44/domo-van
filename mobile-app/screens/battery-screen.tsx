@@ -33,7 +33,7 @@ export default function BatteryScreen() {
     <ModuleScreen
       moduleKey="battery"
       titleKey="battery.overview.title"
-      onSettingsPress={() => router.push("/battery-settings")}
+      onSettingsPress={() => router.push("/settings/battery-info")}
     >
       {(system) => <BatteryDetail telemetry={system} />}
     </ModuleScreen>
