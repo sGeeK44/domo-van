@@ -47,7 +47,8 @@ export const Colors: Record<ThemeName, Palette> = {
     surface: "#FFFFFF",
     sheet: "#FFFFFF",
     scrim: "rgba(0, 0, 0, 0.5)",
-    chip: "#FFFFFF",
+    // Nothing lifts off a white row, so the light chip sinks into it the way an inset does.
+    chip: "#F2F1EE",
     inset: "#F2F1EE",
     off: "#E4E2DC",
     dash: "#C3C0B8",

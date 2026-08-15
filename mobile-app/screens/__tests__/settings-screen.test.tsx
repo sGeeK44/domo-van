@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // createContainer reads this switch at import time, hence the dynamic imports below.
@@ -89,6 +95,20 @@ describe("the Réglages screen", () => {
     cleanup();
     resetNavigation();
     vi.restoreAllMocks();
+  });
+
+  // Réglages is the root of its stack, not a step in it: it closes, it does not go back a crumb.
+  it("closes on a close glyph, and pops to the surface that opened it", async () => {
+    await openSettings(new InMemoryPreferencesRepository());
+    const header = within(screen.getByTestId("settings-header"));
+    expect(header.getByText("close")).toBeTruthy();
+    expect(header.queryByText("arrow-back")).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(header.getByText("close"));
+    });
+
+    expect(routerHistory).toEqual([{ method: "back" }]);
   });
 
   // Acceptance example 7, end to end: the picker is what makes the switch reachable.
