@@ -1,3 +1,4 @@
+import { sinceBoot } from "@/core/clock";
 import {
   createObservable,
   Listener,
@@ -12,24 +13,25 @@ import {
   SAVED,
   unansweredWrite,
 } from "@/domain/Feedback";
+import {
+  type ModuleIdentity,
+  unsendableIdentity,
+} from "@/domain/identityFrame";
 import { Channel } from "@/domain/ports/Channel";
 import {
   type IdentityOwner,
-  type SaveFieldKey,
+  type RejectedWrite,
   type SaveOutcome,
   saveFields,
   type WriteOutcome,
 } from "@/domain/SaveOutcome";
 
+export type { ModuleIdentity };
+
 export type AdminSnapshot = {
   success: boolean;
   error: string | null;
   lastFeedback: Feedback | null;
-};
-
-export type ModuleIdentity = {
-  name: string;
-  pin: string;
 };
 
 export class AdminModule implements Observable<AdminSnapshot> {
@@ -40,7 +42,7 @@ export class AdminModule implements Observable<AdminSnapshot> {
   constructor(
     private readonly channel: Channel,
     private readonly owner: IdentityOwner,
-    now: () => number = Date.now,
+    now: () => number = sinceBoot,
   ) {
     this.state = createObservable<AdminSnapshot>({
       success: false,
@@ -54,6 +56,8 @@ export class AdminModule implements Observable<AdminSnapshot> {
   }
 
   getValue = () => this.state.getValue();
+
+  resync = (): void => this.writes.forgetOwedAcks();
 
   subscribe = (listener: Listener<AdminSnapshot>): Unsubscribe => {
     return this.state.subscribe(listener);
@@ -73,36 +77,60 @@ export class AdminModule implements Observable<AdminSnapshot> {
   };
 
   setName(name: string): Promise<WriteOutcome> {
-    return this.report(this.writes.send(`NAME:${name}`));
+    return this.reported(this.writes.send(`NAME:${name}`));
   }
 
   setPin(pin: string): Promise<WriteOutcome> {
-    return this.report(this.writes.send(`PIN:${pin}`));
+    return this.reported(this.writes.send(`PIN:${pin}`));
   }
 
   /** Name and pin travel as one command: the module reboots on the ack, so a second write would be lost. */
   saveIdentity(identity: ModuleIdentity): Promise<SaveOutcome> {
     return saveFields([
       {
-        field: `${this.owner}.identity` satisfies SaveFieldKey,
-        write: () =>
-          this.report(
-            this.writes.send(`ID:NAME=${identity.name};PIN=${identity.pin}`),
-          ),
+        field: `${this.owner}.identity`,
+        write: () => this.writeIdentity(identity),
       },
     ]);
   }
 
-  private async report(sending: Promise<WriteOutcome>): Promise<WriteOutcome> {
-    const outcome = await sending;
+  private writeIdentity(identity: ModuleIdentity): Promise<WriteOutcome> {
+    const unsendable = unsendableIdentity(identity);
+    if (unsendable) return Promise.resolve(this.refuse(unsendable));
+
+    return this.reported(
+      this.writes.send(`ID:NAME=${identity.name};PIN=${identity.pin}`),
+    );
+  }
+
+  /** A frame we refuse to send answers itself, in the vocabulary the module would have used. */
+  private refuse(outcome: RejectedWrite): WriteOutcome {
+    this.state.update((prev) => ({
+      ...prev,
+      success: false,
+      error: outcome.code,
+      lastFeedback: ackFailure(outcome.code),
+    }));
+    return outcome;
+  }
+
+  private async reported(
+    sending: Promise<WriteOutcome>,
+  ): Promise<WriteOutcome> {
+    return this.report(await sending);
+  }
+
+  /** A refusal already reported itself as a frame; silence has to, and it clears the code of the write before it. */
+  private report(outcome: WriteOutcome): WriteOutcome {
     const failure = unansweredWrite(outcome);
-    if (failure) {
-      this.state.update((prev) => ({
-        ...prev,
-        success: false,
-        lastFeedback: failure,
-      }));
-    }
+    if (!failure) return outcome;
+
+    this.state.update((prev) => ({
+      ...prev,
+      success: false,
+      error: null,
+      lastFeedback: failure,
+    }));
     return outcome;
   }
 

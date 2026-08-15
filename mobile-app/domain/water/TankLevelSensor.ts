@@ -1,3 +1,4 @@
+import { sinceBoot } from "@/core/clock";
 import {
   createObservable,
   Listener,
@@ -6,7 +7,12 @@ import {
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
 import { ConfirmedWrite } from "@/domain/ConfirmedWrite";
-import { type Feedback, SAVED, unansweredWrite } from "@/domain/Feedback";
+import {
+  ackFailure,
+  type Feedback,
+  SAVED,
+  unansweredWrite,
+} from "@/domain/Feedback";
 import { Channel } from "@/domain/ports/Channel";
 import type { WriteOutcome } from "@/domain/SaveOutcome";
 import {
@@ -90,7 +96,7 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
 
   constructor(
     private readonly channel: Channel,
-    now: () => number = Date.now,
+    now: () => number = sinceBoot,
   ) {
     this.state = createObservable<TankLevelSnapshot>(DEFAULT_TANK_SNAPSHOT);
     this.writes = new ConfirmedWrite(this.channel, now);
@@ -106,6 +112,11 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
 
   getConfig(): Promise<void> {
     return this.channel.send("CFG?");
+  }
+
+  resync(): Promise<void> {
+    this.writes.forgetOwedAcks();
+    return this.getConfig();
   }
 
   subscribe = (listener: Listener<TankLevelSnapshot>): Unsubscribe => {
@@ -145,13 +156,12 @@ export class TankLevelSensor implements Observable<TankLevelSnapshot> {
       });
       return;
     }
-    if (parseAckMessage(msg)?.type === "ok") {
-      this.state.update((prev) => {
-        return {
-          ...prev,
-          lastFeedback: SAVED,
-        };
-      });
+    const ack = parseAckMessage(msg);
+    if (ack) {
+      this.state.update((prev) => ({
+        ...prev,
+        lastFeedback: ack.type === "ok" ? SAVED : ackFailure(ack.code),
+      }));
       return;
     }
     console.log("Unknown message:", msg);

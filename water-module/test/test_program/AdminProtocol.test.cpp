@@ -93,6 +93,18 @@ TEST(AdminProtocol, IdentityWriteRejectsMalformedFrame) {
   EXPECT_EQ(p.handle("ID:PIN=123456"), "ERR_ID_FMT");
 }
 
+// The name ends at the FIRST ";PIN=": splitting at the last would hand the
+// module a name it never validated, and a pin taken from inside the name.
+TEST(AdminProtocol, IdentityWriteSplitsOnTheFirstPinSeparator) {
+  FakeSettings s;
+  AdminSettings adminSettings(&s);
+  AdminProtocol p(&adminSettings);
+
+  EXPECT_EQ(p.handle("ID:NAME=Van;PIN=x;PIN=123456"), "ERR_PIN_LEN");
+  EXPECT_EQ(s.str_values.count("device_name"), 0u);
+  EXPECT_EQ(s.int_values.count("pin_code"), 0u);
+}
+
 TEST(AdminProtocol, IdentityWritePersistsNothingWhenOneFieldIsRejected) {
   FakeSettings s;
   AdminSettings adminSettings(&s);

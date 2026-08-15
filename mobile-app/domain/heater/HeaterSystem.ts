@@ -1,3 +1,4 @@
+import { sinceBoot } from "@/core/clock";
 import { createObservable, type Observable } from "@/core/observable";
 import { AdminModule } from "@/domain/AdminModule";
 import { EnvironmentData } from "@/domain/heater/EnvironmentData";
@@ -50,7 +51,7 @@ export class HeaterSystem {
   /** Night mode is a preset, not a toggle: every other write leaves it. */
   readonly nightMode: Observable<boolean> = this.nightModeState;
 
-  constructor(transport: ModuleTransport, now: () => number = Date.now) {
+  constructor(transport: ModuleTransport, now: () => number = sinceBoot) {
     this.admin = new AdminModule(
       transport.openChannel(CHANNELS.admin),
       "heater",
@@ -126,7 +127,9 @@ export class HeaterSystem {
   };
 
   resync = () => {
+    this.admin.resync();
     for (const zone of this.zones) {
+      zone.resync();
       void zone.getStatus().catch(() => {});
       void zone.getPidConfig().catch(() => {});
     }

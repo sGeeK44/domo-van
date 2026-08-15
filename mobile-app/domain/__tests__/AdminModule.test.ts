@@ -105,6 +105,29 @@ describe("AdminModule", () => {
     expect(channel.commands).toEqual([`ID:NAME=Van;PIN=${VALID_PIN}`]);
   });
 
+  it("never puts a name on the wire that would split into two frames", async () => {
+    const { channel, admin } = adminOnFake();
+
+    const outcome = await admin.saveIdentity({
+      name: `Van${String.fromCharCode(10)}PIN=000000`,
+      pin: VALID_PIN,
+    });
+
+    expect(outcome).toMatchObject({
+      failures: [
+        {
+          field: "water.identity",
+          outcome: { status: "rejected", code: "ERR_NAME_CHARS" },
+        },
+      ],
+    });
+    expect(channel.commands).toEqual([]);
+    expect(admin.getValue().lastFeedback).toEqual({
+      key: "modules.admin.failed",
+      params: { message: "ERR_NAME_CHARS" },
+    });
+  });
+
   it("reports a save that never left the phone, and says so to the user", async () => {
     const admin = new AdminModule(DEAF_CHANNEL, "water");
 
@@ -118,6 +141,21 @@ describe("AdminModule", () => {
     });
     expect(admin.getValue().lastFeedback).toEqual({
       key: "common.feedback.unreachable",
+    });
+  });
+
+  it("drops the code of the write before it when the next one goes unanswered", async () => {
+    const channel = new FakeChannel(adminScenario());
+    const admin = new AdminModule(channel, "water");
+    await admin.saveIdentity({ name: "Van", pin: TOO_SHORT_PIN });
+    expect(admin.getValue().error).toBe("ERR_PIN_LEN");
+
+    channel.failWrites();
+    await admin.saveIdentity({ name: "Van", pin: VALID_PIN });
+
+    expect(admin.getValue()).toMatchObject({
+      error: null,
+      lastFeedback: { key: "common.feedback.unreachable" },
     });
   });
 });

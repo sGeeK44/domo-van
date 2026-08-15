@@ -11,7 +11,9 @@ export const UNREACHABLE: WriteOutcome = Object.freeze({
   status: "unreachable",
 });
 
-export function rejectedWrite(code: string): WriteOutcome {
+export type RejectedWrite = { status: "rejected"; code: string };
+
+export function rejectedWrite(code: string): RejectedWrite {
   return { status: "rejected", code };
 }
 

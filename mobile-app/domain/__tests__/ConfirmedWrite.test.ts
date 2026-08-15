@@ -11,6 +11,7 @@ class ScriptedChannel implements Channel {
   readonly commands: string[] = [];
   private readonly listeners = new Set<Listener<string>>();
   private refusesWrites = false;
+  private hangsWrites = false;
 
   listen(listener: Listener<string>): Unsubscribe {
     this.listeners.add(listener);
@@ -22,6 +23,7 @@ class ScriptedChannel implements Channel {
   send(command: string): Promise<void> {
     if (this.refusesWrites) return Promise.reject(new Error("radio down"));
     this.commands.push(command);
+    if (this.hangsWrites) return new Promise<void>(() => {});
     return Promise.resolve();
   }
 
@@ -31,6 +33,11 @@ class ScriptedChannel implements Channel {
 
   refuseWrites(): void {
     this.refusesWrites = true;
+  }
+
+  /** The GATT operation that never comes back: the peripheral vanished mid-write. */
+  hangWrites(): void {
+    this.hangsWrites = true;
   }
 }
 
@@ -166,6 +173,81 @@ describe("ConfirmedWrite", () => {
       code: "ERR_RANGE",
     });
     await expect(second).resolves.toEqual({ status: "applied" });
+  });
+
+  it("forgets an ack that never came, so the next write keeps its own", async () => {
+    vi.useFakeTimers();
+    const clock = new TestClock();
+    const channel = new ScriptedChannel();
+    const writes = new ConfirmedWrite(channel, clock.read, TIMEOUT_MS);
+
+    const lost = writes.send("CFG:T=45");
+    await flushMicrotasks();
+    await clock.advance(TIMEOUT_MS);
+    await expect(lost).resolves.toEqual({ status: "timedOut" });
+    await clock.advance(TIMEOUT_MS);
+
+    for (const seconds of [50, 55, 60]) {
+      const healthy = writes.send(`CFG:T=${seconds}`);
+      await flushMicrotasks();
+      channel.answer("OK");
+      await expect(healthy).resolves.toEqual({ status: "applied" });
+    }
+  });
+
+  it("never owes more than the one ack a silent module last skipped", async () => {
+    vi.useFakeTimers();
+    const clock = new TestClock();
+    const channel = new ScriptedChannel();
+    const writes = new ConfirmedWrite(channel, clock.read, TIMEOUT_MS);
+
+    for (const seconds of [45, 50, 55]) {
+      const abandoned = writes.send(`CFG:T=${seconds}`);
+      await flushMicrotasks();
+      await clock.advance(TIMEOUT_MS);
+      await expect(abandoned).resolves.toEqual({ status: "timedOut" });
+    }
+
+    const spendsTheDebt = writes.send("CFG:T=60");
+    await flushMicrotasks();
+    channel.answer("OK");
+    await flushMicrotasks();
+    channel.answer("OK");
+
+    await expect(spendsTheDebt).resolves.toEqual({ status: "applied" });
+  });
+
+  it("owes nothing to a module that reconnected", async () => {
+    vi.useFakeTimers();
+    const clock = new TestClock();
+    const channel = new ScriptedChannel();
+    const writes = new ConfirmedWrite(channel, clock.read, TIMEOUT_MS);
+
+    const abandoned = writes.send("CFG:T=45");
+    await flushMicrotasks();
+    await clock.advance(TIMEOUT_MS);
+    await expect(abandoned).resolves.toEqual({ status: "timedOut" });
+    writes.forgetOwedAcks();
+
+    const afterReconnect = writes.send("CFG:T=60");
+    await flushMicrotasks();
+    channel.answer("OK");
+
+    await expect(afterReconnect).resolves.toEqual({ status: "applied" });
+  });
+
+  it("gives up on a write the radio never finishes taking", async () => {
+    vi.useFakeTimers();
+    const clock = new TestClock();
+    const channel = new ScriptedChannel();
+    channel.hangWrites();
+    const writes = new ConfirmedWrite(channel, clock.read, TIMEOUT_MS);
+
+    const hung = writes.send("CFG:T=45");
+    await flushMicrotasks();
+    await clock.advance(TIMEOUT_MS);
+
+    await expect(hung).resolves.toEqual({ status: "timedOut" });
   });
 
   it("settles nothing on an ack that answers no write of ours", async () => {

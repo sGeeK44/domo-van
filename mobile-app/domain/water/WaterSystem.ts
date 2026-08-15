@@ -1,3 +1,4 @@
+import { sinceBoot } from "@/core/clock";
 import type { ModuleTransport } from "@/domain/ports/ModuleTransport";
 import { type SaveOutcome, saveFields } from "@/domain/SaveOutcome";
 import { DrainValve } from "@/domain/water/DrainValve";
@@ -31,7 +32,7 @@ export class WaterSystem {
   readonly greyTank: TankLevelSensor;
   readonly greyDrainValve: DrainValve;
 
-  constructor(transport: ModuleTransport, now: () => number = Date.now) {
+  constructor(transport: ModuleTransport, now: () => number = sinceBoot) {
     this.admin = new AdminModule(
       transport.openChannel(CHANNELS.admin),
       "water",
@@ -69,9 +70,10 @@ export class WaterSystem {
     ]);
 
   resync = () => {
-    void this.cleanTank.getConfig().catch(() => {});
-    void this.greyTank.getConfig().catch(() => {});
-    void this.greyDrainValve.getConfig().catch(() => {});
+    this.admin.resync();
+    void this.cleanTank.resync().catch(() => {});
+    void this.greyTank.resync().catch(() => {});
+    void this.greyDrainValve.resync().catch(() => {});
   };
 
   dispose = () => {
