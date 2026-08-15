@@ -36,7 +36,7 @@ export default function HeaterScreen() {
     <ModuleScreen
       moduleKey="heater"
       titleKey="heater.zones.title"
-      onSettingsPress={() => router.push("/settings/heater-pid")}
+      onSettingsPress={() => router.push("/heater-settings")}
     >
       {(heater) => <HeaterZones heater={heater} />}
     </ModuleScreen>
