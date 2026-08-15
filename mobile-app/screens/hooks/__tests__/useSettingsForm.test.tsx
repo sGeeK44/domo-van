@@ -156,6 +156,38 @@ describe("the settings draft", () => {
     expect(form.onSave).toHaveBeenCalledTimes(2);
   });
 
+  // The fields stay editable during the ack round-trip, so typing then must not be lost either.
+  it("keeps a keystroke made while the save was in flight", async () => {
+    let settle = () => {};
+    const form = mountForm(
+      vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            settle = resolve;
+          }),
+      ),
+    );
+
+    act(() => form.result.current.set("volume", "42"));
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = form.result.current.save();
+    });
+    act(() => form.result.current.set("height", "900"));
+
+    await act(async () => {
+      settle();
+      await pending;
+    });
+    form.reports({ volume: "120", height: "850" });
+
+    expect(form.result.current.dirty).toBe(true);
+    expect(form.result.current.values).toEqual({
+      volume: "42",
+      height: "900",
+    });
+  });
+
   it("marks itself saving only while the write is in flight", async () => {
     let settle = () => {};
     const form = mountForm(
