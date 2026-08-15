@@ -22,7 +22,7 @@ export default function WaterScreen() {
     <ModuleScreen
       moduleKey="water"
       titleKey="modules.water.tab"
-      onSettingsPress={() => router.push("/water-settings")}
+      onSettingsPress={() => router.push("/settings/water-tanks")}
     >
       {(system) => <WaterLevels system={system} />}
     </ModuleScreen>

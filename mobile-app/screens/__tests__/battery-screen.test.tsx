@@ -205,15 +205,15 @@ describe("the battery tab", () => {
     expect(screen.getByTestId("battery-hero")).toBeTruthy();
   });
 
-  it("opens the battery settings from its header", async () => {
+  it("opens the battery information form from its header", async () => {
     const harness = renderModuleScreen(<BatteryScreen />);
     await pairOnly(harness, ["battery"]);
 
-    fireEvent.click(screen.getByText("settings"));
+    fireEvent.click(screen.getByTestId("page-settings"));
 
     expect(routerHistory).toContainEqual({
       method: "push",
-      href: "/battery-settings",
+      href: "/settings/battery-info",
     });
   });
 });
