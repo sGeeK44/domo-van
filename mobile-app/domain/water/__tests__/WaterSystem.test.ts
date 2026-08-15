@@ -158,6 +158,32 @@ describe("WaterSystem", () => {
     });
   });
 
+  it("refuses a volume below the bound the firmware keeps", async () => {
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport);
+
+    const outcome = await water.cleanTank.saveConfig({
+      volumeLiters: 0,
+      heightMm: 200,
+    });
+
+    expect(outcome).toEqual({ status: "rejected", code: "ERR_CFG_RANGE" });
+  });
+
+  it("tells the user when a tank config never left the phone", async () => {
+    const transport = new FakeModuleTransport(waterScenario());
+    const water = new WaterSystem(transport);
+    transport.channel(CLEAN_TANK).failWrites();
+
+    const outcome = await water.cleanTank.setConfig("120", "112");
+
+    expect(outcome).toEqual({ status: "unreachable" });
+    expect(water.cleanTank.getValue()).toMatchObject({
+      capacityLiters: 100,
+      lastFeedback: { key: "common.feedback.unreachable" },
+    });
+  });
+
   it("saves the tanks and the valve as one form, one write per field", async () => {
     const transport = new FakeModuleTransport(waterScenario());
     const water = new WaterSystem(transport);
@@ -239,6 +265,9 @@ describe("WaterSystem", () => {
       status: "failed",
       failures: [{ field: "water.valve", outcome: { status: "timedOut" } }],
     });
+    expect(water.greyDrainValve.getValue().lastFeedback).toEqual({
+      key: "common.feedback.notAnswered",
+    });
   });
 
   it("saves the water identity under the water's own field keys", async () => {
@@ -247,10 +276,8 @@ describe("WaterSystem", () => {
 
     const outcome = await water.admin.saveIdentity({ name: "Eau", pin: "12" });
 
-    expect(outcome).toMatchObject({
-      failures: [{ field: "water.identity.pin" }],
-    });
-    expect(transport.channel(ADMIN).commands).toContain("NAME:Eau");
+    expect(outcome).toMatchObject({ failures: [{ field: "water.identity" }] });
+    expect(transport.channel(ADMIN).commands).toEqual(["ID:NAME=Eau;PIN=12"]);
   });
 
   it("takes an ack answering no write of ours as feedback, and nothing else", () => {

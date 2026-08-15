@@ -118,6 +118,33 @@ describe("ConfirmedWrite", () => {
     await vi.advanceTimersByTimeAsync(TIMEOUT_MS * 2);
 
     expect(pending.settled()).toBeNull();
+    writes.dispose();
+  });
+
+  it("gives a late ack to the write that gave up on it, not to the next one", async () => {
+    vi.useFakeTimers();
+    const clock = new TestClock();
+    const channel = new ScriptedChannel();
+    const writes = new ConfirmedWrite(channel, clock.read, TIMEOUT_MS);
+
+    const abandoned = writes.send("CFG:T=45");
+    await flushMicrotasks();
+    await clock.advance(TIMEOUT_MS);
+    await expect(abandoned).resolves.toEqual({ status: "timedOut" });
+
+    const second = track(writes.send("CFG:T=60"));
+    await flushMicrotasks();
+    channel.answer("OK");
+    await flushMicrotasks();
+
+    expect(second.settled()).toBeNull();
+
+    channel.answer("ERR_RANGE");
+    await flushMicrotasks();
+    expect(second.settled()).toEqual({
+      status: "rejected",
+      code: "ERR_RANGE",
+    });
   });
 
   it("queues the second write and gives each its own answer", async () => {
@@ -150,15 +177,16 @@ describe("ConfirmedWrite", () => {
     await flushMicrotasks();
 
     expect(pending.settled()).toBeNull();
+    writes.dispose();
   });
 
-  it("reports a write the radio refused as unanswered", async () => {
+  it("tells a write that never left the phone from one the module ignored", async () => {
     const channel = new ScriptedChannel();
     const writes = new ConfirmedWrite(channel, () => 0, TIMEOUT_MS);
     channel.refuseWrites();
 
     await expect(writes.send("CFG:T=45")).resolves.toEqual({
-      status: "timedOut",
+      status: "unreachable",
     });
   });
 
@@ -170,6 +198,20 @@ describe("ConfirmedWrite", () => {
     await flushMicrotasks();
     writes.dispose();
 
-    await expect(outcome).resolves.toEqual({ status: "timedOut" });
+    await expect(outcome).resolves.toEqual({ status: "unreachable" });
+  });
+
+  it("answers a write queued behind a dispose instead of waiting out its timeout", async () => {
+    const channel = new ScriptedChannel();
+    const writes = new ConfirmedWrite(channel, () => 0, TIMEOUT_MS);
+
+    const inFlight = writes.send("CFG:T=45");
+    const queued = writes.send("CFG:T=60");
+    await flushMicrotasks();
+    writes.dispose();
+
+    await expect(inFlight).resolves.toEqual({ status: "unreachable" });
+    await expect(queued).resolves.toEqual({ status: "unreachable" });
+    expect(channel.commands).toEqual(["CFG:T=45"]);
   });
 });

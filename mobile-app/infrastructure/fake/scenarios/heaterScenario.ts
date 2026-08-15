@@ -10,12 +10,39 @@ type ZoneReading = {
   running: boolean;
 };
 
-const PID_WRITE = /^CFG:KP=(\d+);KI=(\d+);KD=(\d+)$/;
+/** PID gains as the protocol carries them: hundredths, whole numbers. */
+type PidGains = { kp: number; ki: number; kd: number };
+
 const SETPOINT_WRITE = /^SP:(\d+)$/;
 
 // Sanity bounds the firmware refuses to store beyond, see
 // heater-module/lib/protocol/HeaterCfgProtocol.cpp.
 const MAX_GAIN_HUNDREDTHS = 10000;
+
+function fieldOf(command: string, key: string): string {
+  const written = new RegExp(`${key}=([^;]*)`).exec(command);
+  return written ? written[1] : "";
+}
+
+function isWholeNumber(value: string): boolean {
+  return /^\d+$/.test(value);
+}
+
+function outOfGainRange(value: string): boolean {
+  const gain = Number(value);
+  return gain <= 0 || gain > MAX_GAIN_HUNDREDTHS;
+}
+
+/** The frame the firmware answers a PID write with, error codes included. */
+function pidWriteAnswer(command: string): { ack: string; gains?: PidGains } {
+  const written = ["KP", "KI", "KD"].map((key) => fieldOf(command, key));
+  if (written.some((value) => value === "")) return { ack: "ERR_CFG_FMT" };
+  if (!written.every(isWholeNumber)) return { ack: "ERR_CFG_NUM" };
+  if (written.some(outOfGainRange)) return { ack: "ERR_CFG_RANGE" };
+
+  const [kp, ki, kd] = written.map(Number);
+  return { ack: "OK", gains: { kp, ki, kd } };
+}
 
 const ZONES: readonly ZoneReading[] = [
   { temperatureTenths: 215, setpointTenths: 210, running: true },
@@ -26,10 +53,6 @@ const ZONES: readonly ZoneReading[] = [
 
 const ENVIRONMENT_READING = "ENV:T=215;H=450;P=10132;EXT=120";
 
-function outOfGainRange(hundredths: number): boolean {
-  return hundredths <= 0 || hundredths > MAX_GAIN_HUNDREDTHS;
-}
-
 function heaterZoneScenario(zone: ZoneReading): ChannelScenario {
   let setpointTenths = zone.setpointTenths;
   let pid = { kp: 1000, ki: 10, kd: 50 };
@@ -39,16 +62,10 @@ function heaterZoneScenario(zone: ZoneReading): ChannelScenario {
     `STATUS:T=${zone.temperatureTenths};SP=${setpointTenths};RUN=${running ? 1 : 0}`;
 
   return (command) => {
-    const pidWrite = PID_WRITE.exec(command);
-    if (pidWrite) {
-      const written = {
-        kp: Number(pidWrite[1]),
-        ki: Number(pidWrite[2]),
-        kd: Number(pidWrite[3]),
-      };
-      if (Object.values(written).some(outOfGainRange)) return ["ERR_CFG_RANGE"];
-      pid = written;
-      return ["OK"];
+    if (command !== "CFG?" && command.startsWith("CFG:")) {
+      const answer = pidWriteAnswer(command);
+      if (answer.gains) pid = answer.gains;
+      return [answer.ack];
     }
 
     const setpointWrite = SETPOINT_WRITE.exec(command);

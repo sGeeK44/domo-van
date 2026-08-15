@@ -6,7 +6,12 @@ import {
 } from "@/core/observable";
 import { parseAckMessage } from "@/domain/AckMessage";
 import { ConfirmedWrite } from "@/domain/ConfirmedWrite";
-import { ackFailure, type Feedback, SAVED } from "@/domain/Feedback";
+import {
+  ackFailure,
+  type Feedback,
+  SAVED,
+  unansweredWrite,
+} from "@/domain/Feedback";
 import { Channel } from "@/domain/ports/Channel";
 import type { WriteOutcome } from "@/domain/SaveOutcome";
 import {
@@ -70,12 +75,9 @@ export class DrainValve implements Observable<ValveState> {
       this.state.update((prev) => ({ ...prev, autoCloseSeconds: seconds }));
       return outcome;
     }
-    // a refusal already came in as an ack, with its code; silence has to name itself
-    if (outcome.status === "timedOut") {
-      this.state.update((prev) => ({
-        ...prev,
-        lastFeedback: { key: "water.feedback.autoCloseFailed" },
-      }));
+    const failure = unansweredWrite(outcome);
+    if (failure) {
+      this.state.update((prev) => ({ ...prev, lastFeedback: failure }));
     }
     return outcome;
   };

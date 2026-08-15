@@ -45,7 +45,7 @@ describe("AdminModule", () => {
     });
   });
 
-  it("saves name and pin as one form, on one channel", async () => {
+  it("saves name and pin as the one command the module reboots on", async () => {
     const { channel, admin } = adminOnFake();
 
     const outcome = await admin.saveIdentity({
@@ -54,10 +54,10 @@ describe("AdminModule", () => {
     });
 
     expect(outcome).toEqual({ status: "applied" });
-    expect(channel.commands).toEqual(["NAME:Van", `PIN:${VALID_PIN}`]);
+    expect(channel.commands).toEqual([`ID:NAME=Van;PIN=${VALID_PIN}`]);
   });
 
-  it("names the refused field and still writes the other one", async () => {
+  it("keeps a refused identity out of the module, whole", async () => {
     const { channel, admin } = adminOnFake();
 
     const outcome = await admin.saveIdentity({
@@ -69,15 +69,15 @@ describe("AdminModule", () => {
       status: "failed",
       failures: [
         {
-          field: "water.identity.pin",
+          field: "water.identity",
           outcome: { status: "rejected", code: "ERR_PIN_LEN" },
         },
       ],
     });
-    expect(channel.commands).toContain("NAME:Van");
+    expect(channel.commands).toEqual([`ID:NAME=Van;PIN=${TOO_SHORT_PIN}`]);
   });
 
-  it("names the fields of the module it belongs to", async () => {
+  it("names the field of the module it belongs to", async () => {
     const { admin } = adminOnFake("heater");
 
     const outcome = await admin.saveIdentity({
@@ -85,12 +85,27 @@ describe("AdminModule", () => {
       pin: TOO_SHORT_PIN,
     });
 
-    expect(outcome).toMatchObject({
-      failures: [{ field: "heater.identity.pin" }],
-    });
+    expect(outcome).toMatchObject({ failures: [{ field: "heater.identity" }] });
   });
 
-  it("reports a save nothing answered, so the screen never claims success", async () => {
+  it("reports a module that does not know the identity command as a refusal", async () => {
+    const channel = new FakeChannel(() => ["ERR_UNKNOWN_CMD"]);
+    const admin = new AdminModule(channel, "water");
+
+    const outcome = await admin.saveIdentity({ name: "Van", pin: VALID_PIN });
+
+    expect(outcome).toMatchObject({
+      failures: [
+        {
+          field: "water.identity",
+          outcome: { status: "rejected", code: "ERR_UNKNOWN_CMD" },
+        },
+      ],
+    });
+    expect(channel.commands).toEqual([`ID:NAME=Van;PIN=${VALID_PIN}`]);
+  });
+
+  it("reports a save that never left the phone, and says so to the user", async () => {
     const admin = new AdminModule(DEAF_CHANNEL, "water");
 
     const outcome = await admin.saveIdentity({ name: "Van", pin: VALID_PIN });
@@ -98,9 +113,11 @@ describe("AdminModule", () => {
     expect(outcome).toEqual({
       status: "failed",
       failures: [
-        { field: "water.identity.name", outcome: { status: "timedOut" } },
-        { field: "water.identity.pin", outcome: { status: "timedOut" } },
+        { field: "water.identity", outcome: { status: "unreachable" } },
       ],
+    });
+    expect(admin.getValue().lastFeedback).toEqual({
+      key: "common.feedback.unreachable",
     });
   });
 });

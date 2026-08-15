@@ -55,6 +55,58 @@ TEST(AdminProtocol, NameWriteRejectsInvalidChars) {
   EXPECT_EQ(p.handle("NAME:Bad!Name"), "ERR_NAME_CHARS");
 }
 
+TEST(AdminProtocol, IdentityWritePersistsBothAndRespondsOkOnce) {
+  FakeSettings s;
+  AdminSettings adminSettings(&s);
+  AdminProtocol p(&adminSettings);
+
+  EXPECT_EQ(p.handle("ID:NAME=My_Water-Tank 1;PIN=123456"), "OK");
+  EXPECT_EQ(s.str_values["device_name"], "My_Water-Tank 1");
+  EXPECT_EQ(s.int_values["pin_code"], 123456);
+}
+
+TEST(AdminProtocol, IdentityWriteRejectsInvalidName) {
+  FakeSettings s;
+  AdminSettings adminSettings(&s);
+  AdminProtocol p(&adminSettings);
+
+  EXPECT_EQ(p.handle("ID:NAME=;PIN=123456"), "ERR_NAME_LEN");
+  EXPECT_EQ(p.handle("ID:NAME=Bad!Name;PIN=123456"), "ERR_NAME_CHARS");
+}
+
+TEST(AdminProtocol, IdentityWriteRejectsInvalidPin) {
+  FakeSettings s;
+  AdminSettings adminSettings(&s);
+  AdminProtocol p(&adminSettings);
+
+  EXPECT_EQ(p.handle("ID:NAME=Van;PIN=12345"), "ERR_PIN_LEN");
+  EXPECT_EQ(p.handle("ID:NAME=Van;PIN=12ab56"), "ERR_PIN_NUM");
+}
+
+TEST(AdminProtocol, IdentityWriteRejectsMalformedFrame) {
+  FakeSettings s;
+  AdminSettings adminSettings(&s);
+  AdminProtocol p(&adminSettings);
+
+  EXPECT_EQ(p.handle("ID:"), "ERR_ID_FMT");
+  EXPECT_EQ(p.handle("ID:NAME=Van"), "ERR_ID_FMT");
+  EXPECT_EQ(p.handle("ID:PIN=123456"), "ERR_ID_FMT");
+}
+
+TEST(AdminProtocol, IdentityWritePersistsNothingWhenOneFieldIsRejected) {
+  FakeSettings s;
+  AdminSettings adminSettings(&s);
+  AdminProtocol p(&adminSettings);
+
+  EXPECT_EQ(p.handle("ID:NAME=Van;PIN=12345"), "ERR_PIN_LEN");
+  EXPECT_EQ(s.str_values.count("device_name"), 0u);
+  EXPECT_EQ(s.int_values.count("pin_code"), 0u);
+
+  EXPECT_EQ(p.handle("ID:NAME=Bad!Name;PIN=123456"), "ERR_NAME_CHARS");
+  EXPECT_EQ(s.str_values.count("device_name"), 0u);
+  EXPECT_EQ(s.int_values.count("pin_code"), 0u);
+}
+
 TEST(AdminProtocol, UnknownCommandReturnsErrUnknown) {
   FakeSettings s;
   AdminSettings adminSettings(&s);

@@ -1,11 +1,15 @@
-/** What one write to a module came back as. */
+/** What one write came back as: `unreachable` never left the phone, `timedOut` got no answer. */
 export type WriteOutcome =
   | { status: "applied" }
   | { status: "rejected"; code: string }
-  | { status: "timedOut" };
+  | { status: "timedOut" }
+  | { status: "unreachable" };
 
-export const APPLIED: WriteOutcome = { status: "applied" };
-export const TIMED_OUT: WriteOutcome = { status: "timedOut" };
+export const APPLIED: WriteOutcome = Object.freeze({ status: "applied" });
+export const TIMED_OUT: WriteOutcome = Object.freeze({ status: "timedOut" });
+export const UNREACHABLE: WriteOutcome = Object.freeze({
+  status: "unreachable",
+});
 
 export function rejectedWrite(code: string): WriteOutcome {
   return { status: "rejected", code };
@@ -16,8 +20,7 @@ export type IdentityOwner = "water" | "heater";
 
 /** Which field a failed write belongs to; the dictionary owns the wording. */
 export type SaveFieldKey =
-  | `${IdentityOwner}.identity.name`
-  | `${IdentityOwner}.identity.pin`
+  | `${IdentityOwner}.identity`
   | "water.cleanTank"
   | "water.greyTank"
   | "water.valve"

@@ -19,6 +19,8 @@ export const fr = {
     },
     feedback: {
       saved: "Configuration enregistrée",
+      notAnswered: "Le module n'a pas confirmé",
+      unreachable: "Module non joignable",
     },
   },
 
