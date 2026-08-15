@@ -3,6 +3,7 @@ import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { HeaterPresets } from "@/components/heater/heater-presets";
+import { ZONE_NAME_KEYS } from "@/components/heater/zone-names";
 import { useObservable } from "@/core/react/useObservable";
 import {
   GaugeSetpointRow,
@@ -18,16 +19,8 @@ import {
 } from "@/domain/heater/HeaterPresets";
 import type { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
-import type { TranslationKey } from "@/i18n/keys";
 import { useFeedbackToast } from "@/screens/hooks/useFeedbackToast";
 import { ModuleScreen } from "@/screens/module-screen";
-
-const ZONE_NAME_KEYS: readonly TranslationKey[] = [
-  "heater.zones.zone1",
-  "heater.zones.zone2",
-  "heater.zones.zone3",
-  "heater.zones.zone4",
-];
 
 export default function HeaterScreen() {
   const router = useRouter();
@@ -36,7 +29,7 @@ export default function HeaterScreen() {
     <ModuleScreen
       moduleKey="heater"
       titleKey="heater.zones.title"
-      onSettingsPress={() => router.push("/heater-settings")}
+      onSettingsPress={() => router.push("/settings/heater-pid")}
     >
       {(heater) => <HeaterZones heater={heater} />}
     </ModuleScreen>

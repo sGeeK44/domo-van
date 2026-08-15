@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ZONE_NAME_KEYS } from "@/components/heater/zone-names";
 import { HeaterPidSection } from "@/components/heater-settings";
 import { AdminSection } from "@/components/module-settings";
 import { ModuleLinkNotice } from "@/components/modules";
@@ -13,13 +14,6 @@ import {
 import { useHeaterSystem } from "@/composition/ModuleSystemsProvider";
 import { type Palette, SettingsHeader, useThemeColor } from "@/design-system";
 import { HEATER_MODULE } from "@/domain/modules/ModuleDescriptor";
-
-const ZONE_NAME_KEYS = [
-  "heater.settings.zone1",
-  "heater.settings.zone2",
-  "heater.settings.zone3",
-  "heater.settings.zone4",
-] as const;
 
 export default function HeaterSettingsScreen() {
   const { t } = useTranslation();
