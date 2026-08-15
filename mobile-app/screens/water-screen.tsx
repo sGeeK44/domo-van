@@ -63,7 +63,7 @@ function WaterLevels({ system }: { system: WaterSystem }) {
   };
 
   const closeValve = () => {
-    setCloseRequestedAt(Date.now());
+    setCloseRequestedAt(sinceBoot());
     void announce(valveDevice.close(), "water.drain.toast.closedNow");
   };
 
@@ -148,7 +148,12 @@ const MODULE_CADENCE_MS = 1000;
 
 /** Past that one tick, a valve still counting down is genuinely open, and must say so again. */
 function withinOneTickOf(requestedAt: number | null): boolean {
-  return requestedAt !== null && Date.now() - requestedAt < MODULE_CADENCE_MS;
+  return requestedAt !== null && sinceBoot() - requestedAt < MODULE_CADENCE_MS;
+}
+
+/** Monotonic: an NTP correction stepping the wall clock back would re-arm the guard. */
+function sinceBoot(): number {
+  return performance.now();
 }
 
 function useDrainStart(draining: boolean, liters: number): DrainStart | null {
