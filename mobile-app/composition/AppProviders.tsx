@@ -1,18 +1,21 @@
 import type { PropsWithChildren } from "react";
-import { I18nextProvider } from "react-i18next";
 import { ContainerProvider } from "@/composition/ContainerProvider";
+import {
+  LanguageProvider,
+  type LanguageProviderProps,
+} from "@/composition/LanguageProvider";
 import { ModuleRegistryProvider } from "@/composition/ModuleRegistryProvider";
-import { createI18n } from "@/i18n/createI18n";
-import { deviceLanguage } from "@/i18n/language";
 
-const i18n = createI18n(deviceLanguage());
+type AppProvidersProps = PropsWithChildren<
+  Omit<LanguageProviderProps, "children">
+>;
 
-export function AppProviders({ children }: PropsWithChildren) {
+export function AppProviders({ children, ...language }: AppProvidersProps) {
   return (
-    <I18nextProvider i18n={i18n}>
+    <LanguageProvider {...language}>
       <ContainerProvider>
         <ModuleRegistryProvider>{children}</ModuleRegistryProvider>
       </ContainerProvider>
-    </I18nextProvider>
+    </LanguageProvider>
   );
 }

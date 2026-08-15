@@ -18,10 +18,13 @@ vi.mock("expo-splash-screen", () => ({
 const { useAppReady } = await import("@/composition/useAppReady");
 
 function Boot({ preferences }: { preferences: PreferencesRepository }) {
-  const { ready, initialThemeMode } = useAppReady({}, preferences);
+  const { ready, initialThemeMode, initialLanguage } = useAppReady(
+    {},
+    preferences,
+  );
   return (
     <span data-testid="boot">
-      {ready ? `app:${initialThemeMode}` : "splash"}
+      {ready ? `app:${initialThemeMode}:${initialLanguage}` : "splash"}
     </span>
   );
 }
@@ -58,15 +61,22 @@ describe("useAppReady", () => {
     expect(shown()).toBe("splash");
     expect(hideAsync).not.toHaveBeenCalled();
 
-    await waitFor(() => expect(shown()).toBe("app:auto"));
+    await waitFor(() => expect(shown()).toBe("app:auto:fr"));
   });
 
   it("lifts the splash once the fonts are loaded and the preferences are read", async () => {
     fontResult = [true, null];
     renderBoot(new InMemoryPreferencesRepository({ themeMode: "light" }));
 
-    await waitFor(() => expect(shown()).toBe("app:light"));
+    await waitFor(() => expect(shown()).toBe("app:light:fr"));
     await waitFor(() => expect(hideAsync).toHaveBeenCalled());
+  });
+
+  it("hands the stored language down, so the first frame is not painted in the device's", async () => {
+    fontResult = [true, null];
+    renderBoot(new InMemoryPreferencesRepository({ language: "en" }));
+
+    await waitFor(() => expect(shown()).toBe("app:auto:en"));
   });
 
   it("lifts the splash and renders the app when the fonts fail to load", async () => {
@@ -76,7 +86,7 @@ describe("useAppReady", () => {
 
     renderBoot();
 
-    await waitFor(() => expect(shown()).toBe("app:auto"));
+    await waitFor(() => expect(shown()).toBe("app:auto:fr"));
     await waitFor(() => expect(hideAsync).toHaveBeenCalled());
     expect(warn).toHaveBeenCalledWith(expect.any(String), failure);
     warn.mockRestore();
