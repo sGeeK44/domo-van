@@ -19,7 +19,7 @@ vi.mock("react-native", async () => ({
 }));
 
 const { ThemeProvider, useTheme } = await import("@/design-system");
-const { useThemePreference } = await import("@/composition/useThemePreference");
+const { useAppPreferences } = await import("@/composition/useAppPreferences");
 
 let setThemeMode: (mode: "auto" | "dark" | "light") => void = () => {
   throw new Error("the theme provider did not render");
@@ -37,7 +37,7 @@ function Probe() {
 /** The wiring `app/_layout.tsx` performs: hydrate above the provider, persist below it. */
 function Boot({ repository }: { repository: PreferencesRepository }) {
   const { hydrated, initialThemeMode, saveThemeMode } =
-    useThemePreference(repository);
+    useAppPreferences(repository);
   if (!hydrated) return <span data-testid="theme">splash</span>;
 
   return (
@@ -95,7 +95,7 @@ describe("the persisted theme mode", () => {
     );
 
     function RebuildingBoot() {
-      const { hydrated, initialThemeMode } = useThemePreference({
+      const { hydrated, initialThemeMode } = useAppPreferences({
         load,
         save: () => Promise.resolve(),
       });
