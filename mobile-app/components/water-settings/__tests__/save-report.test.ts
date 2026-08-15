@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   identityFieldName,
   type SaveCopy,
   saveMessage,
+  savePress,
   saveReport,
 } from "@/components/water-settings/save-report";
 import type { SaveOutcome, WriteOutcome } from "@/domain/SaveOutcome";
@@ -112,5 +113,24 @@ describe("the sentence the toast shows", () => {
     expect(saveMessage(failed({ status: "timedOut" }), TANKS, shout)).toBe(
       "water.save.notConfirmed(water.save.fields.cleanTank)",
     );
+  });
+});
+
+describe("the press behind the save button", () => {
+  it("carries the form's own busy flag", () => {
+    const press = savePress({ save: async () => {}, saving: true }, () => {});
+
+    expect(press.busy).toBe(true);
+  });
+
+  // useSettingsForm rethrows what the write threw, and a dropped throw would say nothing.
+  it("reports a save that threw rather than letting it escape", async () => {
+    const onFailure = vi.fn();
+    const save = () => Promise.reject(new Error("the radio went away"));
+
+    savePress({ save, saving: false }, onFailure).onPress();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(onFailure).toHaveBeenCalledTimes(1);
   });
 });

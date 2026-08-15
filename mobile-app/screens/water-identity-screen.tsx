@@ -10,10 +10,12 @@ import {
   identityFieldName,
   type SaveCopy,
   saveMessage,
+  savePress,
 } from "@/components/water-settings/save-report";
 import { useModuleSlot } from "@/composition/ModuleRegistryProvider";
 import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useThemeColor, useToast } from "@/design-system";
+import type { SaveOutcome } from "@/domain/SaveOutcome";
 import type { WaterSystem } from "@/domain/water/WaterSystem";
 import {
   type SettingsForm,
@@ -31,9 +33,13 @@ const SAVE_COPY: SaveCopy = {
 const NO_PIN = "";
 
 export default function WaterIdentityScreen() {
+  const { t } = useTranslation();
+  const toast = useToast();
   const colors = useThemeColor();
   const pairedName = useModuleSlot("water").pairing?.name ?? "";
-  const form = useIdentityForm(useWaterSystem(), pairedName);
+  const form = useIdentityForm(useWaterSystem(), pairedName, (outcome) =>
+    toast.show(saveMessage(outcome, SAVE_COPY, t)),
+  );
 
   return (
     <SettingsFormScreen
@@ -41,7 +47,7 @@ export default function WaterIdentityScreen() {
       crumbKey="water.identity.crumb"
       titleKey="water.identity.title"
       introKey="water.identity.intro"
-      save={{ onPress: () => void form.save(), busy: form.saving }}
+      save={savePress(form, () => toast.show(t("common.errors.send")))}
     >
       {() => (
         <IdentityCards
@@ -58,18 +64,15 @@ export default function WaterIdentityScreen() {
 function useIdentityForm(
   system: WaterSystem | null,
   pairedName: string,
+  announce: (outcome: SaveOutcome) => void,
 ): SettingsForm<IdentityDraft> {
-  const { t } = useTranslation();
-  const toast = useToast();
-
   return useSettingsForm<IdentityDraft>({
     reported: { name: pairedName, pin: NO_PIN },
     validate: identityErrors,
     // The outcome is what is announced: save() resolves the same whether it wrote or refused to.
     onSave: async (values) => {
       if (!system) return;
-      const outcome = await system.admin.saveIdentity(moduleIdentity(values));
-      toast.show(saveMessage(outcome, SAVE_COPY, t));
+      announce(await system.admin.saveIdentity(moduleIdentity(values)));
     },
   });
 }
