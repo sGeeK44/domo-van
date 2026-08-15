@@ -77,7 +77,7 @@ function WaterLevels({ system }: { system: WaterSystem }) {
             fillColor={colors.fill.cleanWater}
             lineColor={colors.line.cleanWater}
             label={t("water.levels.cleanTank")}
-            caption={t("water.levels.cleanCaption", {
+            caption={t("water.levels.tankCaption", {
               capacity: clean.capacityLiters,
             })}
             value={{ amount: String(litersOf(clean)), unit: LITERS }}
@@ -97,7 +97,7 @@ function WaterLevels({ system }: { system: WaterSystem }) {
             caption={
               draining
                 ? t("water.levels.greyDrainingCaption")
-                : t("water.levels.greyCaption", {
+                : t("water.levels.tankCaption", {
                     capacity: grey.capacityLiters,
                   })
             }

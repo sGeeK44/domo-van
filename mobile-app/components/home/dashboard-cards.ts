@@ -71,11 +71,12 @@ const CARD_TINT: Record<DashboardCardKey, DashboardCardTint> = {
   heater: "heat",
 };
 
-/** An unpaired or offline module yields one card, so it needs a label of its own. */
+/** An unpaired or offline module collapses to one card. A single-card module reuses
+ *  that card's label; water's two name neither, so it gets one of its own. */
 const MODULE_LABEL_KEY: Record<ModuleKey, TranslationKey> = {
-  battery: "dashboard.modules.battery",
+  battery: "dashboard.cards.battery",
   water: "dashboard.modules.water",
-  heater: "dashboard.modules.heater",
+  heater: "dashboard.cards.heater",
 };
 
 /** Salon first: index 0 is the zone the dashboard quotes (planning decision 5). */

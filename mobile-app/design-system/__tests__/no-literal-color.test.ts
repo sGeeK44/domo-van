@@ -20,7 +20,7 @@ const COLOR_PERMANENT: Record<string, string> = {
 /** Each file a later issue rewrites onto tokens; the entry retires with it. */
 const COLOR_RETIRING: Record<string, string> = {
   "components/modules/UnpairSheet.tsx":
-    "#6 rewrites the module sheet; the scrim has no token",
+    "#7 rewrites the module sheet; the scrim has no token",
 };
 
 const COLOR_ALLOWED = { ...COLOR_PERMANENT, ...COLOR_RETIRING };
@@ -36,6 +36,15 @@ const TOAST_ALLOWED: Record<string, string> = {
   "components/module-settings/AdminSection.tsx":
     "#7 rewrites the settings sections onto useToast",
 };
+
+/** The rows of the exception table in the doc: `| \`path\` | reason |`. */
+function documentedExceptions(): string[] {
+  const doc = readFileSync(join(ROOT, "docs", "design-system.md"), "utf8");
+  const guardrail = doc.slice(doc.indexOf("## The colour guardrail"));
+  return [...guardrail.matchAll(/^\|\s*`([^`]+)`\s*\|/gm)].map(
+    ([, path]) => path,
+  );
+}
 
 function sourceFiles(directory: string): string[] {
   const walk = (path: string): string[] => {
@@ -95,6 +104,15 @@ describe("no literal colour, no native toast", () => {
     for (const file of Object.keys(TOAST_ALLOWED)) {
       expect(toastHits.has(file), file).toBe(true);
     }
+  });
+
+  it("keeps the documented inventory equal to the exception maps", () => {
+    const documented = documentedExceptions();
+
+    expect(documented.length).toBeGreaterThan(0);
+    expect([...documented].sort()).toEqual(
+      [...Object.keys(COLOR_ALLOWED), ...Object.keys(TOAST_ALLOWED)].sort(),
+    );
   });
 
   it("names the issue that retires each temporary exception", () => {

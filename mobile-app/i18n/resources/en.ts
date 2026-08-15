@@ -108,9 +108,7 @@ export const en: typeof fr = {
       heater: "HEATING",
     },
     modules: {
-      battery: "BATTERY",
       water: "WATER",
-      heater: "HEATING",
     },
     empty: {
       body: "No module is paired. Add one to see its levels here.",
@@ -138,9 +136,8 @@ export const en: typeof fr = {
     levels: {
       cleanTank: "CLEAN",
       greyTank: "GREY",
-      cleanCaption: "{{capacity}} L tank",
+      tankCaption: "{{capacity}} L tank",
       cleanFooter: "{{percentage}} % of the tank",
-      greyCaption: "{{capacity}} L tank",
       greyFooter: "{{percentage}} % · {{remaining}} L to full",
       greyDrainingCaption: "draining",
       greyDrainingFooter: "−{{liters}} L since {{time}}",

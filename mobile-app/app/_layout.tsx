@@ -52,10 +52,6 @@ function AppContent() {
               name="battery-settings"
               options={{ headerShown: false }}
             />
-            <Stack.Screen
-              name="gauge-gallery"
-              options={{ headerShown: false }}
-            />
           </Stack>
         </ToastProvider>
       </AppProviders>
