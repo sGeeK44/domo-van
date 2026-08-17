@@ -4,7 +4,6 @@ import {
   type SaveCopy,
   saveMessage,
   savePress,
-  saveReport,
 } from "@/components/settings/save-report";
 import type { SaveOutcome, WriteOutcome } from "@/domain/SaveOutcome";
 import type { TranslationKey } from "@/i18n/keys";
@@ -35,14 +34,20 @@ function refusedIdentity(code: string): SaveOutcome {
   };
 }
 
+const shout = ((key: TranslationKey, params?: { field: string }) =>
+  params ? `${key}(${params.field})` : key) as (
+  key: TranslationKey,
+  params?: { field: string },
+) => string;
+
 describe("what a save is announced as", () => {
   it("confirms the form's own applied copy", () => {
-    expect(saveReport({ status: "applied" }, TANKS)).toEqual({
-      key: "settings.save.sent",
-    });
-    expect(saveReport({ status: "applied" }, IDENTITY)).toEqual({
-      key: "modules.admin.restarted",
-    });
+    expect(saveMessage({ status: "applied" }, TANKS, shout)).toBe(
+      "settings.save.sent",
+    );
+    expect(saveMessage({ status: "applied" }, IDENTITY, shout)).toBe(
+      "modules.admin.restarted",
+    );
   });
 
   it.each([
@@ -50,22 +55,9 @@ describe("what a save is announced as", () => {
     [{ status: "timedOut" }, "settings.save.notConfirmed"],
     [{ status: "unreachable" }, "settings.save.unreachable"],
   ] as const)("tells %o apart from the others", (outcome, key) => {
-    expect(saveReport(failed(outcome), TANKS)).toEqual({
-      key,
-      fieldKey: "settings.save.fields.cleanTank",
-    });
-  });
-
-  it("names the first failure, the one the user reads", () => {
-    const outcome: SaveOutcome = {
-      status: "failed",
-      failures: [
-        { field: "water.greyTank", outcome: { status: "timedOut" } },
-        { field: "water.valve", outcome: { status: "unreachable" } },
-      ],
-    };
-
-    expect(saveReport(outcome, TANKS).key).toBe("settings.save.notConfirmed");
+    expect(saveMessage(failed(outcome), TANKS, shout)).toBe(
+      `${key}(settings.save.fields.cleanTank)`,
+    );
   });
 });
 
@@ -77,12 +69,14 @@ describe("the field a refused identity names", () => {
     ["ERR_PIN_LEN", "settings.save.fields.pin"],
     ["ERR_PIN_NUM", "settings.save.fields.pin"],
   ])("reads %s as %s", (code, fieldKey) => {
-    expect(saveReport(refusedIdentity(code), IDENTITY).fieldKey).toBe(fieldKey);
+    expect(saveMessage(refusedIdentity(code), IDENTITY, shout)).toBe(
+      `settings.save.refused(${fieldKey})`,
+    );
   });
 
   it("names the whole frame when the module refuses its format", () => {
-    expect(saveReport(refusedIdentity("ERR_ID_FMT"), IDENTITY).fieldKey).toBe(
-      "settings.save.fields.identity",
+    expect(saveMessage(refusedIdentity("ERR_ID_FMT"), IDENTITY, shout)).toBe(
+      "settings.save.refused(settings.save.fields.identity)",
     );
   });
 
@@ -97,12 +91,6 @@ describe("the field a refused identity names", () => {
 });
 
 describe("the sentence the toast shows", () => {
-  const shout = ((key: TranslationKey, params?: { field: string }) =>
-    params ? `${key}(${params.field})` : key) as (
-    key: TranslationKey,
-    params?: { field: string },
-  ) => string;
-
   it("carries no field on the applied copy", () => {
     expect(saveMessage({ status: "applied" }, TANKS, shout)).toBe(
       "settings.save.sent",
@@ -112,6 +100,30 @@ describe("the sentence the toast shows", () => {
   it("puts the translated field name inside the failure copy", () => {
     expect(saveMessage(failed({ status: "timedOut" }), TANKS, shout)).toBe(
       "settings.save.notConfirmed(settings.save.fields.cleanTank)",
+    );
+  });
+
+  it("says one sentence per kind of failure, so no field is described by another's status", () => {
+    const mixed = {
+      status: "failed",
+      failures: [
+        {
+          field: "water.cleanTank",
+          outcome: { status: "rejected", code: "ERR_CFG_RANGE" },
+        },
+        { field: "water.greyTank", outcome: { status: "timedOut" } },
+      ],
+    } as const;
+    const bothTanks: SaveCopy = {
+      applied: "settings.save.sent",
+      fieldName: (failure) =>
+        failure.field === "water.cleanTank"
+          ? "settings.save.fields.cleanTank"
+          : "settings.save.fields.greyTank",
+    };
+
+    expect(saveMessage(mixed, bothTanks, shout)).toBe(
+      "settings.save.refused(settings.save.fields.cleanTank) settings.save.notConfirmed(settings.save.fields.greyTank)",
     );
   });
 

@@ -3,6 +3,10 @@ import type { PidConfig } from "@/domain/heater/HeaterProtocol";
 import { PID_FIELDS, type ZoneGains } from "@/domain/heater/HeaterSystem";
 import type { HeaterZoneSnapshot } from "@/domain/heater/HeaterZone";
 import type { SaveFailure } from "@/domain/SaveOutcome";
+
+/** `savePidConfig` only ever fails on a zone, so a PID report needs no other shape. */
+export type PidFailure = SaveFailure & { field: (typeof PID_FIELDS)[number] };
+
 import type { TranslationKey } from "@/i18n/keys";
 
 export const ZONE_INDEXES = [0, 1, 2, 3] as const;

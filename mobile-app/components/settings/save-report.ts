@@ -5,9 +5,6 @@ import type {
 } from "@/domain/SaveOutcome";
 import type { TranslationKey } from "@/i18n/keys";
 
-/** What a save is announced as: a sentence, and the field it names. */
-export type SaveReport = { key: TranslationKey; fieldKey?: TranslationKey };
-
 /** `t`, narrowed to what a report needs; the dictionary owns every word of it. */
 export type Translate = (
   key: TranslationKey,
@@ -26,17 +23,6 @@ const FAILURE_COPY = {
   timedOut: "settings.save.notConfirmed",
   unreachable: "settings.save.unreachable",
 } as const satisfies Record<WriteOutcome["status"], TranslationKey>;
-
-/** Read from the outcome, never from the fact that the save resolved: a blocked save resolves too. */
-export function saveReport(outcome: SaveOutcome, copy: SaveCopy): SaveReport {
-  const failure = outcome.status === "failed" ? outcome.failures[0] : undefined;
-  if (!failure) return { key: copy.applied };
-
-  return {
-    key: FAILURE_COPY[failure.outcome.status],
-    fieldKey: copy.fieldName(failure),
-  };
-}
 
 /**
  * Whether the module's word now overrides the draft. A refusal is authoritative — the module
@@ -70,28 +56,37 @@ export function savePress(
   };
 }
 
+/** Read from the outcome, never from the fact that the save resolved: a blocked save resolves too. */
 export function saveMessage(
   outcome: SaveOutcome,
   copy: SaveCopy,
   t: Translate,
 ): string {
-  const report = saveReport(outcome, copy);
-  if (!report.fieldKey) return t(report.key);
-  return t(report.key, { field: failingFields(outcome, copy, t) });
+  if (outcome.status === "applied") return t(copy.applied);
+  return sentencePerOutcome(outcome.failures, copy, t).join(" ");
 }
 
 /**
- * Every field that failed, not only the first. A whole-form save writes twelve fields over four
- * channels; naming one of four failures reads as "the rest went through", which is not true.
+ * One sentence per kind of failure, naming every field it covers. A whole-form save writes twelve
+ * fields over four channels: naming one of four reads as "the rest went through", and describing
+ * all four with the first one's status says a refused field went silent, or the reverse.
  */
-function failingFields(
-  outcome: SaveOutcome,
+function sentencePerOutcome(
+  failures: readonly SaveFailure[],
   copy: SaveCopy,
   t: Translate,
-): string {
-  if (outcome.status === "applied") return "";
-  const named = outcome.failures.map((failure) => t(copy.fieldName(failure)));
-  return [...new Set(named)].join(", ");
+): string[] {
+  const byStatus = new Map<WriteOutcome["status"], Set<string>>();
+  for (const failure of failures) {
+    const status = failure.outcome.status;
+    const named = byStatus.get(status) ?? new Set<string>();
+    named.add(t(copy.fieldName(failure)));
+    byStatus.set(status, named);
+  }
+
+  return [...byStatus].map(([status, named]) =>
+    t(FAILURE_COPY[status], { field: [...named].join(", ") }),
+  );
 }
 
 const REFUSED_FIELD: Record<string, TranslationKey> = {
