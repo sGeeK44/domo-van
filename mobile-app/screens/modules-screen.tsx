@@ -22,8 +22,7 @@ import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
 /** The only way into an identity form — and the JK BMS has no admin channel to reach. */
 const IDENTITY_ROUTE = {
   water: "/settings/water-identity",
-  // T6 moves this to /settings/heater-identity, the route it is the one to create.
-  heater: "/heater-settings",
+  heater: "/settings/heater-identity",
 } as const;
 
 type EditableModule = keyof typeof IDENTITY_ROUTE;
