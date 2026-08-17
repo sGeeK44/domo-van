@@ -21,7 +21,6 @@ export const en: typeof fr = {
     },
     feedback: {
       saved: "Configuration saved",
-      sent: "Configuration sent to the module",
       notAnswered: "The module did not confirm",
       unreachable: "Module unreachable",
     },
@@ -235,8 +234,6 @@ export const en: typeof fr = {
         "Each zone has its own coefficients. Kp corrects the current error, Ki catches up the accumulated one, Kd damps the swings.",
       card: "PID · {{zone}}",
       invalidGain: "Every coefficient must be a number between 0.01 and 100.",
-      rejected: "{{zone}}: value refused by the module ({{code}})",
-      notAnswered: "{{zone}}: the module did not confirm",
     },
     settings: {
       title: "Heating",
@@ -341,6 +338,7 @@ export const en: typeof fr = {
       pin: "6-DIGIT PIN",
     },
     save: {
+      blocked: "Fix the fields in red before saving.",
       sent: "Configuration sent to the module",
       refused: "{{field}}: value refused by the module.",
       notConfirmed:

@@ -10,6 +10,8 @@ export type SettingsForm<T> = {
   saving: boolean;
   /** What to paint — empty until a save has been tried, so a value nobody typed stays plain. */
   errors: SettingsFormErrors<T>;
+  /** Whether validation would refuse a save, whether or not one has been tried yet. */
+  blocked: boolean;
   save: () => Promise<void>;
 };
 
@@ -68,6 +70,7 @@ export function useSettingsForm<T extends object>({
     dirty: draft !== null,
     saving,
     errors: tried ? errors : NO_ERRORS,
+    blocked: Object.keys(errors).length > 0,
     save,
   };
 }

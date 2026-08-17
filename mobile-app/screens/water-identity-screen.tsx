@@ -52,7 +52,10 @@ export default function WaterIdentityScreen() {
       crumbKey="water.identity.crumb"
       titleKey="water.identity.title"
       introKey="water.identity.intro"
-      save={savePress(form, () => toast.show(t("common.errors.send")))}
+      save={savePress(form, {
+        onFailure: () => toast.show(t("common.errors.send")),
+        onBlocked: () => toast.show(t("settings.save.blocked")),
+      })}
     >
       {() => (
         <IdentityCards

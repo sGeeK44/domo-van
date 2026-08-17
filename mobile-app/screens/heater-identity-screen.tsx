@@ -52,7 +52,10 @@ export default function HeaterIdentityScreen() {
       crumbKey="heater.identity.crumb"
       titleKey="heater.identity.title"
       introKey="heater.identity.intro"
-      save={savePress(form, () => toast.show(t("common.errors.send")))}
+      save={savePress(form, {
+        onFailure: () => toast.show(t("common.errors.send")),
+        onBlocked: () => toast.show(t("settings.save.blocked")),
+      })}
     >
       {() => (
         <IdentityCards

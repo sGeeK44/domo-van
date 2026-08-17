@@ -233,7 +233,8 @@ describe("the Eau — cuves et vanne form", () => {
     expect(configWrites()).toEqual([]);
     expect(DANGER).toContain(borderOf("clean-volume"));
     expect(DANGER).not.toContain(borderOf("grey-volume"));
-    expect(toast()).toBeNull();
+    // A press that reaches no module says why, rather than reading as a dead button.
+    expect(toast()).toBe("Corrige les champs en rouge avant d'enregistrer.");
   });
 
   // Before the first press, a danger border would be about a value nobody typed.

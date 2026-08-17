@@ -1,1 +1,3 @@
-export { default } from "@/screens/heater-pid-screen";
+import HeaterPidScreen from "@/screens/heater-pid-screen";
+
+export default HeaterPidScreen;

@@ -26,7 +26,8 @@ export type HeaterModuleChannel =
 /** One set of gains per zone, in zone order — the form has no partial shape. */
 export type ZoneGains = readonly [PidConfig, PidConfig, PidConfig, PidConfig];
 
-const PID_FIELDS = [
+/** The field key each zone reports its save under, in zone order. */
+export const PID_FIELDS = [
   "heater.pid.zone1",
   "heater.pid.zone2",
   "heater.pid.zone3",
