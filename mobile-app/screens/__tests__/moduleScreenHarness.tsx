@@ -36,6 +36,8 @@ export type ModulesHarness = {
   forgetFirmware: () => void;
   /** Pushes a frame from a module's firmware, the way an unsolicited one arrives. */
   firmwareFrame: (key: ModuleKey, channelId: string, frame: string) => void;
+  /** What the app has written to one channel, in order — the wire, as the module saw it. */
+  firmwareCommands: (key: ModuleKey, channelId: string) => readonly string[];
 };
 
 function unavailable(): never {
@@ -60,6 +62,10 @@ function Probe({ harness }: { harness: ModulesHarness }) {
       firmwareOf(slots, transports as FakeTransportFactory, key)
         .channel(channelId)
         .emit(frame);
+    harness.firmwareCommands = (key, channelId) =>
+      firmwareOf(slots, transports as FakeTransportFactory, key).channel(
+        channelId,
+      ).commands;
     harness.advertised = async () => {
       const found: DiscoveredBluetoothDevice[] = [];
       await bluetooth.startScan(ALL_SCAN_SERVICE_UUIDS, (device) =>
@@ -83,6 +89,7 @@ export function renderModuleScreen(screen: ReactNode): ModulesHarness {
     dropLink: unavailable,
     forgetFirmware: unavailable,
     firmwareFrame: unavailable,
+    firmwareCommands: unavailable,
   };
 
   render(
