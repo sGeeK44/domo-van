@@ -1,1 +1,3 @@
-export { default } from "@/screens/heater-identity-screen";
+import HeaterIdentityScreen from "@/screens/heater-identity-screen";
+
+export default HeaterIdentityScreen;

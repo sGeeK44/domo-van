@@ -49,14 +49,22 @@ export function moduleHasTheLastWord(outcome: SaveOutcome): boolean {
   );
 }
 
-/** `save()` rethrows what the write threw, so a press that dropped it would report nothing at all. */
+export type PressReports = {
+  /** `save()` rethrows what the write threw; a press that dropped it would report nothing at all. */
+  onFailure: () => void;
+  /** A save validation refuses never reaches the module, and has to say so rather than do nothing. */
+  onBlocked: () => void;
+};
+
 export function savePress(
-  form: { save: () => Promise<void>; saving: boolean },
-  onFailure: () => void,
+  form: { save: () => Promise<void>; saving: boolean; blocked: boolean },
+  reports: PressReports,
 ): { onPress: () => void; busy: boolean } {
   return {
     onPress: () => {
-      form.save().catch(onFailure);
+      // save() paints the offending fields even when it refuses to send, so it runs either way.
+      form.save().catch(reports.onFailure);
+      if (form.blocked) reports.onBlocked();
     },
     busy: form.saving,
   };
@@ -69,7 +77,21 @@ export function saveMessage(
 ): string {
   const report = saveReport(outcome, copy);
   if (!report.fieldKey) return t(report.key);
-  return t(report.key, { field: t(report.fieldKey) });
+  return t(report.key, { field: failingFields(outcome, copy, t) });
+}
+
+/**
+ * Every field that failed, not only the first. A whole-form save writes twelve fields over four
+ * channels; naming one of four failures reads as "the rest went through", which is not true.
+ */
+function failingFields(
+  outcome: SaveOutcome,
+  copy: SaveCopy,
+  t: Translate,
+): string {
+  if (outcome.status === "applied") return "";
+  const named = outcome.failures.map((failure) => t(copy.fieldName(failure)));
+  return [...new Set(named)].join(", ");
 }
 
 const REFUSED_FIELD: Record<string, TranslationKey> = {

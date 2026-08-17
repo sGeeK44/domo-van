@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   gainKey,
   type PidFormValues,
-  pidSaveMessage,
   pidValuesFrom,
+  pidZoneName,
   validatePidValues,
   ZONE_INDEXES,
   zoneGainsFrom,
@@ -68,6 +68,16 @@ describe("validatePidValues", () => {
 });
 
 describe("zoneGainsFrom", () => {
+  it("quantizes a gain to what the wire carries, so the field cannot disagree with the module", () => {
+    // HeaterZone sends round(gain x 100); unquantized, 0.015 would be stored 0.02 and shown 0.01.
+    const gains = zoneGainsFrom(valuesOf({ [gainKey(0, "ki")]: "0.015" }));
+
+    expect(gains[0].ki).toBe(0.02);
+    expect(pidValuesFrom([{ ...zoneAt(gains[0]) }])[gainKey(0, "ki")]).toBe(
+      "0.02",
+    );
+  });
+
   it("hands the domain one set of gains per zone, in zone order", () => {
     const gains = zoneGainsFrom(valuesOf({ [gainKey(2, "kp")]: "12.34" }));
 
@@ -77,46 +87,13 @@ describe("zoneGainsFrom", () => {
   });
 });
 
-describe("pidSaveMessage", () => {
-  it("says the configuration was sent when every zone applied", () => {
-    expect(pidSaveMessage({ status: "applied" })).toEqual({
-      key: "common.feedback.sent",
-    });
-  });
+describe("pidZoneName", () => {
+  it("names a failing zone from the key the piloting screen reads", () => {
+    const refused = {
+      field: "heater.pid.zone3",
+      outcome: { status: "rejected", code: "ERR_CFG_RANGE" },
+    } as const;
 
-  it("names the refused zone and carries the module's own code", () => {
-    const message = pidSaveMessage({
-      status: "failed",
-      failures: [
-        {
-          field: "heater.pid.zone3",
-          outcome: { status: "rejected", code: "ERR_CFG_RANGE" },
-        },
-      ],
-    });
-
-    expect(message).toEqual({
-      key: "heater.pid.rejected",
-      zone: "heater.zones.zone3",
-      code: "ERR_CFG_RANGE",
-    });
-  });
-
-  it("tells a write that never left the phone from one the module ignored", () => {
-    const unreachable = pidSaveMessage({
-      status: "failed",
-      failures: [
-        { field: "heater.pid.zone1", outcome: { status: "unreachable" } },
-      ],
-    });
-    const silent = pidSaveMessage({
-      status: "failed",
-      failures: [
-        { field: "heater.pid.zone1", outcome: { status: "timedOut" } },
-      ],
-    });
-
-    expect(unreachable.key).toBe("common.feedback.unreachable");
-    expect(silent.key).toBe("heater.pid.notAnswered");
+    expect(pidZoneName(refused)).toBe("heater.zones.zone3");
   });
 });

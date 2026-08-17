@@ -183,7 +183,8 @@ describe("the Eau — identité form", () => {
 
     expect(identityWrites()).toEqual([]);
     expect(DANGER).toContain(borderOf("module-pin"));
-    expect(toast()).toBeNull();
+    // A press that reaches no module says why, rather than reading as a dead button.
+    expect(toast()).toBe("Corrige les champs en rouge avant d'enregistrer.");
   });
 
   it("marks a name the firmware would refuse and sends nothing", async () => {

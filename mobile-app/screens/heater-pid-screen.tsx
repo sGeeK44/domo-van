@@ -4,8 +4,8 @@ import {
   GAINS,
   gainKey,
   type PidFormValues,
-  pidSaveMessage,
   pidValuesFrom,
+  pidZoneName,
   validatePidValues,
   ZONE_INDEXES,
   type ZoneIndex,
@@ -14,6 +14,8 @@ import {
 import { moduleAccent } from "@/components/module-accent";
 import {
   moduleHasTheLastWord,
+  type SaveCopy,
+  saveMessage,
   savePress,
 } from "@/components/settings/save-report";
 import { useModuleSystem } from "@/composition/ModuleSystemsProvider";
@@ -37,18 +39,18 @@ import {
 } from "@/screens/hooks/useSettingsForm";
 import { SettingsFormScreen } from "@/screens/settings-form-screen";
 
+/** A PID failure is a zone, and the zone names are the ones the piloting screen reads. */
+const SAVE_COPY: SaveCopy = {
+  applied: "settings.save.sent",
+  fieldName: pidZoneName,
+};
+
 export default function HeaterPidScreen() {
   const { t } = useTranslation();
   const toast = useToast();
-  const form = usePidForm(useModuleSystem("heater"), (outcome) => {
-    const message = pidSaveMessage(outcome);
-    toast.show(
-      t(message.key, {
-        zone: message.zone ? t(message.zone) : "",
-        code: message.code ?? "",
-      }),
-    );
-  });
+  const form = usePidForm(useModuleSystem("heater"), (outcome) =>
+    toast.show(saveMessage(outcome, SAVE_COPY, t)),
+  );
 
   return (
     <SettingsFormScreen
@@ -56,7 +58,10 @@ export default function HeaterPidScreen() {
       crumbKey="heater.pid.crumb"
       titleKey="heater.pid.title"
       introKey="heater.pid.intro"
-      save={savePress(form, () => toast.show(t("common.errors.send")))}
+      save={savePress(form, {
+        onFailure: () => toast.show(t("common.errors.send")),
+        onBlocked: () => toast.show(t("settings.save.blocked")),
+      })}
     >
       {() => <PidCards form={form} />}
     </SettingsFormScreen>
@@ -119,6 +124,9 @@ function PidCards({ form }: { form: SettingsForm<PidFormValues> }) {
   );
 }
 
+/** The mockup sets these in caps, like every other field label. */
+const GAIN_LABELS = { kp: "KP", ki: "KI", kd: "KD" } as const;
+
 type GainFieldProps = {
   form: SettingsForm<PidFormValues>;
   zone: ZoneIndex;
@@ -131,8 +139,8 @@ function GainField({ form, zone, gain }: GainFieldProps) {
   return (
     <FieldInput
       testID={`pid-${key}`}
-      // Kp / Ki / Kd are symbols, not copy — they read the same in every language.
-      label={`K${gain.slice(1)}`}
+      // KP / KI / KD are symbols, not copy — they read the same in every language.
+      label={GAIN_LABELS[gain]}
       value={form.values[key]}
       onChangeText={(text) => form.set(key, text)}
       invalid={form.errors[key] !== undefined}

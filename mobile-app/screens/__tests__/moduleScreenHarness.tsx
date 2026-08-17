@@ -38,6 +38,8 @@ export type ModulesHarness = {
   firmwareFrame: (key: ModuleKey, channelId: string, frame: string) => void;
   /** What the app has written to one channel, in order — the wire, as the module saw it. */
   firmwareCommands: (key: ModuleKey, channelId: string) => readonly string[];
+  /** Makes one channel stop answering, the way a module out of range does. */
+  silenceChannel: (key: ModuleKey, channelId: string) => void;
 };
 
 function unavailable(): never {
@@ -62,6 +64,10 @@ function Probe({ harness }: { harness: ModulesHarness }) {
       firmwareOf(slots, transports as FakeTransportFactory, key)
         .channel(channelId)
         .emit(frame);
+    harness.silenceChannel = (key, channelId) =>
+      firmwareOf(slots, transports as FakeTransportFactory, key)
+        .channel(channelId)
+        .goSilent();
     harness.firmwareCommands = (key, channelId) =>
       firmwareOf(slots, transports as FakeTransportFactory, key).channel(
         channelId,
@@ -90,6 +96,7 @@ export function renderModuleScreen(screen: ReactNode): ModulesHarness {
     forgetFirmware: unavailable,
     firmwareFrame: unavailable,
     firmwareCommands: unavailable,
+    silenceChannel: unavailable,
   };
 
   render(

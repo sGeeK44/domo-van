@@ -55,7 +55,10 @@ export default function WaterTanksScreen() {
       titleKey="water.tanks.title"
       introKey="water.tanks.intro"
       noteKey="water.tanks.note"
-      save={savePress(form, () => toast.show(t("common.errors.send")))}
+      save={savePress(form, {
+        onFailure: () => toast.show(t("common.errors.send")),
+        onBlocked: () => toast.show(t("settings.save.blocked")),
+      })}
     >
       {() => (
         <TankAndValveCards

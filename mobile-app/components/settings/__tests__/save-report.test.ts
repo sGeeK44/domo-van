@@ -114,11 +114,36 @@ describe("the sentence the toast shows", () => {
       "settings.save.notConfirmed(settings.save.fields.cleanTank)",
     );
   });
+
+  it("names every field that failed, not only the first", () => {
+    const outcome = {
+      status: "failed",
+      failures: [
+        { field: "water.cleanTank", outcome: { status: "timedOut" } },
+        { field: "water.greyTank", outcome: { status: "timedOut" } },
+      ],
+    } as const;
+
+    const bothTanks: SaveCopy = {
+      applied: "settings.save.sent",
+      fieldName: (failure) =>
+        failure.field === "water.cleanTank"
+          ? "settings.save.fields.cleanTank"
+          : "settings.save.fields.greyTank",
+    };
+
+    expect(saveMessage(outcome, bothTanks, shout)).toBe(
+      "settings.save.notConfirmed(settings.save.fields.cleanTank, settings.save.fields.greyTank)",
+    );
+  });
 });
 
 describe("the press behind the save button", () => {
   it("carries the form's own busy flag", () => {
-    const press = savePress({ save: async () => {}, saving: true }, () => {});
+    const press = savePress(
+      { save: async () => {}, saving: true, blocked: false },
+      { onFailure: () => {}, onBlocked: () => {} },
+    );
 
     expect(press.busy).toBe(true);
   });
@@ -128,9 +153,24 @@ describe("the press behind the save button", () => {
     const onFailure = vi.fn();
     const save = () => Promise.reject(new Error("the radio went away"));
 
-    savePress({ save, saving: false }, onFailure).onPress();
+    savePress(
+      { save, saving: false, blocked: false },
+      { onFailure, onBlocked: () => {} },
+    ).onPress();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(onFailure).toHaveBeenCalledTimes(1);
+  });
+
+  // A press that validation refuses still has to say why; doing nothing reads as a dead button.
+  it("says why a press validation refuses reached no module", () => {
+    const onBlocked = vi.fn();
+
+    savePress(
+      { save: async () => {}, saving: false, blocked: true },
+      { onFailure: () => {}, onBlocked },
+    ).onPress();
+
+    expect(onBlocked).toHaveBeenCalledTimes(1);
   });
 });
