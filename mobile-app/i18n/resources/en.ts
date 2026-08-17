@@ -222,6 +222,12 @@ export const en: typeof fr = {
       nightOn: "Night mode — targets lowered",
       allStopped: "All zones stopped",
     },
+    identity: {
+      crumb: "Heating",
+      title: "Module identity",
+      intro:
+        "The name is what tells the module apart in the list. The PIN protects access to it. The module restarts after saving and reconnects on its own.",
+    },
     pid: {
       crumb: "Heating",
       title: "PID regulation",

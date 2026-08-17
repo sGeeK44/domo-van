@@ -13,10 +13,10 @@ import {
   saveMessage,
   savePress,
 } from "@/components/settings/save-report";
-import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
+import { useHeaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useThemeColor, useToast } from "@/design-system";
+import type { HeaterSystem } from "@/domain/heater/HeaterSystem";
 import type { SaveOutcome } from "@/domain/SaveOutcome";
-import type { WaterSystem } from "@/domain/water/WaterSystem";
 import {
   type ReportedName,
   useReportedName,
@@ -36,27 +36,27 @@ const SAVE_COPY: SaveCopy = {
 /** The PIN is write-only: the module never reports it, so an untouched form has none to show. */
 const NO_PIN = "";
 
-export default function WaterIdentityScreen() {
+export default function HeaterIdentityScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const colors = useThemeColor();
   const form = useIdentityForm(
-    useWaterSystem(),
-    useReportedName("water"),
+    useHeaterSystem(),
+    useReportedName("heater"),
     (outcome) => toast.show(saveMessage(outcome, SAVE_COPY, t)),
   );
 
   return (
     <SettingsFormScreen
-      moduleKey="water"
-      crumbKey="water.identity.crumb"
-      titleKey="water.identity.title"
-      introKey="water.identity.intro"
+      moduleKey="heater"
+      crumbKey="heater.identity.crumb"
+      titleKey="heater.identity.title"
+      introKey="heater.identity.intro"
       save={savePress(form, () => toast.show(t("common.errors.send")))}
     >
       {() => (
         <IdentityCards
-          accent={moduleAccent(colors, "water")}
+          accent={moduleAccent(colors, "heater")}
           values={form.values}
           errors={form.errors}
           onChange={form.set}
@@ -67,7 +67,7 @@ export default function WaterIdentityScreen() {
 }
 
 function useIdentityForm(
-  system: WaterSystem | null,
+  system: HeaterSystem | null,
   name: ReportedName,
   announce: (outcome: SaveOutcome) => void,
 ): SettingsForm<IdentityDraft> {

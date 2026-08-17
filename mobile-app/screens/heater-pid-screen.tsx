@@ -12,6 +12,10 @@ import {
   zoneGainsFrom,
 } from "@/components/heater-settings/pid-form-view";
 import { moduleAccent } from "@/components/module-accent";
+import {
+  moduleHasTheLastWord,
+  savePress,
+} from "@/components/settings/save-report";
 import { useModuleSystem } from "@/composition/ModuleSystemsProvider";
 import { useObservable } from "@/core/react/useObservable";
 import {
@@ -26,6 +30,7 @@ import {
   DEFAULT_ZONE_SNAPSHOT,
   type HeaterZoneSnapshot,
 } from "@/domain/heater/HeaterZone";
+import type { SaveOutcome } from "@/domain/SaveOutcome";
 import {
   type SettingsForm,
   useSettingsForm,
@@ -33,8 +38,17 @@ import {
 import { SettingsFormScreen } from "@/screens/settings-form-screen";
 
 export default function HeaterPidScreen() {
-  const heater = useModuleSystem("heater");
-  const form = usePidForm(heater);
+  const { t } = useTranslation();
+  const toast = useToast();
+  const form = usePidForm(useModuleSystem("heater"), (outcome) => {
+    const message = pidSaveMessage(outcome);
+    toast.show(
+      t(message.key, {
+        zone: message.zone ? t(message.zone) : "",
+        code: message.code ?? "",
+      }),
+    );
+  });
 
   return (
     <SettingsFormScreen
@@ -42,32 +56,26 @@ export default function HeaterPidScreen() {
       crumbKey="heater.pid.crumb"
       titleKey="heater.pid.title"
       introKey="heater.pid.intro"
-      save={{ onPress: () => void form.save(), busy: form.saving }}
+      save={savePress(form, () => toast.show(t("common.errors.send")))}
     >
       {() => <PidCards form={form} />}
     </SettingsFormScreen>
   );
 }
 
-function usePidForm(heater: HeaterSystem | null): SettingsForm<PidFormValues> {
-  const { t } = useTranslation();
-  const toast = useToast();
-  const reported = pidValuesFrom(useZoneSnapshots(heater));
-
+function usePidForm(
+  heater: HeaterSystem | null,
+  announce: (outcome: SaveOutcome) => void,
+): SettingsForm<PidFormValues> {
   return useSettingsForm<PidFormValues>({
-    reported,
+    reported: pidValuesFrom(useZoneSnapshots(heater)),
     validate: validatePidValues,
+    // The outcome is what is announced: save() resolves the same whether it wrote or refused to.
     onSave: async (values) => {
-      if (!heater) return;
-      const message = pidSaveMessage(
-        await heater.savePidConfig(zoneGainsFrom(values)),
-      );
-      toast.show(
-        t(message.key, {
-          zone: message.zone ? t(message.zone) : "",
-          code: message.code ?? "",
-        }),
-      );
+      if (!heater) return false;
+      const outcome = await heater.savePidConfig(zoneGainsFrom(values));
+      announce(outcome);
+      return moduleHasTheLastWord(outcome);
     },
   });
 }

@@ -221,6 +221,12 @@ export const fr = {
       nightOn: "Mode nuit — cibles abaissées",
       allStopped: "Toutes les zones arrêtées",
     },
+    identity: {
+      crumb: "Chauffage",
+      title: "Identité du module",
+      intro:
+        "Le nom sert à reconnaître le module dans la liste. Le PIN protège l'accès. Après enregistrement le module redémarre et se reconnecte seul.",
+    },
     pid: {
       crumb: "Chauffage",
       title: "Régulation PID",
