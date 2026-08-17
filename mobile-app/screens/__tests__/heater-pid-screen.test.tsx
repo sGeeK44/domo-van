@@ -234,13 +234,25 @@ describe("the zone vocabulary", () => {
     }
   });
 
-  it("leaves no second zone dictionary for the two screens to disagree over", () => {
+  it("retired the second zone dictionary the two screens used to disagree over", () => {
     const retired = ["heater", "settings", "zone"].join(".");
     const offenders = sourceFiles(APP_ROOT)
       .filter((file) => file !== import.meta.filename)
       .filter((file) => readFileSync(file, "utf8").includes(retired));
 
     expect(offenders).toEqual([]);
+  });
+
+  it("declares the four zone names in one place, so no caller can drift from it", () => {
+    const declaring = sourceFiles(APP_ROOT).filter((file) => {
+      const source = readFileSync(file, "utf8");
+      return ZONE_NAME_KEYS.every((key) => source.includes(`"${key}"`));
+    });
+
+    // The dictionaries declare them as a tree, not as dotted paths, so they do not match.
+    expect(declaring).toEqual([
+      join(APP_ROOT, "components", "heater", "zone-names.ts"),
+    ]);
   });
 });
 

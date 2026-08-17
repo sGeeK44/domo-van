@@ -1,3 +1,4 @@
+import { ZONE_NAME_KEYS } from "@/components/heater/zone-names";
 import type { Palette } from "@/design-system";
 import {
   type BatterySnapshot,
@@ -78,14 +79,6 @@ const MODULE_LABEL_KEY: Record<ModuleKey, TranslationKey> = {
   water: "dashboard.modules.water",
   heater: "dashboard.cards.heater",
 };
-
-/** Salon first: index 0 is the zone the dashboard quotes (planning decision 5). */
-const ZONE_NAME_KEYS = [
-  "heater.zones.zone1",
-  "heater.zones.zone2",
-  "heater.zones.zone3",
-  "heater.zones.zone4",
-] as const satisfies readonly TranslationKey[];
 
 const CARD_READING: Record<
   DashboardCardKey,
