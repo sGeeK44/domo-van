@@ -11,7 +11,7 @@
 #define ESP_TX2 17
 
 // Relay control for grey water tank valve
-#define RELAY_PIN 23
+#define RELAY_PIN 22
 
 // Rates for serial communication
 #define STANDARD_BAUD 9600
