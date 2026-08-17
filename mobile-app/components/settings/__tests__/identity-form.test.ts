@@ -3,7 +3,7 @@ import {
   type IdentityDraft,
   identityErrors,
   moduleIdentity,
-} from "@/components/water-settings/identity-form";
+} from "@/components/settings/identity-form";
 
 const VALID: IdentityDraft = { name: "Cuve avant", pin: "123456" };
 

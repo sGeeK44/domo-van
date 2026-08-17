@@ -17,7 +17,10 @@ function validate(values: TankDraft): SettingsFormErrors<TankDraft> {
     : { volume: "common.errors.send" };
 }
 
-function mountForm(onSave = vi.fn(async () => {})) {
+/** The module had the last word: what it applied or refused is newer than the draft. */
+const SETTLED = true;
+
+function mountForm(onSave = vi.fn(async () => SETTLED)) {
   const { result, rerender } = renderHook(
     ({ reported }: { reported: TankDraft }) =>
       useSettingsForm({ reported, validate, onSave }),
@@ -127,8 +130,8 @@ describe("the settings draft", () => {
     const form = mountForm(
       vi.fn(
         () =>
-          new Promise<void>((resolve) => {
-            settles.push(resolve);
+          new Promise<boolean>((resolve) => {
+            settles.push(() => resolve(SETTLED));
           }),
       ),
     );
@@ -162,8 +165,8 @@ describe("the settings draft", () => {
     const form = mountForm(
       vi.fn(
         () =>
-          new Promise<void>((resolve) => {
-            settle = resolve;
+          new Promise<boolean>((resolve) => {
+            settle = () => resolve(SETTLED);
           }),
       ),
     );
@@ -193,8 +196,8 @@ describe("the settings draft", () => {
     const form = mountForm(
       vi.fn(
         () =>
-          new Promise<void>((resolve) => {
-            settle = resolve;
+          new Promise<boolean>((resolve) => {
+            settle = () => resolve(SETTLED);
           }),
       ),
     );
@@ -210,5 +213,56 @@ describe("the settings draft", () => {
       await pending;
     });
     expect(form.result.current.saving).toBe(false);
+  });
+
+  // A write the module never confirmed is the one the user retries: the draft has to survive it.
+  it("keeps the draft when the module never had the last word", async () => {
+    const form = mountForm(vi.fn(async () => !SETTLED));
+
+    act(() => form.result.current.set("volume", "42"));
+    await act(async () => {
+      await form.result.current.save();
+    });
+    form.reports({ volume: "120", height: "850" });
+
+    expect(form.result.current.dirty).toBe(true);
+    expect(form.result.current.values.volume).toBe("42");
+  });
+});
+
+describe("the fields a form paints as refused", () => {
+  afterEach(cleanup);
+
+  // Between mount and the module's first answer, every field holds a value nobody typed.
+  it("paints none of them before a save has been tried", () => {
+    const form = mountForm();
+
+    act(() => form.result.current.set("volume", "0"));
+
+    expect(form.result.current.errors).toEqual({});
+  });
+
+  it("paints them from the press that the invalid field blocked", async () => {
+    const form = mountForm();
+
+    act(() => form.result.current.set("volume", "0"));
+    await act(async () => {
+      await form.result.current.save();
+    });
+
+    expect(form.result.current.errors.volume).toBe("common.errors.send");
+    expect(form.onSave).not.toHaveBeenCalled();
+  });
+
+  it("clears the paint as soon as the field is fixed", async () => {
+    const form = mountForm();
+
+    act(() => form.result.current.set("volume", "0"));
+    await act(async () => {
+      await form.result.current.save();
+    });
+    act(() => form.result.current.set("volume", "120"));
+
+    expect(form.result.current.errors).toEqual({});
   });
 });

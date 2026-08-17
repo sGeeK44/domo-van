@@ -7,7 +7,7 @@ export type IdentityErrors = Partial<
   Record<keyof IdentityDraft, TranslationKey>
 >;
 
-const MAX_NAME_LENGTH = 20;
+export const MAX_NAME_LENGTH = 20;
 const NAME_CHARSET = /^[A-Za-z0-9 _-]+$/;
 const SIX_DIGITS = /^\d{6}$/;
 

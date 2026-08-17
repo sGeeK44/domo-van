@@ -150,6 +150,30 @@ describe("the Eau — identité form", () => {
     expect(toast()).toBe("OK. Le module va redémarrer. Reconnecte-toi.");
   });
 
+  // The module never reports a PIN, so an untouched form is already unsaveable — silently, before.
+  it("says why the button did nothing when pressed on an untouched form", async () => {
+    await identityForm();
+
+    await pressSave();
+
+    expect(identityWrites()).toEqual([]);
+    expect(DANGER).toContain(borderOf("module-pin"));
+  });
+
+  // A slot's pairing is written once, at pairing time, and no reconnection refreshes it.
+  it("keeps showing the name the module accepted, not the one it was paired under", async () => {
+    await identityForm();
+
+    type("module-name", NAME);
+    type("module-pin", PIN);
+    await pressSave();
+
+    await waitFor(() => {
+      expect(valueOf("module-name")).toBe(NAME);
+    });
+    expect(valueOf("module-pin")).toBe("");
+  });
+
   it("marks a PIN that is not six digits and sends nothing", async () => {
     await identityForm();
 

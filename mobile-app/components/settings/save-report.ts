@@ -21,10 +21,10 @@ export type SaveCopy = {
 };
 
 const FAILURE_COPY = {
-  applied: "water.save.sent",
-  rejected: "water.save.refused",
-  timedOut: "water.save.notConfirmed",
-  unreachable: "water.save.unreachable",
+  applied: "settings.save.sent",
+  rejected: "settings.save.refused",
+  timedOut: "settings.save.notConfirmed",
+  unreachable: "settings.save.unreachable",
 } as const satisfies Record<WriteOutcome["status"], TranslationKey>;
 
 /** Read from the outcome, never from the fact that the save resolved: a blocked save resolves too. */
@@ -36,6 +36,17 @@ export function saveReport(outcome: SaveOutcome, copy: SaveCopy): SaveReport {
     key: FAILURE_COPY[failure.outcome.status],
     fieldKey: copy.fieldName(failure),
   };
+}
+
+/**
+ * Whether the module's word now overrides the draft. A refusal is authoritative — the module
+ * kept what it had — but silence tells us nothing, and that is when the user retries.
+ */
+export function moduleHasTheLastWord(outcome: SaveOutcome): boolean {
+  if (outcome.status === "applied") return true;
+  return outcome.failures.every(
+    (failure) => failure.outcome.status === "rejected",
+  );
 }
 
 /** `save()` rethrows what the write threw, so a press that dropped it would report nothing at all. */
@@ -62,15 +73,16 @@ export function saveMessage(
 }
 
 const REFUSED_FIELD: Record<string, TranslationKey> = {
-  ERR_NAME_LEN: "water.save.fields.name",
-  ERR_NAME_CHARS: "water.save.fields.name",
-  ERR_PIN_LEN: "water.save.fields.pin",
-  ERR_PIN_NUM: "water.save.fields.pin",
+  ERR_NAME_LEN: "settings.save.fields.name",
+  ERR_NAME_CHARS: "settings.save.fields.name",
+  ERR_PIN_LEN: "settings.save.fields.pin",
+  ERR_PIN_NUM: "settings.save.fields.pin",
 };
 
 /** Name and PIN travel as one command, so the module's own code is what tells the two apart. */
 export function identityFieldName(failure: SaveFailure): TranslationKey {
-  if (failure.outcome.status !== "rejected")
-    return "water.save.fields.identity";
-  return REFUSED_FIELD[failure.outcome.code] ?? "water.save.fields.identity";
+  if (failure.outcome.status !== "rejected") {
+    return "settings.save.fields.identity";
+  }
+  return REFUSED_FIELD[failure.outcome.code] ?? "settings.save.fields.identity";
 }

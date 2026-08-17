@@ -184,10 +184,6 @@ export const fr = {
       title: "Identité du module",
       intro:
         "Le nom sert à reconnaître le module dans la liste. Le PIN protège l'accès. Après enregistrement le module redémarre et se reconnecte seul.",
-      nameCard: "NOM DU MODULE",
-      name: "NOM",
-      pinCard: "CODE PIN",
-      pin: "PIN À 6 CHIFFRES",
     },
     tanks: {
       crumb: "Eau",
@@ -201,21 +197,6 @@ export const fr = {
       emptyHeight: "HAUTEUR VIDE",
       valve: "VANNE DE VIDANGE",
       autoClose: "FERMETURE AUTO",
-    },
-    save: {
-      sent: "Configuration envoyée au module",
-      refused: "{{field}} : valeur refusée par le module.",
-      notConfirmed:
-        "{{field}} : le module n'a pas confirmé. Configuration non appliquée.",
-      unreachable: "{{field}} : module injoignable. Connecte-le et réessaie.",
-      fields: {
-        identity: "Identité du module",
-        name: "Nom du module",
-        pin: "Code PIN",
-        cleanTank: "Cuve propre",
-        greyTank: "Cuve grise",
-        valve: "Vanne de vidange",
-      },
     },
   },
 
@@ -335,6 +316,30 @@ export const fr = {
       mosfet: "MOSFET",
       probe1: "SONDE 1",
       probe2: "SONDE 2",
+    },
+  },
+
+  settings: {
+    identity: {
+      nameCard: "NOM DU MODULE",
+      name: "NOM",
+      pinCard: "CODE PIN",
+      pin: "PIN À 6 CHIFFRES",
+    },
+    save: {
+      sent: "Configuration envoyée au module",
+      refused: "{{field}} : valeur refusée par le module.",
+      notConfirmed:
+        "{{field}} : le module n'a pas confirmé. Configuration non appliquée.",
+      unreachable: "{{field}} : module injoignable. Connecte-le et réessaie.",
+      fields: {
+        identity: "Identité du module",
+        name: "Nom du module",
+        pin: "Code PIN",
+        cleanTank: "Cuve propre",
+        greyTank: "Cuve grise",
+        valve: "Vanne de vidange",
+      },
     },
   },
 };
