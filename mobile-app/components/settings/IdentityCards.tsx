@@ -2,12 +2,17 @@ import { useTranslation } from "react-i18next";
 import type {
   IdentityDraft,
   IdentityErrors,
-} from "@/components/water-settings/identity-form";
+} from "@/components/settings/identity-form";
+import { MAX_NAME_LENGTH } from "@/components/settings/identity-form";
 import { AccentCard, FieldInput, FieldRow } from "@/design-system";
 
 const PIN_LENGTH = 6;
 
-const NAME_INPUT = { autoCapitalize: "words" } as const;
+/** The firmware's own ceiling: refusing the 21st keystroke beats refusing the save. */
+const NAME_INPUT = {
+  autoCapitalize: "words",
+  maxLength: MAX_NAME_LENGTH,
+} as const;
 const PIN_INPUT = {
   keyboardType: "number-pad",
   secureTextEntry: true,
@@ -35,12 +40,12 @@ export function IdentityCards({
       <AccentCard
         testID="card-name"
         accent={accent}
-        label={t("water.identity.nameCard")}
+        label={t("settings.identity.nameCard")}
       >
         <FieldRow>
           <FieldInput
             testID="module-name"
-            label={t("water.identity.name")}
+            label={t("settings.identity.name")}
             value={values.name}
             invalid={Boolean(errors.name)}
             onChangeText={(text) => onChange("name", text)}
@@ -52,12 +57,12 @@ export function IdentityCards({
       <AccentCard
         testID="card-pin"
         accent={accent}
-        label={t("water.identity.pinCard")}
+        label={t("settings.identity.pinCard")}
       >
         <FieldRow>
           <FieldInput
             testID="module-pin"
-            label={t("water.identity.pin")}
+            label={t("settings.identity.pin")}
             value={values.pin}
             invalid={Boolean(errors.pin)}
             onChangeText={(text) => onChange("pin", text)}

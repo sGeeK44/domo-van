@@ -185,10 +185,6 @@ export const en: typeof fr = {
       title: "Module identity",
       intro:
         "The name is what tells the module apart in the list. The PIN protects access to it. The module restarts after saving and reconnects on its own.",
-      nameCard: "MODULE NAME",
-      name: "NAME",
-      pinCard: "PIN CODE",
-      pin: "6-DIGIT PIN",
     },
     tanks: {
       crumb: "Water",
@@ -202,21 +198,6 @@ export const en: typeof fr = {
       emptyHeight: "EMPTY HEIGHT",
       valve: "DRAIN VALVE",
       autoClose: "AUTO-CLOSE",
-    },
-    save: {
-      sent: "Configuration sent to the module",
-      refused: "{{field}}: value refused by the module.",
-      notConfirmed:
-        "{{field}}: the module did not confirm. Configuration not applied.",
-      unreachable: "{{field}}: module unreachable. Connect it and try again.",
-      fields: {
-        identity: "Module identity",
-        name: "Module name",
-        pin: "PIN code",
-        cleanTank: "Clean tank",
-        greyTank: "Grey tank",
-        valve: "Drain valve",
-      },
     },
   },
 
@@ -336,6 +317,30 @@ export const en: typeof fr = {
       mosfet: "MOSFET",
       probe1: "PROBE 1",
       probe2: "PROBE 2",
+    },
+  },
+
+  settings: {
+    identity: {
+      nameCard: "MODULE NAME",
+      name: "NAME",
+      pinCard: "PIN CODE",
+      pin: "6-DIGIT PIN",
+    },
+    save: {
+      sent: "Configuration sent to the module",
+      refused: "{{field}}: value refused by the module.",
+      notConfirmed:
+        "{{field}}: the module did not confirm. Configuration not applied.",
+      unreachable: "{{field}}: module unreachable. Connect it and try again.",
+      fields: {
+        identity: "Module identity",
+        name: "Module name",
+        pin: "PIN code",
+        cleanTank: "Clean tank",
+        greyTank: "Grey tank",
+        valve: "Drain valve",
+      },
     },
   },
 };

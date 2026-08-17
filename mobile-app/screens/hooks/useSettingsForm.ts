@@ -8,6 +8,7 @@ export type SettingsForm<T> = {
   set: <K extends keyof T>(key: K, value: T[K]) => void;
   dirty: boolean;
   saving: boolean;
+  /** What to paint — empty until a save has been tried, so a value nobody typed stays plain. */
   errors: SettingsFormErrors<T>;
   save: () => Promise<void>;
 };
@@ -16,8 +17,12 @@ export type SettingsFormOptions<T> = {
   /** What the module last reported; read while the draft is untouched. */
   reported: T;
   validate?: (values: T) => SettingsFormErrors<T>;
-  /** Reports its outcome by resolving; a rejection keeps the draft, since nothing was applied. */
-  onSave: (values: T) => Promise<void>;
+  /**
+   * Resolves whether the module now has the last word on these fields: `true` when it
+   * applied or refused them, `false` when it never confirmed — silence is what the user
+   * retries, so the draft has to survive it. A rejection keeps the draft too: nothing was sent.
+   */
+  onSave: (values: T) => Promise<boolean>;
 };
 
 const NO_ERRORS = Object.freeze({});
@@ -30,6 +35,7 @@ export function useSettingsForm<T extends object>({
 }: SettingsFormOptions<T>): SettingsForm<T> {
   const [draft, setDraft] = useState<T | null>(null);
   const [saving, setSaving] = useState(false);
+  const [tried, setTried] = useState(false);
   // A state flag would still let two presses in one tick through: neither has re-rendered.
   const inFlight = useRef(false);
 
@@ -38,15 +44,17 @@ export function useSettingsForm<T extends object>({
 
   const save = async () => {
     if (inFlight.current) return;
+    // Before the early return: a save blocked by a field nobody typed has to show why.
+    setTried(true);
     if (Object.keys(errors).length > 0) return;
 
     const sent = draft;
     inFlight.current = true;
     setSaving(true);
     try {
-      await onSave(values);
+      const settled = await onSave(values);
       // Only what was sent goes back to the module's word: a keystroke since is newer than it.
-      setDraft((current) => (current === sent ? null : current));
+      if (settled) setDraft((current) => (current === sent ? null : current));
     } finally {
       inFlight.current = false;
       setSaving(false);
@@ -59,7 +67,7 @@ export function useSettingsForm<T extends object>({
       setDraft((current) => ({ ...(current ?? reported), [key]: value })),
     dirty: draft !== null,
     saving,
-    errors,
+    errors: tried ? errors : NO_ERRORS,
     save,
   };
 }

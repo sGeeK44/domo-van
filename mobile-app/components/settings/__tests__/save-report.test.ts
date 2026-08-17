@@ -5,13 +5,13 @@ import {
   saveMessage,
   savePress,
   saveReport,
-} from "@/components/water-settings/save-report";
+} from "@/components/settings/save-report";
 import type { SaveOutcome, WriteOutcome } from "@/domain/SaveOutcome";
 import type { TranslationKey } from "@/i18n/keys";
 
 const TANKS: SaveCopy = {
-  applied: "water.save.sent",
-  fieldName: () => "water.save.fields.cleanTank",
+  applied: "settings.save.sent",
+  fieldName: () => "settings.save.fields.cleanTank",
 };
 
 const IDENTITY: SaveCopy = {
@@ -38,7 +38,7 @@ function refusedIdentity(code: string): SaveOutcome {
 describe("what a save is announced as", () => {
   it("confirms the form's own applied copy", () => {
     expect(saveReport({ status: "applied" }, TANKS)).toEqual({
-      key: "water.save.sent",
+      key: "settings.save.sent",
     });
     expect(saveReport({ status: "applied" }, IDENTITY)).toEqual({
       key: "modules.admin.restarted",
@@ -46,13 +46,13 @@ describe("what a save is announced as", () => {
   });
 
   it.each([
-    [{ status: "rejected", code: "ERR_CFG_RANGE" }, "water.save.refused"],
-    [{ status: "timedOut" }, "water.save.notConfirmed"],
-    [{ status: "unreachable" }, "water.save.unreachable"],
+    [{ status: "rejected", code: "ERR_CFG_RANGE" }, "settings.save.refused"],
+    [{ status: "timedOut" }, "settings.save.notConfirmed"],
+    [{ status: "unreachable" }, "settings.save.unreachable"],
   ] as const)("tells %o apart from the others", (outcome, key) => {
     expect(saveReport(failed(outcome), TANKS)).toEqual({
       key,
-      fieldKey: "water.save.fields.cleanTank",
+      fieldKey: "settings.save.fields.cleanTank",
     });
   });
 
@@ -65,24 +65,24 @@ describe("what a save is announced as", () => {
       ],
     };
 
-    expect(saveReport(outcome, TANKS).key).toBe("water.save.notConfirmed");
+    expect(saveReport(outcome, TANKS).key).toBe("settings.save.notConfirmed");
   });
 });
 
 // Name and PIN travel as one command, so the code is the only thing that tells them apart.
 describe("the field a refused identity names", () => {
   it.each([
-    ["ERR_NAME_LEN", "water.save.fields.name"],
-    ["ERR_NAME_CHARS", "water.save.fields.name"],
-    ["ERR_PIN_LEN", "water.save.fields.pin"],
-    ["ERR_PIN_NUM", "water.save.fields.pin"],
+    ["ERR_NAME_LEN", "settings.save.fields.name"],
+    ["ERR_NAME_CHARS", "settings.save.fields.name"],
+    ["ERR_PIN_LEN", "settings.save.fields.pin"],
+    ["ERR_PIN_NUM", "settings.save.fields.pin"],
   ])("reads %s as %s", (code, fieldKey) => {
     expect(saveReport(refusedIdentity(code), IDENTITY).fieldKey).toBe(fieldKey);
   });
 
   it("names the whole frame when the module refuses its format", () => {
     expect(saveReport(refusedIdentity("ERR_ID_FMT"), IDENTITY).fieldKey).toBe(
-      "water.save.fields.identity",
+      "settings.save.fields.identity",
     );
   });
 
@@ -92,7 +92,7 @@ describe("the field a refused identity names", () => {
         field: "water.identity",
         outcome: { status: "unreachable" },
       }),
-    ).toBe("water.save.fields.identity");
+    ).toBe("settings.save.fields.identity");
   });
 });
 
@@ -105,13 +105,13 @@ describe("the sentence the toast shows", () => {
 
   it("carries no field on the applied copy", () => {
     expect(saveMessage({ status: "applied" }, TANKS, shout)).toBe(
-      "water.save.sent",
+      "settings.save.sent",
     );
   });
 
   it("puts the translated field name inside the failure copy", () => {
     expect(saveMessage(failed({ status: "timedOut" }), TANKS, shout)).toBe(
-      "water.save.notConfirmed(water.save.fields.cleanTank)",
+      "settings.save.notConfirmed(settings.save.fields.cleanTank)",
     );
   });
 });

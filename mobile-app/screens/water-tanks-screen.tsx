@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
 import {
+  moduleHasTheLastWord,
   type SaveCopy,
   saveMessage,
   savePress,
-} from "@/components/water-settings/save-report";
+} from "@/components/settings/save-report";
 import { TankAndValveCards } from "@/components/water-settings/TankAndValveCards";
 import {
   type TankAndValveDraft,
@@ -29,13 +30,13 @@ import {
 import { SettingsFormScreen } from "@/screens/settings-form-screen";
 
 const FIELD_NAME: Partial<Record<SaveFieldKey, TranslationKey>> = {
-  "water.cleanTank": "water.save.fields.cleanTank",
-  "water.greyTank": "water.save.fields.greyTank",
-  "water.valve": "water.save.fields.valve",
+  "water.cleanTank": "settings.save.fields.cleanTank",
+  "water.greyTank": "settings.save.fields.greyTank",
+  "water.valve": "settings.save.fields.valve",
 };
 
 const SAVE_COPY: SaveCopy = {
-  applied: "water.save.sent",
+  applied: "settings.save.sent",
   fieldName: (failure: SaveFailure) =>
     FIELD_NAME[failure.field] ?? "water.tanks.title",
 };
@@ -90,8 +91,12 @@ function useTankAndValveForm(
     validate: tankAndValveErrors,
     // The outcome is what is announced: save() resolves the same whether it wrote or refused to.
     onSave: async (values) => {
-      if (!system) return;
-      announce(await system.saveTankAndValveConfig(tankAndValveConfig(values)));
+      if (!system) return false;
+      const outcome = await system.saveTankAndValveConfig(
+        tankAndValveConfig(values),
+      );
+      announce(outcome);
+      return moduleHasTheLastWord(outcome);
     },
   });
 }

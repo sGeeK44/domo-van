@@ -1,17 +1,19 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { moduleAccent } from "@/components/module-accent";
-import { IdentityCards } from "@/components/water-settings/IdentityCards";
+import { IdentityCards } from "@/components/settings/IdentityCards";
 import {
   type IdentityDraft,
   identityErrors,
   moduleIdentity,
-} from "@/components/water-settings/identity-form";
+} from "@/components/settings/identity-form";
 import {
   identityFieldName,
+  moduleHasTheLastWord,
   type SaveCopy,
   saveMessage,
   savePress,
-} from "@/components/water-settings/save-report";
+} from "@/components/settings/save-report";
 import { useModuleSlot } from "@/composition/ModuleRegistryProvider";
 import { useWaterSystem } from "@/composition/ModuleSystemsProvider";
 import { useThemeColor, useToast } from "@/design-system";
@@ -36,9 +38,10 @@ export default function WaterIdentityScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const colors = useThemeColor();
-  const pairedName = useModuleSlot("water").pairing?.name ?? "";
-  const form = useIdentityForm(useWaterSystem(), pairedName, (outcome) =>
-    toast.show(saveMessage(outcome, SAVE_COPY, t)),
+  const form = useIdentityForm(
+    useWaterSystem(),
+    useReportedName("water"),
+    (outcome) => toast.show(saveMessage(outcome, SAVE_COPY, t)),
   );
 
   return (
@@ -53,7 +56,7 @@ export default function WaterIdentityScreen() {
         <IdentityCards
           accent={moduleAccent(colors, "water")}
           values={form.values}
-          errors={form.dirty ? form.errors : {}}
+          errors={form.errors}
           onChange={form.set}
         />
       )}
@@ -61,18 +64,35 @@ export default function WaterIdentityScreen() {
   );
 }
 
+type ReportedName = { value: string; keep: (name: string) => void };
+
+/**
+ * The name the module answers to. A slot's `pairing` is written once, at pairing time, and no
+ * reconnection refreshes it — so a name we saw the module accept is newer than the one it carries.
+ */
+function useReportedName(moduleKey: "water"): ReportedName {
+  const paired = useModuleSlot(moduleKey).pairing?.name ?? "";
+  const [written, setWritten] = useState<string | null>(null);
+
+  return { value: written ?? paired, keep: setWritten };
+}
+
 function useIdentityForm(
   system: WaterSystem | null,
-  pairedName: string,
+  name: ReportedName,
   announce: (outcome: SaveOutcome) => void,
 ): SettingsForm<IdentityDraft> {
   return useSettingsForm<IdentityDraft>({
-    reported: { name: pairedName, pin: NO_PIN },
+    reported: { name: name.value, pin: NO_PIN },
     validate: identityErrors,
     // The outcome is what is announced: save() resolves the same whether it wrote or refused to.
     onSave: async (values) => {
-      if (!system) return;
-      announce(await system.admin.saveIdentity(moduleIdentity(values)));
+      if (!system) return false;
+      const identity = moduleIdentity(values);
+      const outcome = await system.admin.saveIdentity(identity);
+      if (outcome.status === "applied") name.keep(identity.name);
+      announce(outcome);
+      return moduleHasTheLastWord(outcome);
     },
   });
 }

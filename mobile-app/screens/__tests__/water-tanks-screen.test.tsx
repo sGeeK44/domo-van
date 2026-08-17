@@ -208,7 +208,8 @@ describe("the Eau — cuves et vanne form", () => {
     expect(toast()).toBe(
       "Cuve propre : le module n'a pas confirmé. Configuration non appliquée.",
     );
-    expect(toast()).not.toBe("Configuration envoyée au module");
+    // We do not know what the module holds, and this is the moment the user retries.
+    expect(valueOf("clean-height")).toBe(SILENT_HEIGHT);
   });
 
   it("reports a refused value as a refusal, and falls back to what the module holds", async () => {
@@ -233,6 +234,18 @@ describe("the Eau — cuves et vanne form", () => {
     expect(DANGER).toContain(borderOf("clean-volume"));
     expect(DANGER).not.toContain(borderOf("grey-volume"));
     expect(toast()).toBeNull();
+  });
+
+  // Before the first press, a danger border would be about a value nobody typed.
+  it("marks a refused value only once the button has been pressed", async () => {
+    await tanksForm();
+
+    type("clean-volume", "0");
+    expect(DANGER).not.toContain(borderOf("clean-volume"));
+
+    await pressSave();
+
+    expect(DANGER).toContain(borderOf("clean-volume"));
   });
 
   it("marks a valve delay past the five minutes the firmware stores", async () => {
