@@ -128,6 +128,7 @@ Contains common C++ code: BLE management, protocol parsing, ESP32 utilities, NVS
 - Uses JSN-SR04T ultrasonic sensors with rolling median + EMA filtering
 - Tank config via BLE: `CFG:V=<liters>;H=<mm>`, read back with `CFG?`
 - Valve commands: `OPEN`, `CLOSE`
+- Valve auto-close delay via BLE: `CFG:T=<seconds>`, read back with `CFG?`
 
 ### Heater Module
 - 4 independent PID-controlled zones with DS18B20 temperature sensors

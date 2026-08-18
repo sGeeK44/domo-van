@@ -83,13 +83,6 @@ export const en: typeof fr = {
       offlineBody: "The settings appear once the module is reconnected.",
     },
     admin: {
-      section: "Administration",
-      namePlaceholder: "Module name",
-      saveName: "Save the name",
-      pinLabel: "PIN (6 digits)",
-      savePin: "Save the PIN",
-      sendingName: "Sending the new name…",
-      sendingPin: "Sending the new PIN…",
       restarted: "OK. The module is restarting. Reconnect to it.",
       failed: "Error: {{message}}",
       nameLength: "The name must be between 1 and 20 characters.",

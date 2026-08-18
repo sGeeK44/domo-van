@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   identityFieldName,
+  moduleHasTheLastWord,
   type SaveCopy,
   saveMessage,
   savePress,
@@ -184,5 +185,42 @@ describe("the press behind the save button", () => {
     ).onPress();
 
     expect(onBlocked).toHaveBeenCalledTimes(1);
+  });
+});
+
+// The docs promise this rule for all four statuses, so all four are pinned here.
+describe("whether the module now has the last word", () => {
+  it("takes the module's word when it applied everything", () => {
+    expect(moduleHasTheLastWord({ status: "applied" })).toBe(true);
+  });
+
+  it("takes it on a refusal too: the module kept what it had", () => {
+    expect(
+      moduleHasTheLastWord(
+        failed({ status: "rejected", code: "ERR_CFG_RANGE" }),
+      ),
+    ).toBe(true);
+  });
+
+  it.each([
+    { status: "timedOut" },
+    { status: "unreachable" },
+  ] as const)("keeps the draft on %o, since silence says nothing about the module", (outcome) => {
+    expect(moduleHasTheLastWord(failed(outcome))).toBe(false);
+  });
+
+  it("keeps the draft when one field went silent among refusals", () => {
+    const mixed: SaveOutcome = {
+      status: "failed",
+      failures: [
+        {
+          field: "water.cleanTank",
+          outcome: { status: "rejected", code: "ERR_CFG_RANGE" },
+        },
+        { field: "water.greyTank", outcome: { status: "timedOut" } },
+      ],
+    };
+
+    expect(moduleHasTheLastWord(mixed)).toBe(false);
   });
 });

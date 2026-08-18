@@ -401,7 +401,8 @@ Every user-visible string goes through a key. `i18n/resources/fr.ts` is the
 source of truth — the mockups are French — and `i18n/resources/en.ts` is a
 **full** translation typed as `typeof fr`, so a missing or stray key fails
 `npm run typecheck`. Keys read `<area>.<screen>.<element>`; the areas are
-`common`, `link`, `modules`, `dashboard`, `water`, `heater` and `battery`.
+`common`, `link`, `modules`, `dashboard`, `water`, `heater`, `battery` and
+`settings`.
 
 - **`i18n/keys.ts` types `t()`.** It merges `CustomTypeOptions` into the
   `i18next` module, so `t('does.not.exist')` is a compile error and
@@ -562,7 +563,7 @@ Found while reviewing #6 and left deliberately: each is #7 or #8 work, and none
 blocks the hardware validation. Written down so the next reader finds them
 before rediscovering them.
 
-#7 closed the two that were its own: `useFeedbackToast` still announces failures
+#7 closed the entry that was its own: `useFeedbackToast` still announces failures
 only, but each settings form now fires its own success toast where it sends, so
 nothing was lost when the sections' hand-rolled `ToastAndroid` went — and with
 those four sections deleted, `TOAST_ALLOWED` is empty.
