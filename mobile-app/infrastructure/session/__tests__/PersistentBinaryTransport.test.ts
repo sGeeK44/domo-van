@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { FRAME, frame } from "@/domain/battery/__tests__/JkBmsFrames";
+import { cellInfoFrame, FRAME } from "@/domain/battery/__tests__/JkBmsFrames";
 import { BatterySystem } from "@/domain/battery/BatterySystem";
-import { buildReadAllCommand } from "@/domain/battery/JkBmsProtocol";
+import { buildCellInfoCommand } from "@/domain/battery/JkBmsProtocol";
 import type { BinaryTransport } from "@/domain/ports/BinaryTransport";
 import type { DeviceHandle } from "@/domain/ports/DeviceHandle";
 import { FakeBinaryTransport } from "@/infrastructure/fake/FakeBinaryTransport";
@@ -11,8 +11,8 @@ import { TransportDisposedError } from "@/infrastructure/session/TransportDispos
 
 const DEVICE: DeviceHandle = { id: "fake-battery", name: "Battery (fake)" };
 
-/** Field 0x85 alone: the pack now reports 50 % instead of the corpus' 98 %. */
-const HALF_CHARGED = frame([0x85, 0x32]);
+/** The same pack reporting 50 % instead of the reference frame's 85 %. */
+const HALF_CHARGED = cellInfoFrame({ soc: 50 });
 
 /** No corpus: these tests drive every byte themselves. */
 const SILENT = { frames: [] };
@@ -55,10 +55,10 @@ describe("PersistentBinaryTransport", () => {
 
     transport.bind(DEVICE);
     sessions[0].emit(FRAME);
-    expect(battery.getValue().percentage).toBe(98);
+    expect(battery.getValue().percentage).toBe(85);
 
     transport.unbind();
-    expect(battery.getValue().percentage).toBe(98);
+    expect(battery.getValue().percentage).toBe(85);
 
     transport.bind(DEVICE);
     sessions[1].emit(HALF_CHARGED);
@@ -104,7 +104,7 @@ describe("PersistentBinaryTransport", () => {
   it("rejects a write with NotConnectedError while no session is bound", async () => {
     const { transport } = persistentTransport();
 
-    const writing = transport.send(buildReadAllCommand());
+    const writing = transport.send(buildCellInfoCommand());
 
     await expect(writing).rejects.toThrow(NotConnectedError);
   });
@@ -113,9 +113,9 @@ describe("PersistentBinaryTransport", () => {
     const { transport, sessions } = persistentTransport();
     transport.bind(DEVICE);
 
-    await transport.send(buildReadAllCommand());
+    await transport.send(buildCellInfoCommand());
 
-    expect(sessions[0].sent).toEqual([buildReadAllCommand()]);
+    expect(sessions[0].sent).toEqual([buildCellInfoCommand()]);
   });
 
   it("keeps reading the previous session when a rebind fails", () => {
@@ -138,8 +138,8 @@ describe("PersistentBinaryTransport", () => {
 
     expect(() => transport.bind(DEVICE)).toThrow();
 
-    await transport.send(buildReadAllCommand());
-    expect(sessions[0].sent).toEqual([buildReadAllCommand()]);
+    await transport.send(buildCellInfoCommand());
+    expect(sessions[0].sent).toEqual([buildCellInfoCommand()]);
   });
 
   it("stays unbound when the first bind fails", async () => {
@@ -148,7 +148,7 @@ describe("PersistentBinaryTransport", () => {
 
     expect(() => transport.bind(DEVICE)).toThrow();
 
-    await expect(transport.send(buildReadAllCommand())).rejects.toThrow(
+    await expect(transport.send(buildCellInfoCommand())).rejects.toThrow(
       NotConnectedError,
     );
   });
@@ -213,7 +213,7 @@ describe("PersistentBinaryTransport", () => {
 
     transport.dispose();
 
-    await expect(transport.send(buildReadAllCommand())).rejects.toThrow(
+    await expect(transport.send(buildCellInfoCommand())).rejects.toThrow(
       TransportDisposedError,
     );
   });

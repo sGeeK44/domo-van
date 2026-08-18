@@ -1,6 +1,6 @@
 import { createFanout, type Source } from "@/core/fanout";
 import type { Listener, Unsubscribe } from "@/core/observable";
-import { buildReadAllCommand } from "@/domain/battery/JkBmsProtocol";
+import { buildDeviceInfoCommand } from "@/domain/battery/JkBmsProtocol";
 import type { BinaryTransport } from "@/domain/ports/BinaryTransport";
 import { JK_BMS_CORPUS } from "./scenarios/jkBmsFrames";
 
@@ -30,7 +30,7 @@ export class FakeBinaryTransport implements BinaryTransport {
     return this.notifications.size;
   }
 
-  /** Subscribing is silent, as on a radio: ask with a read-all, or wait for the cadence. */
+  /** Subscribing is silent, as on a radio: send the wake-up, or wait for the cadence. */
   listen(onBytes: Listener<Uint8Array>): Unsubscribe {
     const stopFanout = this.notifications.add(onBytes);
     const stop = () => {
@@ -43,7 +43,7 @@ export class FakeBinaryTransport implements BinaryTransport {
 
   send(bytes: Uint8Array): Promise<void> {
     this.sent.push(bytes);
-    if (isReadAllCommand(bytes)) {
+    if (isStreamWakeCommand(bytes)) {
       this.replay();
     }
     return Promise.resolve();
@@ -78,10 +78,11 @@ export class FakeBinaryTransport implements BinaryTransport {
   }
 }
 
-function isReadAllCommand(bytes: Uint8Array): boolean {
-  const readAll = buildReadAllCommand();
+/** The device-info request is what wakes the telemetry stream on the real BMS. */
+function isStreamWakeCommand(bytes: Uint8Array): boolean {
+  const wakeUp = buildDeviceInfoCommand();
   return (
-    bytes.length === readAll.length &&
-    readAll.every((byte, index) => byte === bytes[index])
+    bytes.length === wakeUp.length &&
+    wakeUp.every((byte, index) => byte === bytes[index])
   );
 }

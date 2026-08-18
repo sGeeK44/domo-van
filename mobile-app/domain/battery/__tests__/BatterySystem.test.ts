@@ -1,38 +1,43 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { BatterySystem } from "@/domain/battery/BatterySystem";
-import { buildReadAllCommand } from "@/domain/battery/JkBmsProtocol";
-import { FakeBinaryTransport } from "@/infrastructure/fake/FakeBinaryTransport";
 import {
-  BROKEN_SENSE_WIRE,
-  CHARGE_MOSFET_OFF,
-  CHARGE_MOSFET_ON,
-  CURRENT,
-  DISCHARGE_CURRENT,
-  DISCHARGE_MOSFET_ON,
-  FRAME,
-  frame,
-  NO_CURRENT,
-  PAYLOAD,
-  withBogusLength,
-  withBrokenChecksum,
-} from "./JkBmsFrames";
+  buildCellInfoCommand,
+  buildDeviceInfoCommand,
+} from "@/domain/battery/JkBmsProtocol";
+import { FakeBinaryTransport } from "@/infrastructure/fake/FakeBinaryTransport";
+import { cellInfoFrame, FRAME, withBrokenChecksum } from "./JkBmsFrames";
 
 /** No corpus: these tests drive every byte themselves. */
 const SILENT = { frames: [] };
 
 describe("BatterySystem", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("publishes the telemetry of a good frame", () => {
     const transport = new FakeBinaryTransport(SILENT);
     const system = new BatterySystem(transport);
 
     transport.emit(FRAME);
 
-    expect(system.getValue()).toMatchObject({
-      percentage: 98,
-      cellCount: 4,
-      tempMos: 4,
-    });
-    expect(system.getValue().voltage).toBeCloseTo(13.2, 2);
+    const snapshot = system.getValue();
+    expect(snapshot).toMatchObject({ percentage: 85, cellCount: 4 });
+    expect(snapshot.voltage).toBeCloseTo(13.289, 3);
+    expect(snapshot.current).toBeCloseTo(-6.137, 3);
+    expect(snapshot.capacityAh).toBeCloseTo(560, 3);
+    expect(snapshot.remainingAh).toBeCloseTo(475.055, 3);
+    expect(snapshot.tempMos).toBeCloseTo(23.1, 1);
+    system.dispose();
+  });
+
+  it("signs the power with the current, so a discharge reads negative", () => {
+    const transport = new FakeBinaryTransport(SILENT);
+    const system = new BatterySystem(transport);
+
+    transport.emit(FRAME);
+
+    expect(system.getValue().power).toBeCloseTo(-81.557, 3);
     system.dispose();
   });
 
@@ -40,7 +45,7 @@ describe("BatterySystem", () => {
     const transport = new FakeBinaryTransport(SILENT);
     const system = new BatterySystem(transport);
 
-    transport.emit(frame([...BROKEN_SENSE_WIRE]));
+    transport.emit(cellInfoFrame({ cellVoltagesMv: [3352, 0, 3361, 3338] }));
 
     const snapshot = system.getValue();
     expect(snapshot.cellVoltages).toEqual([3.352, 0, 3.361, 3.338]);
@@ -52,7 +57,7 @@ describe("BatterySystem", () => {
     const transport = new FakeBinaryTransport(SILENT);
     const system = new BatterySystem(transport);
 
-    transport.emit(frame([...BROKEN_SENSE_WIRE]));
+    transport.emit(cellInfoFrame({ cellVoltagesMv: [3352, 0, 3361, 3338] }));
 
     const snapshot = system.getValue();
     expect(snapshot.minCellVoltage).toBeCloseTo(3.338, 3);
@@ -61,7 +66,7 @@ describe("BatterySystem", () => {
     system.dispose();
   });
 
-  it("keeps the previous snapshot when a malformed frame arrives", () => {
+  it("keeps the previous snapshot when a corrupted frame arrives", () => {
     const transport = new FakeBinaryTransport(SILENT);
     const system = new BatterySystem(transport);
     transport.emit(FRAME);
@@ -72,83 +77,28 @@ describe("BatterySystem", () => {
     });
 
     transport.emit(withBrokenChecksum(FRAME));
-    transport.emit(withBogusLength(FRAME));
-    transport.emit(frame(PAYLOAD.slice(0, -1)));
-    transport.emit([0x4e, 0x57, 0x00]);
 
     expect(updates).toBe(0);
     expect(system.getValue()).toEqual(good);
     system.dispose();
   });
 
-  it("keeps the fields a frame does not carry", () => {
+  it("recovers on the next good frame after a corrupted one", () => {
     const transport = new FakeBinaryTransport(SILENT);
     const system = new BatterySystem(transport);
+
+    transport.emit(withBrokenChecksum(FRAME));
     transport.emit(FRAME);
 
-    transport.emit(frame([0x85, 0x32]));
-
-    const snapshot = system.getValue();
-    expect(snapshot.percentage).toBe(50);
-    expect(snapshot.voltage).toBeCloseTo(13.2, 2);
-    expect(snapshot.cellVoltages).toHaveLength(4);
+    expect(system.getValue().percentage).toBe(85);
     system.dispose();
   });
 
-  it("keeps the charge MOSFET state when a later frame omits it", () => {
+  it("reports a discharge, and only that, while the current flows out", () => {
     const transport = new FakeBinaryTransport(SILENT);
     const system = new BatterySystem(transport);
-    transport.emit(frame([...NO_CURRENT, ...CHARGE_MOSFET_ON]));
-    expect(system.getValue().isCharging).toBe(true);
 
-    transport.emit(frame([0x85, 0x32]));
-
-    expect(system.getValue().isCharging).toBe(true);
-    system.dispose();
-  });
-
-  it("keeps the discharge MOSFET state when a later frame omits it", () => {
-    const transport = new FakeBinaryTransport(SILENT);
-    const system = new BatterySystem(transport);
-    transport.emit(frame([...NO_CURRENT, ...DISCHARGE_MOSFET_ON]));
-    expect(system.getValue().isDischarging).toBe(true);
-
-    transport.emit(frame([0x85, 0x32]));
-
-    expect(system.getValue().isDischarging).toBe(true);
-    system.dispose();
-  });
-
-  it("clears the charge flag when a frame reports the charge MOSFET open", () => {
-    const transport = new FakeBinaryTransport(SILENT);
-    const system = new BatterySystem(transport);
-    transport.emit(frame([...NO_CURRENT, ...CHARGE_MOSFET_ON]));
-    expect(system.getValue().isCharging).toBe(true);
-
-    transport.emit(frame([...CHARGE_MOSFET_OFF]));
-
-    expect(system.getValue().isCharging).toBe(false);
-    system.dispose();
-  });
-
-  it("stops reporting a charge once the current falls back to zero", () => {
-    const transport = new FakeBinaryTransport(SILENT);
-    const system = new BatterySystem(transport);
-    transport.emit(frame([...CURRENT]));
-    expect(system.getValue().isCharging).toBe(true);
-
-    transport.emit(frame([...NO_CURRENT]));
-
-    expect(system.getValue().isCharging).toBe(false);
-    system.dispose();
-  });
-
-  it("reports a discharge, and only that, once the current reverses", () => {
-    const transport = new FakeBinaryTransport(SILENT);
-    const system = new BatterySystem(transport);
-    transport.emit(frame([...CURRENT]));
-
-    transport.emit(frame([...DISCHARGE_CURRENT]));
+    transport.emit(FRAME);
 
     expect(system.getValue()).toMatchObject({
       isCharging: false,
@@ -157,48 +107,75 @@ describe("BatterySystem", () => {
     system.dispose();
   });
 
-  it("never reports charging and discharging at once when frames carry only the current", () => {
+  it("reports a charge, and only that, once the current reverses", () => {
     const transport = new FakeBinaryTransport(SILENT);
     const system = new BatterySystem(transport);
-    const sequence = [
-      [CURRENT, { isCharging: true, isDischarging: false }],
-      [NO_CURRENT, { isCharging: false, isDischarging: false }],
-      [DISCHARGE_CURRENT, { isCharging: false, isDischarging: true }],
-      [CURRENT, { isCharging: true, isDischarging: false }],
-      [DISCHARGE_CURRENT, { isCharging: false, isDischarging: true }],
-    ] as const;
 
-    for (const [payload, expected] of sequence) {
-      transport.emit(frame([...payload]));
+    transport.emit(cellInfoFrame({ currentMa: 6137, powerMw: 81557 }));
 
-      const snapshot = system.getValue();
-      expect(snapshot).toMatchObject(expected);
-      expect(snapshot.isCharging && snapshot.isDischarging).toBe(false);
-    }
+    expect(system.getValue()).toMatchObject({
+      isCharging: true,
+      isDischarging: false,
+    });
     system.dispose();
   });
 
-  it("re-issues the read-all the constructor sent on resync", () => {
+  it("reports neither at rest, whatever the MOSFETs allow", () => {
     const transport = new FakeBinaryTransport(SILENT);
     const system = new BatterySystem(transport);
 
-    system.resync();
+    transport.emit(cellInfoFrame({ currentMa: 0, powerMw: 0 }));
+
+    expect(system.getValue()).toMatchObject({
+      isCharging: false,
+      isDischarging: false,
+    });
+    system.dispose();
+  });
+
+  it("wakes the stream, then requests the cell info after the settle delay", async () => {
+    vi.useFakeTimers();
+    const transport = new FakeBinaryTransport(SILENT);
+    const system = new BatterySystem(transport);
+
+    expect(transport.sent).toEqual([buildDeviceInfoCommand()]);
+
+    await vi.advanceTimersByTimeAsync(500);
 
     expect(transport.sent).toEqual([
-      buildReadAllCommand(),
-      buildReadAllCommand(),
+      buildDeviceInfoCommand(),
+      buildCellInfoCommand(),
     ]);
     system.dispose();
   });
 
-  it("recovers on the next good frame after a malformed one", () => {
+  it("re-issues the wake-up sequence the constructor sent on resync", async () => {
+    vi.useFakeTimers();
     const transport = new FakeBinaryTransport(SILENT);
     const system = new BatterySystem(transport);
+    await vi.advanceTimersByTimeAsync(500);
 
-    transport.emit(withBrokenChecksum(FRAME));
-    transport.emit(FRAME);
+    system.resync();
+    await vi.advanceTimersByTimeAsync(500);
 
-    expect(system.getValue().percentage).toBe(98);
+    expect(transport.sent).toEqual([
+      buildDeviceInfoCommand(),
+      buildCellInfoCommand(),
+      buildDeviceInfoCommand(),
+      buildCellInfoCommand(),
+    ]);
+    system.dispose();
+  });
+
+  it("drops the half frame a lost session left behind on resync", () => {
+    const transport = new FakeBinaryTransport(SILENT);
+    const system = new BatterySystem(transport);
+    transport.emit(FRAME.slice(0, 150));
+
+    system.resync();
+    transport.emit(cellInfoFrame({ soc: 50 }));
+
+    expect(system.getValue().percentage).toBe(50);
     system.dispose();
   });
 });

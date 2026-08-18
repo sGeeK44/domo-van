@@ -1,33 +1,30 @@
 import {
-  declaredFrameLength,
-  findFrameStart,
-  type JkBmsData,
-  MIN_FRAME_SIZE,
-  parseResponse,
+  FRAME_SIZE,
+  findFrameHeader,
+  isChecksumValid,
+  type JkBmsCellInfo,
+  parseCellInfo,
 } from "@/domain/battery/JkBmsProtocol";
 
-/** The length field counts every byte after the two start bytes. */
-const START_BYTES = 2;
-/** A read-all reply of a 32-cell pack stays well under this. */
-const MAX_FRAME_BYTES = 1024;
 /** Ceiling on the pending bytes, so a frame that never completes cannot grow forever. */
-const MAX_BUFFER_BYTES = 2 * MAX_FRAME_BYTES;
+const MAX_BUFFER_BYTES = 2048;
 
 /**
- * Reassembles JK BMS frames out of a byte stream: notifications arrive in
- * chunks that split frames and may carry several of them.
+ * Reassembles JK02 frames out of a byte stream: a 300-byte frame arrives
+ * fragmented across several BLE notifications, and the BMS interleaves
+ * "AT\r\n" keepalives between them.
  */
 export class JkBmsFrameReader {
   private buffer: number[] = [];
 
-  /** Appends a chunk and returns every frame it completed, in order. */
-  read(chunk: Uint8Array): JkBmsData[] {
+  /** Appends a chunk and returns every cell-info frame it completed, in order. */
+  read(chunk: Uint8Array): JkBmsCellInfo[] {
     for (const byte of chunk) {
       this.buffer.push(byte);
     }
     this.dropOverflow();
 
-    const frames: JkBmsData[] = [];
+    const frames: JkBmsCellInfo[] = [];
     while (this.extractFrame(frames)) {
       // Keep going: a single chunk can complete more than one frame.
     }
@@ -38,41 +35,33 @@ export class JkBmsFrameReader {
     this.buffer = [];
   }
 
-  private extractFrame(frames: JkBmsData[]): boolean {
-    const frameStart = findFrameStart(new Uint8Array(this.buffer));
-    if (frameStart === -1) {
+  private extractFrame(frames: JkBmsCellInfo[]): boolean {
+    const headerStart = findFrameHeader(new Uint8Array(this.buffer));
+    if (headerStart === -1) {
+      // No frame can start in these bytes — this eats the AT keepalives.
       this.buffer = [];
       return false;
     }
-    if (frameStart > 0) {
-      this.buffer = this.buffer.slice(frameStart);
+    if (headerStart > 0) {
+      this.buffer = this.buffer.slice(headerStart);
     }
-
-    const frameLength = declaredFrameLength(new Uint8Array(this.buffer));
-    if (frameLength === null) {
-      return false;
-    }
-    if (frameLength < MIN_FRAME_SIZE || frameLength > MAX_FRAME_BYTES) {
-      return this.resynchronise();
-    }
-    if (this.buffer.length < frameLength) {
+    if (this.buffer.length < FRAME_SIZE) {
       return false;
     }
 
-    const frame = new Uint8Array(this.buffer.slice(0, frameLength));
-    const parsed = parseResponse(frame);
-    if (!parsed) {
-      return this.resynchronise();
+    const frame = new Uint8Array(this.buffer.slice(0, FRAME_SIZE));
+    if (!isChecksumValid(frame)) {
+      // Drop the rejected header's first byte, so the next scan moves on.
+      this.buffer = this.buffer.slice(1);
+      return this.buffer.length > 0;
     }
 
-    this.buffer = this.buffer.slice(frameLength);
-    frames.push(parsed);
-    return this.buffer.length > 0;
-  }
-
-  /** Drops the rejected start marker, so the next scan picks the following one. */
-  private resynchronise(): boolean {
-    this.buffer = this.buffer.slice(START_BYTES);
+    // A valid frame is consumed whole, whatever its record type.
+    this.buffer = this.buffer.slice(FRAME_SIZE);
+    const parsed = parseCellInfo(frame);
+    if (parsed) {
+      frames.push(parsed);
+    }
     return this.buffer.length > 0;
   }
 

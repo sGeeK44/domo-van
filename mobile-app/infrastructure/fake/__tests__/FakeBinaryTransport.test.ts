@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BatterySystem } from "@/domain/battery/BatterySystem";
-import { buildReadAllCommand } from "@/domain/battery/JkBmsProtocol";
+import { buildDeviceInfoCommand } from "@/domain/battery/JkBmsProtocol";
 import { FakeBinaryTransport } from "@/infrastructure/fake/FakeBinaryTransport";
 import { JK_BMS_NOMINAL_FRAME } from "@/infrastructure/fake/scenarios/jkBmsFrames";
 
@@ -38,11 +38,11 @@ describe("FakeBinaryTransport", () => {
     expect(first.chunks).toHaveLength(3);
   });
 
-  it("answers a read-all command with the corpus", () => {
+  it("answers the stream wake-up with the corpus", () => {
     const transport = new FakeBinaryTransport();
     const { chunks } = collect(transport);
 
-    void transport.send(buildReadAllCommand());
+    void transport.send(buildDeviceInfoCommand());
 
     expect(chunks.at(-1)).toEqual(JK_BMS_NOMINAL_FRAME);
     expect(transport.sent).toHaveLength(1);
@@ -52,7 +52,7 @@ describe("FakeBinaryTransport", () => {
     const transport = new FakeBinaryTransport();
     const { chunks } = collect(transport);
 
-    void transport.send(new Uint8Array([0x4e, 0x57, 0x00]));
+    void transport.send(new Uint8Array([0x01, 0x02, 0x03]));
 
     expect(chunks).toHaveLength(0);
   });
