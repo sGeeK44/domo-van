@@ -3,11 +3,22 @@
 UltrasonicSensor::UltrasonicSensor(Stream &stream, Logger *logger) : _serial(stream), _logger(logger) {}
 
 int UltrasonicSensor::read() {
-  if (_serial.available() < PACKET_SIZE) {
-    _logger->debug("Frame not complete done - waiting for more data");
-    return -1;
+  int lastDistance = -1;
+
+  while (_serial.available() >= PACKET_SIZE) {
+    int distance = readPacket();
+    if (distance >= 0) {
+      lastDistance = distance;
+    }
   }
 
+  if (lastDistance < 0) {
+    _logger->debug("Frame not complete done - waiting for more data");
+  }
+  return lastDistance;
+}
+
+int UltrasonicSensor::readPacket() {
   if (_serial.read() != PACKET_HEADER) {
     _logger->debug("Header missing - byte ignored.");
     return -1;

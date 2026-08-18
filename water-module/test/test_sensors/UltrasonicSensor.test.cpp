@@ -70,4 +70,18 @@ TEST_F(UltrasonicSensorTest, ReadReturnsMaxDistance) {
   EXPECT_EQ(65535, sensor->read());
 }
 
+TEST_F(UltrasonicSensorTest, ReadReturnsFreshestPacketWhenSeveralAreBuffered) {
+  mockStream.addPacket(0x01, 0x00);
+  mockStream.addPacket(0x01, 0xF4);
+
+  EXPECT_EQ(500, sensor->read());
+}
+
+TEST_F(UltrasonicSensorTest, ReadResyncsAfterATruncatedPacket) {
+  mockStream.addByte(0x2A); // leftover byte from a truncated frame
+  mockStream.addPacket(0x01, 0xF4);
+
+  EXPECT_EQ(500, sensor->read());
+}
+
 TEST_F(UltrasonicSensorTest, MaxRangeReturns1000) { EXPECT_EQ(1000, sensor->maxRange()); }
