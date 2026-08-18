@@ -42,19 +42,6 @@ function AppContent() {
           <Stack.Screen name="add-module" options={{ headerShown: false }} />
           {/* One entry for the whole group: app/settings/_layout.tsx hides each form's header. */}
           <Stack.Screen name="settings" options={{ headerShown: false }} />
-          {/* Nothing reaches these three any more; T8 deletes the routes and these entries with them. */}
-          <Stack.Screen
-            name="water-settings"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="heater-settings"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="battery-settings"
-            options={{ headerShown: false }}
-          />
         </Stack>
       </ToastProvider>
       <StatusBar style="auto" />
