@@ -1,97 +1,89 @@
 import { describe, expect, it } from "vitest";
 import { JkBmsFrameReader } from "@/domain/battery/JkBmsFrameReader";
-import { parseResponse } from "@/domain/battery/JkBmsProtocol";
 import {
-  CELL_VOLTAGES,
+  buildCellInfoCommand,
+  buildDeviceInfoCommand,
+  parseCellInfo,
+} from "@/domain/battery/JkBmsProtocol";
+import {
+  AT_KEEPALIVE,
+  cellInfoFrame,
   FRAME,
-  frame,
-  PAYLOAD,
-  STATE_OF_CHARGE,
-  withBogusLength,
+  SETTINGS_FRAME,
   withBrokenChecksum,
 } from "./JkBmsFrames";
 
-describe("parseResponse", () => {
-  it("reads the telemetry of a recorded frame", () => {
-    const data = parseResponse(new Uint8Array(FRAME));
+describe("command builder", () => {
+  it("builds the device-info request the physical BMS answered", () => {
+    expect([...buildDeviceInfoCommand()]).toEqual([
+      0xaa, 0x55, 0x90, 0xeb, 0x97, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11,
+    ]);
+  });
+
+  it("builds the cell-info request the physical BMS answered", () => {
+    expect([...buildCellInfoCommand()]).toEqual([
+      0xaa, 0x55, 0x90, 0xeb, 0x96, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+    ]);
+  });
+});
+
+describe("parseCellInfo", () => {
+  it("reads every field of the frame captured off the physical BMS", () => {
+    const data = parseCellInfo(new Uint8Array(FRAME));
 
     expect(data).not.toBeNull();
-    expect(data?.cellVoltages).toHaveLength(4);
-    expect(data?.cellVoltages?.[0]).toBeCloseTo(3.3, 3);
-    expect(data?.cellVoltages?.[1]).toBeCloseTo(3.301, 3);
-    expect(data?.cellVoltages?.[2]).toBeCloseTo(3.299, 3);
-    expect(data?.cellVoltages?.[3]).toBeCloseTo(3.302, 3);
-    expect(data?.cellCount).toBe(4);
-    expect(data?.totalVoltage).toBeCloseTo(13.2, 2);
-    expect(data?.current).toBeCloseTo(5, 2);
-    expect(data?.soc).toBe(98);
+    expect(data?.cellVoltages).toEqual([3.322, 3.322, 3.322, 3.322]);
+    expect(data?.voltage).toBeCloseTo(13.289, 3);
+    expect(data?.power).toBeCloseTo(81.557, 3);
+    expect(data?.current).toBeCloseTo(-6.137, 3);
+    expect(data?.soc).toBe(85);
+    expect(data?.remainingAh).toBeCloseTo(475.055, 3);
+    expect(data?.nominalAh).toBeCloseTo(560, 3);
+    expect(data?.cycleCount).toBe(12);
+    expect(data?.tempMos).toBeCloseTo(23.1, 1);
+    expect(data?.tempSensor1).toBeCloseTo(20.5, 1);
+    expect(data?.tempSensor2).toBeCloseTo(20.8, 1);
+    expect(data?.balancing).toBe(false);
+    expect(data?.chargeMosfetOn).toBe(true);
+    expect(data?.dischargeMosfetOn).toBe(true);
   });
 
-  it("reads a payload that contains the frame end marker", () => {
-    const data = parseResponse(new Uint8Array(FRAME));
+  it("decodes a physically consistent picture, so the offsets line up", () => {
+    const data = parseCellInfo(new Uint8Array(FRAME));
+    if (!data) throw new Error("frame did not parse");
 
-    expect(PAYLOAD).toContain(0x68);
-    expect(data?.tempMos).toBe(4);
-    expect(data?.soc).toBe(98);
+    expect(data.voltage * Math.abs(data.current)).toBeCloseTo(data.power, 1);
+    expect(data.remainingAh / data.nominalAh).toBeCloseTo(data.soc / 100, 2);
   });
 
-  it("rejects a frame whose checksum does not match", () => {
-    const data = parseResponse(new Uint8Array(withBrokenChecksum(FRAME)));
-
-    expect(data).toBeNull();
-  });
-
-  it("rejects a truncated frame rather than decoding the missing bytes as zeroes", () => {
-    const truncated = frame(PAYLOAD.slice(0, -1));
-
-    const data = parseResponse(new Uint8Array(truncated));
-
-    expect(data).toBeNull();
-  });
-
-  it("rejects a cell voltage block that disagrees with the cell count field", () => {
-    const threeCells = [0x8a, 0x00, 0x03];
-
-    const data = parseResponse(
-      new Uint8Array(frame([...CELL_VOLTAGES, ...threeCells])),
+  it("reads a temperature below zero as negative", () => {
+    const data = parseCellInfo(
+      new Uint8Array(cellInfoFrame({ mosTempDeciC: -45 })),
     );
 
-    expect(data).toBeNull();
+    expect(data?.tempMos).toBeCloseTo(-4.5, 1);
   });
 
-  it("rejects a cell count field that disagrees with a later cell voltage block", () => {
-    const threeCells = [0x8a, 0x00, 0x03];
-
-    const data = parseResponse(
-      new Uint8Array(frame([...threeCells, ...CELL_VOLTAGES])),
+  it("reads a charge as a positive current", () => {
+    const data = parseCellInfo(
+      new Uint8Array(cellInfoFrame({ currentMa: 2500 })),
     );
 
-    expect(data).toBeNull();
+    expect(data?.current).toBeCloseTo(2.5, 3);
   });
 
-  it("rejects a zero cell count that disagrees with a later cell voltage block", () => {
-    const noCells = [0x8a, 0x00, 0x00];
-
-    const data = parseResponse(
-      new Uint8Array(frame([...noCells, ...CELL_VOLTAGES])),
+  it("keeps a cell sensed at 0 V in its own place", () => {
+    const data = parseCellInfo(
+      new Uint8Array(cellInfoFrame({ cellVoltagesMv: [3352, 0, 3361, 3338] })),
     );
 
-    expect(data).toBeNull();
+    expect(data?.cellVoltages).toEqual([3.352, 0, 3.361, 3.338]);
   });
 
-  it("rejects a cell voltage block that reports the same cell twice", () => {
-    const duplicated = [...CELL_VOLTAGES];
-    duplicated[8] = 0x01;
-
-    const data = parseResponse(new Uint8Array(frame(duplicated)));
-
-    expect(data).toBeNull();
-  });
-
-  it("only reports the fields the frame carries", () => {
-    const data = parseResponse(new Uint8Array(frame([...STATE_OF_CHARGE])));
-
-    expect(data).toEqual({ soc: 98 });
+  it("returns nothing for a record type the app does not consume", () => {
+    expect(parseCellInfo(new Uint8Array(SETTINGS_FRAME))).toBeNull();
   });
 });
 
@@ -102,28 +94,53 @@ describe("JkBmsFrameReader", () => {
     const frames = reader.read(new Uint8Array(FRAME));
 
     expect(frames).toHaveLength(1);
-    expect(frames[0].soc).toBe(98);
+    expect(frames[0].soc).toBe(85);
   });
 
-  it("waits for the rest of a frame split across notifications", () => {
+  it("reassembles a frame fragmented as the MTU splits it", () => {
     const reader = new JkBmsFrameReader();
-    const cut = 15;
+    const cuts = [128, 150, 278, 300];
 
-    expect(reader.read(new Uint8Array(FRAME.slice(0, cut)))).toHaveLength(0);
-    const frames = reader.read(new Uint8Array(FRAME.slice(cut)));
+    let start = 0;
+    let frames: ReturnType<typeof reader.read> = [];
+    for (const cut of cuts) {
+      expect(frames).toHaveLength(0);
+      frames = reader.read(new Uint8Array(FRAME.slice(start, cut)));
+      start = cut;
+    }
 
     expect(frames).toHaveLength(1);
-    expect(frames[0].cellCount).toBe(4);
+    expect(frames[0].voltage).toBeCloseTo(13.289, 3);
   });
 
-  it("assembles a frame split between its two start bytes", () => {
+  it("skips the AT keepalives the BMS interleaves between frames", () => {
     const reader = new JkBmsFrameReader();
 
-    expect(reader.read(new Uint8Array(FRAME.slice(0, 1)))).toHaveLength(0);
-    const frames = reader.read(new Uint8Array(FRAME.slice(1)));
+    expect(reader.read(new Uint8Array(AT_KEEPALIVE))).toHaveLength(0);
+    const first = reader.read(new Uint8Array(FRAME));
+    expect(reader.read(new Uint8Array(AT_KEEPALIVE))).toHaveLength(0);
+    const second = reader.read(new Uint8Array(FRAME));
+
+    expect(first).toHaveLength(1);
+    expect(second).toHaveLength(1);
+  });
+
+  it("skips a keepalive glued to the front of a fragment", () => {
+    const reader = new JkBmsFrameReader();
+
+    reader.read(new Uint8Array([...AT_KEEPALIVE, ...FRAME.slice(0, 128)]));
+    const frames = reader.read(new Uint8Array(FRAME.slice(128)));
 
     expect(frames).toHaveLength(1);
-    expect(frames[0].soc).toBe(98);
+  });
+
+  it("assembles a frame split inside its header", () => {
+    const reader = new JkBmsFrameReader();
+
+    expect(reader.read(new Uint8Array(FRAME.slice(0, 2)))).toHaveLength(0);
+    const frames = reader.read(new Uint8Array(FRAME.slice(2)));
+
+    expect(frames).toHaveLength(1);
   });
 
   it("reads both frames when a chunk carries two", () => {
@@ -134,27 +151,7 @@ describe("JkBmsFrameReader", () => {
     expect(frames).toHaveLength(2);
   });
 
-  it("resynchronises on the start bytes after leading garbage", () => {
-    const reader = new JkBmsFrameReader();
-
-    const frames = reader.read(new Uint8Array([0xaa, 0xbb, 0xcc, ...FRAME]));
-
-    expect(frames).toHaveLength(1);
-    expect(frames[0].soc).toBe(98);
-  });
-
-  it("resynchronises on the next start marker after a bogus length field", () => {
-    const reader = new JkBmsFrameReader();
-
-    const frames = reader.read(
-      new Uint8Array([...withBogusLength(FRAME), ...FRAME]),
-    );
-
-    expect(frames).toHaveLength(1);
-    expect(frames[0].soc).toBe(98);
-  });
-
-  it("resynchronises on the next start marker after a bad checksum", () => {
+  it("drops a frame with a bad checksum and recovers on the next one", () => {
     const reader = new JkBmsFrameReader();
 
     const frames = reader.read(
@@ -162,15 +159,16 @@ describe("JkBmsFrameReader", () => {
     );
 
     expect(frames).toHaveLength(1);
-    expect(frames[0].soc).toBe(98);
+    expect(frames[0].soc).toBe(85);
   });
 
-  it("drops a truncated frame without emitting it", () => {
+  it("consumes a record it does not parse without emitting it", () => {
     const reader = new JkBmsFrameReader();
 
-    const frames = reader.read(new Uint8Array(frame(PAYLOAD.slice(0, -1))));
+    const frames = reader.read(new Uint8Array([...SETTINGS_FRAME, ...FRAME]));
 
-    expect(frames).toHaveLength(0);
+    expect(frames).toHaveLength(1);
+    expect(frames[0].soc).toBe(85);
   });
 
   it("still reads a frame after a flood of bytes that never completes one", () => {
@@ -185,10 +183,10 @@ describe("JkBmsFrameReader", () => {
 
   it("drops the pending bytes once reset", () => {
     const reader = new JkBmsFrameReader();
-    reader.read(new Uint8Array(FRAME.slice(0, 15)));
+    reader.read(new Uint8Array(FRAME.slice(0, 150)));
 
     reader.reset();
 
-    expect(reader.read(new Uint8Array(FRAME.slice(15)))).toHaveLength(0);
+    expect(reader.read(new Uint8Array(FRAME.slice(150)))).toHaveLength(0);
   });
 });

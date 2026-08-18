@@ -5,7 +5,11 @@ import {
   Unsubscribe,
 } from "@/core/observable";
 import { JkBmsFrameReader } from "@/domain/battery/JkBmsFrameReader";
-import { buildReadAllCommand, JkBmsData } from "@/domain/battery/JkBmsProtocol";
+import {
+  buildCellInfoCommand,
+  buildDeviceInfoCommand,
+  JkBmsCellInfo,
+} from "@/domain/battery/JkBmsProtocol";
 import type { BinaryTransport } from "@/domain/ports/BinaryTransport";
 import {
   BatterySnapshot,
@@ -13,6 +17,9 @@ import {
   isLiveCell,
   parseAlarms,
 } from "./BatteryTelemetry";
+
+/** The pause the BMS needs after the wake-up before it accepts the cell-info request. */
+const STREAM_WAKE_DELAY_MS = 500;
 
 /**
  * BatterySystem manages communication with JK BMS via Bluetooth
@@ -24,7 +31,6 @@ export class BatterySystem implements Observable<BatterySnapshot> {
   private readonly frameReader = new JkBmsFrameReader();
   private readonly state: ReturnType<typeof createObservable<BatterySnapshot>>;
   private transportUnsub: Unsubscribe | null = null;
-  private lastReported: JkBmsData = {};
 
   constructor(private readonly transport: BinaryTransport) {
     this.state = createObservable<BatterySnapshot>(DEFAULT_BATTERY_SNAPSHOT);
@@ -40,7 +46,7 @@ export class BatterySystem implements Observable<BatterySnapshot> {
    */
   private onBytes = (bytes: Uint8Array): void => {
     for (const frame of this.frameReader.read(bytes)) {
-      this.onBmsData(frame);
+      this.onCellInfo(frame);
     }
   };
 
@@ -57,24 +63,29 @@ export class BatterySystem implements Observable<BatterySnapshot> {
   };
 
   /**
-   * Request a fresh data update from the BMS
+   * Start the BMS telemetry stream; it then broadcasts on its own at 1 Hz.
    */
   async refresh(): Promise<void> {
-    await this.transport.send(buildReadAllCommand());
+    // The device-info request wakes the stream: sent alone, the cell-info
+    // request goes unanswered (verified against the physical BMS).
+    await this.transport.send(buildDeviceInfoCommand());
+    await delay(STREAM_WAKE_DELAY_MS);
+    await this.transport.send(buildCellInfoCommand());
   }
 
   /** A reconnect starts from a clean parser: the dropped session may have left half a frame. */
   resync = (): void => {
     this.frameReader.reset();
-    void this.refresh().catch(() => {});
+    void this.refresh().catch((err) => {
+      console.warn("Failed to send read command on resync:", err);
+    });
   };
 
   /**
    * Handle incoming BMS data and update state
    */
-  private onBmsData = (data: JkBmsData): void => {
-    this.lastReported = mergeFrames(this.lastReported, data);
-    this.state.setValue(toSnapshot(this.lastReported));
+  private onCellInfo = (data: JkBmsCellInfo): void => {
+    this.state.setValue(toSnapshot(data));
   };
 
   /**
@@ -84,64 +95,55 @@ export class BatterySystem implements Observable<BatterySnapshot> {
     this.transportUnsub?.();
     this.transportUnsub = null;
     this.frameReader.reset();
-    this.lastReported = {};
     this.state.destroy();
   };
 }
 
-/** Current above which the pack counts as charging, whatever the MOSFET says. */
+/** Below this, the trickle through a closed MOSFET does not count as activity. */
 const CHARGE_CURRENT_THRESHOLD = 0.1;
 
-/** Folds raw fields only, so no derived value can be fed back into itself. */
-function mergeFrames(previous: JkBmsData, incoming: JkBmsData): JkBmsData {
-  return { ...previous, ...incoming };
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Derives the whole snapshot from the raw fields, with no memory of its own. */
-function toSnapshot(data: JkBmsData): BatterySnapshot {
-  // The pack as reported, zeros included: index n is physical cell n + 1.
-  const cellVoltages = data.cellVoltages ?? [];
-  const liveCells = cellVoltages.filter(isLiveCell);
+/** Derives the whole snapshot from one frame: a JK02 frame carries every field. */
+function toSnapshot(data: JkBmsCellInfo): BatterySnapshot {
+  const liveCells = data.cellVoltages.filter(isLiveCell);
   const minCellVoltage = liveCells.length > 0 ? Math.min(...liveCells) : 0;
   const maxCellVoltage = liveCells.length > 0 ? Math.max(...liveCells) : 0;
-
-  const percentage = data.soc ?? 0;
-  const voltage = data.totalVoltage ?? 0;
-  const current = data.current ?? 0;
-  const capacityAh = data.capacityAh ?? 0;
-  const alarms = data.errors === undefined ? [] : parseAlarms(data.errors);
+  const alarms = parseAlarms(data.alarms);
 
   return {
     // Main indicators
-    percentage,
-    voltage,
-    current,
-    power: voltage * current,
+    percentage: data.soc,
+    voltage: data.voltage,
+    current: data.current,
+    // The BMS reports power as a magnitude; the current carries the direction.
+    power: data.current < 0 ? -data.power : data.power,
 
     // Cell details
-    cellVoltages,
-    cellCount: data.cellCount ?? 0,
+    cellVoltages: data.cellVoltages,
+    cellCount: data.cellVoltages.length,
     minCellVoltage,
     maxCellVoltage,
     cellDelta: maxCellVoltage - minCellVoltage,
 
     // Temperatures
-    tempMos: data.tempMos ?? 0,
-    tempCell1: data.tempSensor1 ?? 0,
-    tempCell2: data.tempSensor2 ?? 0,
+    tempMos: data.tempMos,
+    tempCell1: data.tempSensor1,
+    tempCell2: data.tempSensor2,
 
     // Capacity
-    capacityAh,
-    remainingAh: (percentage / 100) * capacityAh,
-    cycleCount: data.cycleCount ?? 0,
+    capacityAh: data.nominalAh,
+    remainingAh: data.remainingAh,
+    cycleCount: data.cycleCount,
 
     // Status
-    isCharging:
-      (data.isCharging ?? false) || current > CHARGE_CURRENT_THRESHOLD,
+    isCharging: data.chargeMosfetOn && data.current > CHARGE_CURRENT_THRESHOLD,
     isDischarging:
-      (data.isDischarging ?? false) || current < -CHARGE_CURRENT_THRESHOLD,
-    balancing: (data.balanceState ?? 0) !== 0,
-    balanceCurrent: data.balanceCurrent ?? 0,
+      data.dischargeMosfetOn && data.current < -CHARGE_CURRENT_THRESHOLD,
+    balancing: data.balancing,
+    balanceCurrent: data.balanceCurrent,
 
     // Alarms
     alarms,

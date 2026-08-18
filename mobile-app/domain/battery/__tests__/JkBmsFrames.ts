@@ -1,82 +1,96 @@
-// Field 0x79: a length byte, then (1-based index, mV big-endian) per cell.
-// Cells 1..4 at 3300, 3301, 3299 and 3302 mV.
-export const CELL_VOLTAGES = [
-  0x79, 0x0c, 0x01, 0x0c, 0xe4, 0x02, 0x0c, 0xe5, 0x03, 0x0c, 0xe3, 0x04, 0x0c,
-  0xe6,
-];
-// Same field, cell 2 sensed at 0 mV: a broken sense wire on a 4-cell pack.
-export const BROKEN_SENSE_WIRE = [
-  0x79, 0x0c, 0x01, 0x0d, 0x18, 0x02, 0x00, 0x00, 0x03, 0x0d, 0x21, 0x04, 0x0d,
-  0x0a,
-];
-// Field 0x80: MOS temperature, 104 - 100 = 4 °C. Its low byte is 0x68, the
-// frame end marker, which a payload is allowed to contain.
-export const MOS_TEMP = [0x80, 0x00, 0x68];
-// Field 0x83: pack voltage, 1320 × 10 mV = 13.20 V.
-export const PACK_VOLTAGE = [0x83, 0x05, 0x28];
-// Field 0x84: current, +500 × 10 mA = 5.00 A charging.
-export const CURRENT = [0x84, 0x01, 0xf4];
-// Same field, sign bit set: 500 × 10 mA = 5.00 A discharging.
-export const DISCHARGE_CURRENT = [0x84, 0x81, 0xf4];
-// Same field at zero: the pack neither charges nor discharges.
-export const NO_CURRENT = [0x84, 0x00, 0x00];
-// Field 0x85: state of charge, 98 %.
-export const STATE_OF_CHARGE = [0x85, 0x62];
-// Field 0x8a: cell count, 4.
-export const CELL_COUNT = [0x8a, 0x00, 0x04];
-// Field 0x8f: charge MOSFET closed.
-export const CHARGE_MOSFET_ON = [0x8f, 0x01];
-// Same field: charge MOSFET open.
-export const CHARGE_MOSFET_OFF = [0x8f, 0x00];
-// Field 0x90: discharge MOSFET closed.
-export const DISCHARGE_MOSFET_ON = [0x90, 0x01];
+/** The keepalive the BMS interleaves between its frames: "AT\r\n". */
+export const AT_KEEPALIVE = [0x41, 0x54, 0x0d, 0x0a];
 
-/** A "Read All Data" response from a 4-cell pack, as the BMS puts it on the wire. */
-export const PAYLOAD = [
-  ...CELL_VOLTAGES,
-  ...MOS_TEMP,
-  ...PACK_VOLTAGE,
-  ...CURRENT,
-  ...STATE_OF_CHARGE,
-  ...CELL_COUNT,
-];
+/** Raw field values of a cell-info frame, in the units the wire carries. */
+type CellInfoFields = {
+  recordType: number;
+  cellVoltagesMv: number[];
+  batteryVoltageMv: number;
+  powerMw: number;
+  currentMa: number;
+  soc: number;
+  remainingMah: number;
+  nominalMah: number;
+  cycleCount: number;
+  mosTempDeciC: number;
+  tempSensor1DeciC: number;
+  tempSensor2DeciC: number;
+  alarms: number;
+  balanceCurrentMa: number;
+  balancingAction: number;
+  chargeMosfetOn: number;
+  dischargeMosfetOn: number;
+};
 
-// start bytes "NW" · length (filled in below) · terminal id · read-all
-// command · source BMS · transport type
-const HEADER = [
-  0x4e, 0x57, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00,
-];
-// record number · end byte
-const TRAILER = [0x00, 0x00, 0x00, 0x01, 0x68];
+/** Values read off the physical BMS: P ≈ V × I and remaining/nominal ≈ SOC. */
+const REAL_DEVICE: CellInfoFields = {
+  recordType: 0x02,
+  cellVoltagesMv: [3322, 3322, 3322, 3322],
+  batteryVoltageMv: 13289,
+  powerMw: 81557,
+  currentMa: -6137,
+  soc: 85,
+  remainingMah: 475055,
+  nominalMah: 560000,
+  cycleCount: 12,
+  mosTempDeciC: 231,
+  tempSensor1DeciC: 205,
+  tempSensor2DeciC: 208,
+  alarms: 0,
+  balanceCurrentMa: 0,
+  balancingAction: 0,
+  chargeMosfetOn: 1,
+  dischargeMosfetOn: 1,
+};
 
-/** Wraps a payload in the JKSERIAL v2.5 envelope, length and checksum included. */
-export function frame(payload: number[]): number[] {
-  const withoutCrc = [...HEADER, ...payload, ...TRAILER];
-  const length = withoutCrc.length - 2 + 4; // drop start bytes, add the CRC
-  withoutCrc[2] = (length >> 8) & 0xff;
-  withoutCrc[3] = length & 0xff;
+const FRAME_SIZE = 300;
 
-  const crc = withoutCrc.reduce((sum, byte) => sum + byte, 0);
-  return [
-    ...withoutCrc,
-    (crc >> 24) & 0xff,
-    (crc >> 16) & 0xff,
-    (crc >> 8) & 0xff,
-    crc & 0xff,
-  ];
+/** Builds a 300-byte JK02 frame at the JK02_32S offsets, checksum included. */
+export function cellInfoFrame(
+  overrides: Partial<CellInfoFields> = {},
+): number[] {
+  const fields = { ...REAL_DEVICE, ...overrides };
+  const bytes = new Uint8Array(FRAME_SIZE);
+  const view = new DataView(bytes.buffer);
+
+  bytes.set([0x55, 0xaa, 0xeb, 0x90]);
+  bytes[4] = fields.recordType;
+
+  fields.cellVoltagesMv.forEach((milliVolts, i) => {
+    view.setUint16(6 + 2 * i, milliVolts, true);
+  });
+  view.setUint32(70, (1 << fields.cellVoltagesMv.length) - 1, true);
+  view.setInt16(144, fields.mosTempDeciC, true);
+  view.setUint32(150, fields.batteryVoltageMv, true);
+  view.setUint32(154, fields.powerMw, true);
+  view.setInt32(158, fields.currentMa, true);
+  view.setInt16(162, fields.tempSensor1DeciC, true);
+  view.setInt16(164, fields.tempSensor2DeciC, true);
+  view.setUint32(166, fields.alarms, true);
+  view.setInt16(170, fields.balanceCurrentMa, true);
+  bytes[172] = fields.balancingAction;
+  bytes[173] = fields.soc;
+  view.setUint32(174, fields.remainingMah, true);
+  view.setUint32(178, fields.nominalMah, true);
+  view.setUint32(182, fields.cycleCount, true);
+  bytes[198] = fields.chargeMosfetOn;
+  bytes[199] = fields.dischargeMosfetOn;
+
+  bytes[FRAME_SIZE - 1] = [...bytes.subarray(0, FRAME_SIZE - 1)].reduce(
+    (sum, byte) => sum + byte,
+    0,
+  );
+  return [...bytes];
 }
 
-export const FRAME = frame(PAYLOAD);
+/** The physical BMS's broadcast, as captured field by field. */
+export const FRAME = cellInfoFrame();
+
+/** A settings broadcast: same envelope, a record type the app does not consume. */
+export const SETTINGS_FRAME = cellInfoFrame({ recordType: 0x01 });
 
 export function withBrokenChecksum(source: number[]): number[] {
   const corrupted = [...source];
   corrupted[corrupted.length - 1] ^= 0xff;
-  return corrupted;
-}
-
-export function withBogusLength(source: number[]): number[] {
-  const corrupted = [...source];
-  corrupted[2] = 0xff;
-  corrupted[3] = 0xff;
   return corrupted;
 }
