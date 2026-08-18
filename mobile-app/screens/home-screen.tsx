@@ -145,6 +145,8 @@ const makeStyles = (colors: Palette) =>
       gap: Spacing.l,
     },
     tiles: {
+      /** Pinned to the foot of the content, so the strip sits just above the tab bar. */
+      marginTop: "auto",
       flexDirection: "row",
       gap: Spacing.m,
       paddingTop: Spacing.xl,
