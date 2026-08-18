@@ -24,9 +24,9 @@ function WaterForm({ save }: WaterFormProps) {
     <SettingsFormScreen
       moduleKey="water"
       crumbKey="modules.water.tab"
-      titleKey="water.settings.cleanTank"
-      introKey="water.settings.sending"
-      noteKey="water.settings.volumePlaceholder"
+      titleKey="water.tanks.title"
+      introKey="water.tanks.intro"
+      noteKey="water.tanks.note"
       save={save}
     >
       {(system) => (
@@ -80,9 +80,11 @@ describe("the shell every settings form is built on", () => {
     await onlineForm();
 
     expect(screen.getByTestId("settings-header").textContent).toContain("Eau");
-    expect(screen.getByText("Eau Propre")).toBeTruthy();
-    expect(screen.getByText("Envoi configuration…")).toBeTruthy();
-    expect(screen.getByText("Volume (L)")).toBeTruthy();
+    expect(screen.getByText("Mesure des cuves")).toBeTruthy();
+    expect(
+      screen.getByText(/Le capteur mesure une distance/),
+    ).toBeTruthy();
+    expect(screen.getByText(/Durée de vanne ≤ 300 s/)).toBeTruthy();
   });
 
   it("renders no save button on a read-only form", async () => {
