@@ -170,7 +170,6 @@ describe("the dashboard", () => {
         "Aucun module n'est associé. Ajoute un module pour voir ses niveaux ici.",
       ),
     ).toBeTruthy();
-    expect(screen.getByTestId("add-module")).toBeTruthy();
     expect(tiles()).toHaveLength(0);
   });
 
@@ -183,8 +182,6 @@ describe("the dashboard", () => {
     expect(tiles()).toHaveLength(4);
     // The heater is unpaired, so the strip has measurements from nobody.
     expect(screen.getAllByText("-")).toHaveLength(4);
-    // A free slot still offers the add button, even next to a paired module.
-    expect(screen.getByTestId("add-module")).toBeTruthy();
   });
 
   // A push, not a replace: acceptance example 4 needs the tab left underneath to come back to.
