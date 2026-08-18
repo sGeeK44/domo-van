@@ -10,13 +10,8 @@ export type ModuleSettingsRow = {
   iconBackground: string;
   titleKey: TranslationKey;
   subtitleKey: TranslationKey;
-  /** An unpaired module still reaches its form, which explains what is missing. */
-  dimmed: boolean;
-};
-
-export type SlotSummary = {
-  paired: number;
-  slots: number;
+  /** Paired shows the edit/unpair controls; unpaired dims the row and offers to add. */
+  paired: boolean;
 };
 
 /** The mockup's order, which is not the catalogue's: Eau, Chauffage, Batterie. */
@@ -41,7 +36,7 @@ const ROWS = [
   },
 ] as const satisfies readonly Omit<
   ModuleSettingsRow,
-  "iconBackground" | "dimmed"
+  "iconBackground" | "paired"
 >[];
 
 export function moduleSettingsRows(
@@ -51,15 +46,8 @@ export function moduleSettingsRows(
   return ROWS.map((row) => ({
     ...row,
     iconBackground: moduleAccent(colors, row.moduleKey),
-    dimmed: !isPaired(slots, row.moduleKey),
+    paired: isPaired(slots, row.moduleKey),
   }));
-}
-
-export function slotSummary(slots: readonly ModuleSlot[]): SlotSummary {
-  return {
-    paired: slots.filter((slot) => slot.pairing !== null).length,
-    slots: slots.length,
-  };
 }
 
 function isPaired(slots: readonly ModuleSlot[], key: ModuleKey): boolean {

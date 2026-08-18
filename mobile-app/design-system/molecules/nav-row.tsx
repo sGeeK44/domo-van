@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { IconSymbol } from "@/design-system/atoms/icon-symbol";
 import { useStyles } from "@/design-system/theme/use-styles";
@@ -28,6 +28,8 @@ export type NavRowProps = {
   dimmed?: boolean;
   /** A list of rows tells them apart with this. */
   testID?: string;
+  /** Caller-owned controls that take the chevron's place; they sit outside the tap area. */
+  trailing?: ReactNode;
   onPress: () => void;
 };
 
@@ -38,17 +40,14 @@ export function NavRow({
   subtitle,
   dimmed = false,
   testID = "nav-row",
+  trailing,
   onPress,
 }: NavRowProps) {
   const colors = useThemeColor();
   const styles = useStyles(makeStyles);
 
-  return (
-    <Pressable
-      testID={testID}
-      style={[styles.row, dimmed && styles.dimmed]}
-      onPress={onPress}
-    >
+  const content = (
+    <>
       <View style={[styles.chip, { backgroundColor: iconBackground }]}>
         <IconSymbol name={icon} size={CHIP_ICON_SIZE} color={colors.onFill} />
       </View>
@@ -56,6 +55,32 @@ export function NavRow({
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
       </View>
+    </>
+  );
+
+  // The controls are their own press targets, so the tap area is the content, not the whole row.
+  if (trailing) {
+    return (
+      <View style={styles.row}>
+        <Pressable
+          testID={testID}
+          style={[styles.content, dimmed && styles.dimmed]}
+          onPress={onPress}
+        >
+          {content}
+        </Pressable>
+        {trailing}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      testID={testID}
+      style={[styles.row, dimmed && styles.dimmed]}
+      onPress={onPress}
+    >
+      {content}
       <IconSymbol
         name="chevron-right"
         size={CHEVRON_SIZE}
@@ -75,6 +100,12 @@ const makeStyles = (colors: Palette) =>
       gap: Spacing.xl,
       borderRadius: BorderRadius.l,
       backgroundColor: colors.surface,
+    },
+    content: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.xl,
     },
     dimmed: {
       opacity: Opacity.faint,

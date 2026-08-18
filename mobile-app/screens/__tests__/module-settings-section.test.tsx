@@ -14,7 +14,9 @@ process.env.EXPO_PUBLIC_FAKE_BLE = "1";
 const { pairOnly, renderModuleScreen, switchableLanguage } = await import(
   "./moduleScreenHarness"
 );
-const { default: ModulesScreen } = await import("@/screens/modules-screen");
+const { ModuleSettingsSection } = await import(
+  "@/screens/module-settings-section"
+);
 const { ModuleRegistry } = await import("@/domain/modules/ModuleRegistry");
 const { InMemoryDeviceRepository } = await import(
   "@/infrastructure/fake/InMemoryDeviceRepository"
@@ -48,27 +50,28 @@ async function confirmUnpair(): Promise<void> {
   });
 }
 
-describe("the Modules screen", () => {
+describe("the module rows on Réglages", () => {
   afterEach(() => {
     cleanup();
     resetNavigation();
     vi.restoreAllMocks();
   });
 
-  it("shows one row per paired module and a dashed placeholder per free slot", async () => {
-    const harness = renderModuleScreen(<ModulesScreen />);
+  it("shows edit and unpair on a paired module, and an add button on a free slot", async () => {
+    const harness = renderModuleScreen(<ModuleSettingsSection />);
 
     await pairOnly(harness, ["water"]);
 
-    expect(screen.getByTestId("module-slot-water")).toBeTruthy();
-    expect(screen.getByTestId("free-slot-heater")).toBeTruthy();
-    expect(screen.getByTestId("free-slot-battery")).toBeTruthy();
-    expect(screen.queryByTestId("module-slot-heater")).toBeNull();
+    expect(screen.getByTestId("module-edit-water")).toBeTruthy();
+    expect(screen.getByTestId("unpair-water")).toBeTruthy();
+    expect(screen.getByTestId("add-slot-heater")).toBeTruthy();
+    expect(screen.getByTestId("add-slot-battery")).toBeTruthy();
+    expect(screen.queryByTestId("unpair-heater")).toBeNull();
   });
 
   it("frees the slot once, when the sheet is confirmed", async () => {
     const unpair = vi.spyOn(ModuleRegistry.prototype, "unpair");
-    const harness = renderModuleScreen(<ModulesScreen />);
+    const harness = renderModuleScreen(<ModuleSettingsSection />);
     await pairOnly(harness, ["water"]);
     unpair.mockClear();
 
@@ -76,16 +79,16 @@ describe("the Modules screen", () => {
     await confirmUnpair();
 
     await waitFor(() => {
-      expect(screen.getByTestId("free-slot-water")).toBeTruthy();
+      expect(screen.getByTestId("add-slot-water")).toBeTruthy();
     });
-    expect(screen.queryByTestId("module-slot-water")).toBeNull();
+    expect(screen.queryByTestId("unpair-water")).toBeNull();
     expect(unpair).toHaveBeenCalledTimes(1);
     expect(unpair).toHaveBeenCalledWith("water");
   });
 
   it("keeps the sheet open and names the failure when storage refuses to drop the pairing", async () => {
     const escaped = watchUnhandledRejections();
-    const harness = renderModuleScreen(<ModulesScreen />);
+    const harness = renderModuleScreen(<ModuleSettingsSection />);
     await pairOnly(harness, ["water"]);
     vi.spyOn(
       InMemoryDeviceRepository.prototype,
@@ -106,7 +109,7 @@ describe("the Modules screen", () => {
   // Acceptance example 7 says every screen, so a failure already on screen switches too.
   it("re-reads a displayed unpairing failure in the language chosen after it", async () => {
     watchUnhandledRejections();
-    const { tree, switchTo } = switchableLanguage(<ModulesScreen />);
+    const { tree, switchTo } = switchableLanguage(<ModuleSettingsSection />);
     const harness = renderModuleScreen(tree);
     await pairOnly(harness, ["water"]);
     // A native store answers with what it likes; anything but an Error falls back to the key.
@@ -130,20 +133,20 @@ describe("the Modules screen", () => {
   });
 
   it("keeps the paired module when the sheet is cancelled", async () => {
-    const harness = renderModuleScreen(<ModulesScreen />);
+    const harness = renderModuleScreen(<ModuleSettingsSection />);
     await pairOnly(harness, ["heater"]);
 
     await openUnpairSheet("heater");
     fireEvent.click(screen.getByTestId("unpair-cancel"));
 
-    expect(screen.getByTestId("module-slot-heater")).toBeTruthy();
-    expect(screen.queryByTestId("free-slot-heater")).toBeNull();
+    expect(screen.getByTestId("unpair-heater")).toBeTruthy();
+    expect(screen.queryByTestId("add-slot-heater")).toBeNull();
   });
 
   it("returns to the one mounted dashboard when the unpaired module owns the open tab", async () => {
     setOpenTab("heater");
-    routerStack.push("/modules");
-    const harness = renderModuleScreen(<ModulesScreen />);
+    routerStack.push("/settings");
+    const harness = renderModuleScreen(<ModuleSettingsSection />);
     await pairOnly(harness, ["heater"]);
 
     await openUnpairSheet("heater");
@@ -156,47 +159,33 @@ describe("the Modules screen", () => {
 
   it("stays on the screen when another module owns the open tab", async () => {
     setOpenTab("water");
-    routerStack.push("/modules");
-    const harness = renderModuleScreen(<ModulesScreen />);
+    routerStack.push("/settings");
+    const harness = renderModuleScreen(<ModuleSettingsSection />);
     await pairOnly(harness, ["water", "heater"]);
 
     await openUnpairSheet("heater");
     await confirmUnpair();
 
     await waitFor(() => {
-      expect(screen.getByTestId("free-slot-heater")).toBeTruthy();
+      expect(screen.getByTestId("add-slot-heater")).toBeTruthy();
     });
-    expect(routerStack).toEqual(["/(tabs)", "/modules"]);
-  });
-
-  // Planning decision 12: the identity form's only way in.
-  it("opens the module's identity form from its row", async () => {
-    const harness = renderModuleScreen(<ModulesScreen />);
-    await pairOnly(harness, ["water"]);
-
-    fireEvent.click(screen.getByTestId("module-edit-water"));
-
-    expect(routerHistory).toContainEqual({
-      method: "push",
-      href: "/settings/water-identity",
-    });
+    expect(routerStack).toEqual(["/(tabs)", "/settings"]);
   });
 
   // The JK BMS is third-party hardware with no admin channel, so it has no identity to edit.
   it("offers no identity to edit on the battery row", async () => {
-    const harness = renderModuleScreen(<ModulesScreen />);
+    const harness = renderModuleScreen(<ModuleSettingsSection />);
     await pairOnly(harness, ["battery"]);
 
-    expect(screen.getByTestId("module-slot-battery")).toBeTruthy();
-    expect(screen.queryByTestId("module-edit-battery")).toBeNull();
     expect(screen.getByTestId("unpair-battery")).toBeTruthy();
+    expect(screen.queryByTestId("module-edit-battery")).toBeNull();
   });
 
   it("sends a free slot to the Ajouter screen", async () => {
-    const harness = renderModuleScreen(<ModulesScreen />);
+    const harness = renderModuleScreen(<ModuleSettingsSection />);
     await pairOnly(harness, []);
 
-    fireEvent.click(screen.getByTestId("free-slot-water"));
+    fireEvent.click(screen.getByTestId("add-slot-water"));
 
     expect(routerHistory).toContainEqual({
       method: "push",

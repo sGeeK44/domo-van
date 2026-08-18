@@ -14,7 +14,7 @@ describe("the i18next instance", () => {
   it("shows English copy on every screen once the device speaks English", () => {
     const i18n = createI18n("en");
 
-    expect(i18n.t("modules.list.title")).toBe("Modules");
+    expect(i18n.t("settings.title")).toBe("Settings");
     expect(i18n.t("heater.zones.title")).toBe("Heating");
     expect(i18n.t("battery.overview.title")).toBe("Battery");
     expect(i18n.t("modules.water.tab")).toBe("Water");

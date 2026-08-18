@@ -121,7 +121,7 @@ describe("the Réglages screen", () => {
     await press("segment-en");
 
     expect(screen.getByText("Settings")).toBeTruthy();
-    expect(screen.getByText("Paired modules")).toBeTruthy();
+    expect(screen.getByText("Water")).toBeTruthy();
     expect(save).toHaveBeenCalledWith({ language: "en" });
 
     cleanup();
@@ -147,20 +147,18 @@ describe("the Réglages screen", () => {
     expect(save).toHaveBeenLastCalledWith({ themeMode: "auto" });
   });
 
-  it("opens the three forms and the Modules list from their rows", async () => {
+  it("opens the three forms from their rows", async () => {
     await openSettings(new InMemoryPreferencesRepository(), [
       "water",
       "heater",
       "battery",
     ]);
 
-    await press("settings-row-modules");
     await press("settings-row-water");
     await press("settings-row-heater");
     await press("settings-row-battery");
 
     expect(routerHistory).toEqual([
-      { method: "push", href: "/modules" },
       { method: "push", href: "/settings/water-tanks" },
       { method: "push", href: "/settings/heater-pid" },
       { method: "push", href: "/settings/battery-info" },
@@ -182,15 +180,6 @@ describe("the Réglages screen", () => {
       method: "push",
       href: "/settings/heater-pid",
     });
-  });
-
-  it("counts the paired modules against the slots the registry holds", async () => {
-    await openSettings(new InMemoryPreferencesRepository(), [
-      "water",
-      "heater",
-    ]);
-
-    expect(screen.getByText("2 sur 3 emplacements")).toBeTruthy();
   });
 
   it("footers the app version the manifest declares", async () => {

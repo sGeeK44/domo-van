@@ -35,7 +35,7 @@ import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
 import { DEFAULT_TANK_SNAPSHOT } from "@/domain/water/TankLevelSensor";
 import { useHeaterSummary } from "@/screens/hooks/useHeaterSummary";
 
-const MODULES_ROUTE = "/modules";
+const ADD_MODULE_ROUTE = "/add-module";
 const SETTINGS_ROUTE = "/settings";
 
 /** Every module tab is the route its key names, see components/navigation/module-tabs.ts. */
@@ -49,7 +49,7 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const styles = useStyles(makeStyles);
   const router = useRouter();
-  const openModules = () => router.push(MODULES_ROUTE);
+  const addModule = () => router.push(ADD_MODULE_ROUTE);
 
   const { reconnect } = useModuleRegistry();
   const slots = useModuleSlots();
@@ -82,14 +82,14 @@ export default function HomeScreen() {
               <DashboardCard
                 key={view.id}
                 view={view}
-                onAdd={openModules}
+                onAdd={addModule}
                 onOpen={() => router.push(MODULE_ROUTE[view.moduleKey])}
                 onReconnect={() => void reconnect(view.moduleKey)}
               />
             ))}
           </View>
 
-          {anyFree && <AddModuleButton onPress={openModules} />}
+          {anyFree && <AddModuleButton onPress={addModule} />}
 
           {anyPaired && (
             <View style={styles.tiles}>

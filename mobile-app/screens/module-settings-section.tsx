@@ -1,23 +1,32 @@
 import { useRootNavigationState, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { StyleSheet, Text, View } from "react-native";
 import { type ErrorReport, errorMessage } from "@/components/error-message";
-import { FreeSlotRow, ModuleSlotRow, UnpairSheet } from "@/components/modules";
+import { UnpairSheet } from "@/components/modules";
+import { moduleSettingsRows } from "@/components/settings/settings-rows";
 import {
   useModuleRegistry,
   useModuleSlots,
 } from "@/composition/ModuleRegistryProvider";
 import {
   FontSize,
+  IconCircleButton,
+  NavRow,
   type Palette,
-  SettingsHeader,
   Spacing,
+  useStyles,
   useThemeColor,
 } from "@/design-system";
 import type { ModuleKey } from "@/domain/modules/ModuleDescriptor";
 import type { ModuleSlot } from "@/domain/modules/ModuleSlot";
+
+/** Réglages reaches the same three forms the module tabs' tune chip does. */
+const FORM_ROUTE = {
+  water: "/settings/water-tanks",
+  heater: "/settings/heater-pid",
+  battery: "/settings/battery-info",
+} as const satisfies Record<ModuleKey, string>;
 
 /** The only way into an identity form — and the JK BMS has no admin channel to reach. */
 const IDENTITY_ROUTE = {
@@ -31,12 +40,13 @@ function hasIdentityForm(key: ModuleKey): key is EditableModule {
   return key in IDENTITY_ROUTE;
 }
 
+const ADD_MODULE_ROUTE = "/add-module";
 const DASHBOARD_ROUTE = "/(tabs)";
 
-export default function ModulesScreen() {
+export function ModuleSettingsSection() {
   const { t } = useTranslation();
   const colors = useThemeColor();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useStyles(makeStyles);
   const router = useRouter();
 
   const slots = useModuleSlots();
@@ -46,9 +56,6 @@ export default function ModulesScreen() {
   const [leaving, setLeaving] = useState<ModuleSlot | null>(null);
   const [isUnpairing, setIsUnpairing] = useState(false);
   const [error, setError] = useState<ErrorReport | null>(null);
-
-  const occupied = slots.filter((slot) => slot.pairing !== null);
-  const free = slots.filter((slot) => slot.pairing === null);
 
   const confirmUnpair = async () => {
     if (!leaving || isUnpairing) return;
@@ -72,34 +79,57 @@ export default function ModulesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <SettingsHeader
-        title={t("modules.list.title")}
-        onBackPress={() => router.back()}
-      />
+    <>
+      {error && (
+        <Text style={styles.error}>
+          {errorMessage(error.cause, t, error.fallbackKey)}
+        </Text>
+      )}
 
-      <ScrollView contentContainerStyle={styles.list}>
-        {error && (
-          <Text style={styles.error}>
-            {errorMessage(error.cause, t, error.fallbackKey)}
-          </Text>
-        )}
-        {occupied.map((slot) => (
-          <ModuleSlotRow
-            key={slot.module.key}
-            slot={slot}
-            onEdit={editIdentity(router, slot.module.key)}
-            onUnpair={() => setLeaving(slot)}
+      {moduleSettingsRows(slots, colors).map((row) => {
+        const key = row.moduleKey;
+        const identityRoute = hasIdentityForm(key) ? IDENTITY_ROUTE[key] : null;
+
+        return (
+          <NavRow
+            key={key}
+            testID={`settings-row-${key}`}
+            icon={row.icon}
+            iconBackground={row.iconBackground}
+            title={t(row.titleKey)}
+            subtitle={t(row.subtitleKey)}
+            dimmed={!row.paired}
+            onPress={() => router.push(FORM_ROUTE[key])}
+            trailing={
+              row.paired ? (
+                <View style={styles.actions}>
+                  {identityRoute && (
+                    <IconCircleButton
+                      testID={`module-edit-${key}`}
+                      icon="edit"
+                      accessibilityLabel={t("settings.rows.editIdentity")}
+                      onPress={() => router.push(identityRoute)}
+                    />
+                  )}
+                  <IconCircleButton
+                    testID={`unpair-${key}`}
+                    icon="delete"
+                    accessibilityLabel={t("modules.list.unpair")}
+                    onPress={() => setLeaving(slotOf(slots, key))}
+                  />
+                </View>
+              ) : (
+                <IconCircleButton
+                  testID={`add-slot-${key}`}
+                  icon="add"
+                  accessibilityLabel={t("dashboard.addModule")}
+                  onPress={() => router.push(ADD_MODULE_ROUTE)}
+                />
+              )
+            }
           />
-        ))}
-        {free.map((slot) => (
-          <FreeSlotRow
-            key={slot.module.key}
-            module={slot.module}
-            onPress={() => router.push("/add-module")}
-          />
-        ))}
-      </ScrollView>
+        );
+      })}
 
       <UnpairSheet
         visible={leaving !== null}
@@ -109,18 +139,15 @@ export default function ModulesScreen() {
         onCancel={() => setLeaving(null)}
         onConfirm={confirmUnpair}
       />
-    </SafeAreaView>
+    </>
   );
 }
 
-type Router = ReturnType<typeof useRouter>;
-
-function editIdentity(
-  router: Router,
+function slotOf(
+  slots: readonly ModuleSlot[],
   key: ModuleKey,
-): (() => void) | undefined {
-  if (!hasIdentityForm(key)) return undefined;
-  return () => router.push(IDENTITY_ROUTE[key]);
+): ModuleSlot | null {
+  return slots.find((candidate) => candidate.module.key === key) ?? null;
 }
 
 type NavigationSnapshot = {
@@ -140,19 +167,15 @@ function openTabName(
     : undefined;
 }
 
-const createStyles = (colors: Palette) =>
+const makeStyles = (colors: Palette) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.screen,
-    },
-    list: {
-      paddingHorizontal: Spacing.xxl,
-      paddingBottom: Spacing.xxl,
-      gap: Spacing.m,
-    },
     error: {
       color: colors.danger,
       fontSize: FontSize.xs,
+    },
+    actions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.s,
     },
   });
