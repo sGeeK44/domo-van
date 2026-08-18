@@ -41,9 +41,7 @@ describe("the i18next instance", () => {
     expect(i18n.t("link.contact.minutes", { value: 5 })).toBe(
       "Dernier contact il y a 5 min",
     );
-    expect(i18n.t("water.settings.tankSection", { tank: "Eau Propre" })).toBe(
-      "Réservoir (Eau Propre)",
-    );
+    expect(i18n.t("heater.pid.card", { zone: "Salon" })).toBe("PID · Salon");
   });
 
   it("rejects an unknown key at compile time, not at runtime", () => {

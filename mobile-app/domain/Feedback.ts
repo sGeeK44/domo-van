@@ -9,7 +9,6 @@ export type FeedbackKey =
   | "common.feedback.notAnswered"
   | "common.feedback.unreachable"
   | "modules.admin.failed"
-  | "water.feedback.autoCloseFailed"
   | "water.feedback.openFailed"
   | "water.feedback.closeFailed"
   | "heater.feedback.setpointFailed"
