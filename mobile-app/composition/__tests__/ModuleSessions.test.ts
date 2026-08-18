@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ModuleSystemSessions } from "@/composition/ModuleSessions";
 import type { Listener, Unsubscribe } from "@/core/observable";
 import { BatterySystem } from "@/domain/battery/BatterySystem";
@@ -162,19 +162,32 @@ function evictingRegistry() {
   return { transports, registry };
 }
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+/** `start` retries its connects, so the restore only settles once the waits between them are burnt. */
+async function startAndExhaustRetries(registry: ModuleRegistry): Promise<void> {
+  const starting = registry.start();
+  await vi.advanceTimersByTimeAsync(4_000);
+  await starting;
+}
+
 describe("a device the transport factory refuses to serve", () => {
   it("leaves the slot offline instead of stuck connecting", async () => {
+    vi.useFakeTimers();
     const { registry } = evictingRegistry();
 
-    await registry.start();
+    await startAndExhaustRetries(registry);
 
     expect(registry.slotOf("water").link.status).toBe("offline");
     expect(registry.slotOf("water").pairing?.id).toBe("fake-water");
   });
 
   it("still reconnects once the factory serves the device again", async () => {
+    vi.useFakeTimers();
     const { transports, registry } = evictingRegistry();
-    await registry.start();
+    await startAndExhaustRetries(registry);
 
     transports.serveAgain();
     await registry.reconnect("water");

@@ -307,6 +307,65 @@ describe("ModuleRegistry", () => {
     await starting;
   });
 
+  it("retries a restore connect that failed, so a cold radio needs no reconnect press", async () => {
+    vi.useFakeTimers();
+    const { repository, connector, registry } = setup();
+    repository.store("water", WATER_DEVICE);
+    connector.deferConnects();
+
+    const starting = registry.start();
+    await connector.whenConnectRequested("water-1");
+    connector.rejectConnect("water-1", new Error("out of range"));
+    await flushMicrotasks();
+
+    expect(registry.slotOf("water").link.status).toBe("offline");
+
+    await vi.advanceTimersByTimeAsync(2_000);
+    await connector.whenConnectRequested("water-1");
+    connector.settleConnect("water-1");
+    await starting;
+
+    expect(connector.connectCalls).toEqual(["water-1", "water-1"]);
+    expect(registry.slotOf("water").link.status).toBe("online");
+  });
+
+  it("gives up the restore after three attempts, leaving the slot offline", async () => {
+    vi.useFakeTimers();
+    const { repository, connector, registry } = setup();
+    repository.store("water", WATER_DEVICE);
+    connector.failWith(new Error("out of range"));
+
+    const starting = registry.start();
+    await vi.advanceTimersByTimeAsync(4_000);
+    await starting;
+
+    expect(connector.connectCalls).toEqual(["water-1", "water-1", "water-1"]);
+    expect(registry.slotOf("water").link).toEqual({
+      status: "offline",
+      lastContactAt: null,
+    });
+  });
+
+  it("drops the restore retry when the slot is unpaired during the wait", async () => {
+    vi.useFakeTimers();
+    const { repository, connector, registry } = setup();
+    repository.store("water", WATER_DEVICE);
+    connector.deferConnects();
+
+    const starting = registry.start();
+    await connector.whenConnectRequested("water-1");
+    connector.rejectConnect("water-1", new Error("out of range"));
+    await flushMicrotasks();
+
+    const unpairing = registry.unpair("water");
+    await starting;
+    await unpairing;
+    await vi.advanceTimersByTimeAsync(4_000);
+
+    expect(connector.connectCalls).toEqual(["water-1"]);
+    expect(registry.slotOf("water").pairing).toBeNull();
+  });
+
   it("keeps the catalogue order and exposes one slot per module", () => {
     const { registry } = setup();
 

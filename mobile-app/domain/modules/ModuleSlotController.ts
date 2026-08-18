@@ -14,10 +14,14 @@ import type { ModuleSessions } from "@/domain/ports/ModuleSessions";
 
 type ConnectOutcome =
   | { kind: "connected"; device: DeviceHandle }
-  | { kind: "failed" }
+  | { kind: "failed"; reason: unknown }
   | { kind: "aborted" };
 
 type ConnectTarget = { deviceId: string; lastContactAt: number | null };
+
+/** The radio is rarely ready on the first try right after boot, and nobody is watching the slot to press reconnect. */
+const RESTORE_ATTEMPTS = 3;
+const RESTORE_RETRY_DELAY_MS = 2_000;
 
 export type ModuleSlotControllerDeps = {
   module: ModuleDescriptor;
@@ -48,6 +52,7 @@ export class ModuleSlotController {
   private handle: DeviceHandle | null = null;
   private watcher: Unsubscribe | null = null;
   private pendingAbort: (() => void) | null = null;
+  private pendingRetry: (() => void) | null = null;
   private sessionOpen = false;
   private disposed = false;
 
@@ -95,7 +100,29 @@ export class ModuleSlotController {
 
     this.occupy(pairing);
     this.openSession(pairing);
-    await this.connectNow();
+    await this.connectWithRetry();
+  }
+
+  /** Stops as soon as `connectTarget` dries up: online, aborted by a release, or disposed. */
+  private async connectWithRetry(): Promise<void> {
+    for (let attempt = 1; attempt <= RESTORE_ATTEMPTS; attempt += 1) {
+      await this.connectNow();
+      if (attempt === RESTORE_ATTEMPTS || !this.connectTarget()) return;
+      if (!(await this.waitBeforeRetry())) return;
+    }
+  }
+
+  /** Answers `false` when a release or a dispose cut the wait short, so the loop stops instead of dialling a slot nobody wants. */
+  private waitBeforeRetry(): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      const settle = (retry: boolean) => {
+        clearTimeout(timer);
+        this.pendingRetry = null;
+        resolve(retry);
+      };
+      const timer = setTimeout(() => settle(true), RESTORE_RETRY_DELAY_MS);
+      this.pendingRetry = () => settle(false);
+    });
   }
 
   private async claimNow(pairing: DeviceInfo): Promise<void> {
@@ -139,6 +166,10 @@ export class ModuleSlotController {
     // an abort means whoever aborted us already owns the slot state
     if (outcome.kind === "aborted") return;
     if (outcome.kind === "failed") {
+      console.warn(
+        `[${this.module.key}] Failed to connect ${target.deviceId}:`,
+        outcome.reason,
+      );
       this.setLink(offline(target.lastContactAt));
       return;
     }
@@ -164,7 +195,11 @@ export class ModuleSlotController {
         resolve(outcome);
       };
       const timer = setTimeout(
-        () => settle({ kind: "failed" }),
+        () =>
+          settle({
+            kind: "failed",
+            reason: new Error(`timed out after ${this.connectTimeoutMs}ms`),
+          }),
         this.connectTimeoutMs,
       );
       this.pendingAbort = () => settle({ kind: "aborted" });
@@ -174,8 +209,8 @@ export class ModuleSlotController {
           if (pending) settle({ kind: "connected", device });
           else void this.releaseHandle(device);
         },
-        () => {
-          if (pending) settle({ kind: "failed" });
+        (error) => {
+          if (pending) settle({ kind: "failed", reason: error });
         },
       );
     });
@@ -183,6 +218,7 @@ export class ModuleSlotController {
 
   private abortPendingConnect(): void {
     this.pendingAbort?.();
+    this.pendingRetry?.();
   }
 
   private attach(device: DeviceHandle, lastContactAt: number | null): void {
