@@ -81,9 +81,7 @@ describe("the shell every settings form is built on", () => {
 
     expect(screen.getByTestId("settings-header").textContent).toContain("Eau");
     expect(screen.getByText("Mesure des cuves")).toBeTruthy();
-    expect(
-      screen.getByText(/Le capteur mesure une distance/),
-    ).toBeTruthy();
+    expect(screen.getByText(/Le capteur mesure une distance/)).toBeTruthy();
     expect(screen.getByText(/Durée de vanne ≤ 300 s/)).toBeTruthy();
   });
 
