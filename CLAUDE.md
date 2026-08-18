@@ -114,13 +114,24 @@ Contains common C++ code: BLE management, protocol parsing, ESP32 utilities, NVS
 
 ## Module-Specific Notes
 
+### Admin channel (both ESP32 modules)
+- `shared-libs/protocol/AdminProtocol.cpp` handles `PIN:<6 digits>`,
+  `NAME:<name>` and `ID:NAME=<name>;PIN=<6 digits>`; anything else answers
+  `ERR_UNKNOWN_CMD`.
+- **`ID:` is the one to use for an identity change.** It persists both fields or
+  neither and answers a single `OK` / `ERR_*`. `AdminListner.cpp` reboots the
+  module on any `OK`, so sending `NAME:` then `PIN:` loses the second field.
+- The channel answers no query, so a write here has **no readback** — a mobile
+  timeout on it is final.
+
 ### Water Module
 - Uses JSN-SR04T ultrasonic sensors with rolling median + EMA filtering
-- Tank config via BLE: `CFG:V=<liters>;H=<mm>`
+- Tank config via BLE: `CFG:V=<liters>;H=<mm>`, read back with `CFG?`
 - Valve commands: `OPEN`, `CLOSE`
 
 ### Heater Module
 - 4 independent PID-controlled zones with DS18B20 temperature sensors
 - BME280 for indoor environment (temp/humidity/pressure)
-- PID config via BLE: `CFG:KP=<kp>;KI=<ki>;KD=<kd>` (values x100)
+- PID config via BLE: `CFG:KP=<kp>;KI=<ki>;KD=<kd>` (values x100), read back
+  with `CFG?`
 - Control: `START`, `STOP`, `SP:<celsius×10>`

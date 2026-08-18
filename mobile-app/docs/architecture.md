@@ -69,8 +69,9 @@ sees a connected device through the `DeviceHandle` port and asks
   injected, and one exists per pairing — session lifetime, which the container
   knows nothing about.
 - **One boot gate, above the providers.** `composition/useAppReady.ts` ANDs
-  every condition the first paint waits on — the bundled fonts and the stored
-  theme mode — and lifts the splash once they all hold. It renders above
+  every condition the first paint waits on — the bundled fonts, and the stored
+  theme mode and language, both read by one `useAppPreferences` load — and lifts
+  the splash once they all hold. It renders above
   `AppProviders`, so it takes its port from `composition/appContainer.ts`, the
   container built outside the React tree and handed down unchanged by
   `ContainerProvider`. A second gate elsewhere would paint a frame this one is
@@ -81,7 +82,7 @@ sees a connected device through the `DeviceHandle` port and asks
   place that sees both. It takes an `initialMode` value — already hydrated,
   which is what avoids a light→dark flash — and an `onModeChange` callback.
   Neither names a port; the write-through and its swallowed rejection live in
-  `composition/useThemePreference.ts`.
+  `composition/useAppPreferences.ts`, which does the same for the language.
 - **`ModuleRegistry` owns the slots.** One slot per module type holds the
   pairing and the link state. `composition/ModuleRegistryProvider.tsx` builds
   the registry inside its mount effect and disposes it on unmount; disposal is
@@ -118,11 +119,15 @@ sees a connected device through the `DeviceHandle` port and asks
   `design-system/`, and always through concrete files from inside it — the
   barrel would close a cycle.
 - **A route under `app/` is two lines**: import a screen, default-export it.
-  Everything under `app/` is a route, so put no helper there. `app/_layout.tsx`
-  stays a real file: it exports `unstable_settings`, which expo-router reads
-  off the route module. `app/(tabs)/_layout.tsx` is a two-liner over
-  `screens/tabs-layout.tsx`, because the bar it draws reads the slots and the
-  catalogue, which `app/` may not import.
+  Everything under `app/` is a route, so put no helper there. **Two layout files
+  are real code**, and they are the only two: `app/_layout.tsx`, which exports
+  `unstable_settings` (expo-router reads it off the route module) and mounts the
+  boot gate and the providers, and `app/settings/_layout.tsx`, whose whole job is
+  a `Stack` with `headerShown: false` for the six settings routes — a
+  `<Stack.Screen>` per form in the root layout would say the same thing six
+  times. `app/(tabs)/_layout.tsx` is a two-liner over `screens/tabs-layout.tsx`,
+  because the bar it draws reads the slots and the catalogue, which `app/` may
+  not import.
 
 ## The screens
 
@@ -186,6 +191,24 @@ targets it displaced live in the module, and the app never knew them.
 
 ### A confirmed write owns its channel's acks
 
+**A write has four answers, not two.** `WriteOutcome` separates them because a
+form has a different sentence for each, and collapsing any pair would make one of
+those sentences a lie:
+
+| status | what happened | what the user is told |
+|---|---|---|
+| `applied` | the module acked `OK`, or echoed back what we wrote | *Configuration envoyée au module* |
+| `rejected` | the module answered `ERR_*`; it kept the value it had | the value was refused — with the code's field, where the code names one |
+| `timedOut` | the write left the phone and the module confirmed nothing | *le module n'a pas confirmé* |
+| `unreachable` | the write **never left the phone**: `channel.send` threw, or the transport was disposed mid-save | *module injoignable* |
+
+`unreachable` and `timedOut` are the pair worth keeping apart. Nothing was
+transmitted in the first, so *reconnect and try again* is actionable and the
+module's state is certainly unchanged; something was transmitted in the second,
+so the module may well hold the new value and the honest report is that it did
+not confirm. One `failed` status covering both would send the user hunting for a
+radio problem that is not there, or reassure them about a write that landed.
+
 `ConfirmedWrite` correlates an ack with a command **by position**: the module
 answers in order, and nothing in the protocol names the command an `OK` belongs
 to. So a channel may only ever have one source of writes in flight.
@@ -230,6 +253,148 @@ The failure path is not the screen's. `screens/hooks/useFeedbackToast.ts`
 watches a domain object's `lastFeedback` and shows `t(key, params)` when it
 changes; a module repeating itself is one event, not two toasts.
 
+## The settings forms
+
+Five forms — water identity, water tanks and valve, heater identity, heater PID,
+battery information — differ by their cards and by nothing else. They live under
+`app/settings/`, alongside `index.tsx` for Réglages, and they are reached from
+three surfaces: a module tab's `tune` chip, a Réglages row, and the Modules
+screen's `edit` button (identity only, and only for water and heater — the JK BMS
+has no admin channel).
+
+### `SettingsFormScreen` is the shell
+
+`screens/settings-form-screen.tsx` owns the page frame and the **same three
+states** a module tab has: an unpaired slot shows `ModuleLinkNotice`, an offline
+or connecting one is taken over by `OfflineTakeover`, and an online one renders
+`children(system)`. It is `ModuleScreen`'s shape, reused: a form returns cards and
+nothing else — no `SafeAreaView`, no `screen` background, no padding.
+
+What it varies is `crumbKey` / `titleKey` / `introKey` / `noteKey`, and a `save`
+that is **optional**: Batterie is read-only, so it passes none and no button is
+drawn. `components/battery-settings/battery-info-view.ts` is the pure
+`(snapshot) → FormCardView[]` behind it, returning keys and numbers the screen
+translates — the `components/home/link-view.ts` precedent. The card list is a
+`KeyboardAwareScrollView` with a 78 px `bottomOffset`, so a focused field stays
+above the keyboard; `KeyboardProvider` is mounted once, at the root of
+`app/_layout.tsx`.
+
+### Back returns to the caller, and no route param says so
+
+Every entry point is a `push` onto the same stack, so `router.back()` already
+lands on whichever of the three surfaces opened the form. There is no `from`
+param because the stack is the state. What holds it true is negative: no
+`replace` and no `dismissTo` anywhere under `app/settings/`, and a test per entry
+point.
+
+`app/settings/_layout.tsx` therefore exports **no `unstable_settings`** — neither
+`anchor` nor `initialRouteName`. Either one would seat Réglages under every form
+as the group's first route, and a back press from a form opened off the *Eau* tab
+would land on Réglages instead of on Eau. The absence is load-bearing, which is
+why the file carries a comment saying so and the route test asserts the
+identifier is not there.
+
+### `useSettingsForm` owns the draft
+
+`screens/hooks/useSettingsForm.ts` is the one place the telemetry rule lives:
+**there is no draft until the first keystroke.** `values` is `draft ?? reported`,
+so while `draft` is `null` every frame the module publishes flows straight
+through, and from the first `set` the draft shadows it completely. A distance
+frame landing while the volume field is being edited changes nothing on screen.
+The draft is cleared — and hydration resumes — only when the module has the last
+word, and only if nothing was typed since the save started (`current === sent`; a
+keystroke since is newer than the module's answer).
+
+**`onSave` returns whether the module has the last word**, not whether the save
+succeeded. `components/settings/save-report.ts:moduleHasTheLastWord` answers
+`true` for `applied` and for a failure whose every write was `rejected`: a refusal
+is authoritative, the module told us it kept what it had, so the draft goes and
+the field falls back to the reported value. `timedOut` and `unreachable` answer
+`false` — silence is exactly what the user retries, so throwing the typed values
+away would make the retry impossible.
+
+**`errors` and `blocked` are two different questions.** `errors` is *what to
+paint*, and it is empty until a save has been tried, so a field nobody has typed
+in yet is never red on arrival. `blocked` is *would validation refuse a save*,
+ungated — the screen needs it before any press. `save()` sets `tried` **before**
+its early return, so a press refused by a field the user never touched still
+paints the reason.
+
+That leaves the refused press itself, which is what `savePress` handles: it calls
+`save()` (which paints) and then, if `blocked`, fires `onBlocked` — a toast saying
+*Corrige les champs en rouge*. Without it the button would be a dead control: the
+field turns red somewhere off-screen and the press appears to have done nothing.
+A blocked save sends no command at all.
+
+### One save, one transaction, one sentence per kind of failure
+
+A whole-form save is a domain method, never a `Promise.all` in a screen:
+`AdminModule.saveIdentity` (one channel), `WaterSystem.saveTankAndValveConfig`
+(three channels, five fields), `HeaterSystem.savePidConfig` (four channels, twelve
+fields). `saveFields` writes **every** field before reporting and names every one
+that failed — stopping at the first failure would leave the module in a state the
+form cannot describe.
+
+`saveMessage` groups the failures by `WriteOutcome.status` and emits one sentence
+per group, naming the fields it covers. Naming one field out of four reads as *the
+rest went through*; describing all four with the first one's status says a refused
+field went silent, or the reverse.
+
+The success toast is the **screen's** own, fired where the command is sent:
+`useFeedbackToast` reports failures only, so a confirmation has nowhere else to
+come from.
+
+### Identity travels as one command
+
+`AdminProtocol` gained `ID:NAME=<name>;PIN=<6 digits>`, which persists both
+fields or neither and answers a single `OK` / `ERR_*`. It had to: `AdminListner`
+reboots the module on any `OK`, so an identity save sent as `NAME:` then `PIN:`
+always lost its second field to the restart. The admin channel is also the one
+channel with **no readback** — `AdminProtocol` answers `ERR_UNKNOWN_CMD` to any
+query — so there a timeout stays the honest answer, and `AdminModule` builds its
+`ConfirmedWrite` with a `null` readback.
+
+Because name and PIN are one command, one `ERR_*` covers both, and only the
+module's code tells them apart: `identityFieldName` maps `ERR_NAME_*` /
+`ERR_PIN_*` onto the field and falls back to *the module's identity*.
+
+### Where the pieces live
+
+| File | Holds |
+|---|---|
+| `screens/settings-form-screen.tsx` | the shell, its three states, the save button |
+| `screens/hooks/useSettingsForm.ts` | the draft, `errors` / `blocked`, the telemetry rule |
+| `screens/hooks/useReportedName.ts` | the name the module answers to — a slot's `pairing` is written once at pairing time, so a name we saw accepted is newer than the one the slot carries |
+| `components/settings/save-report.ts` | outcome → sentence, `moduleHasTheLastWord`, `savePress` |
+| `components/settings/identity-form.ts` | name and PIN validation, shared by both identity forms |
+| `components/settings/IdentityCards.tsx` | the two identity cards, likewise shared |
+| `components/settings/settings-rows.ts` | Réglages' module rows and the paired count |
+| `components/water-settings/tank-form.ts` | tank and valve validation and command shaping |
+| `components/heater-settings/pid-form-view.ts` | the four PID cards and gain validation |
+| `components/heater/zone-names.ts` | `ZONE_NAME_KEYS` — **one** zone vocabulary, read by the piloting screen and the PID form alike |
+| `components/battery-settings/battery-info-view.ts` | the read-only cards |
+| `components/module-accent.ts` | `ModuleKey → fill.*`, because the design system names no module and the domain names no colour |
+
+The kit these draw with — `AccentCard`, `FieldRow`, `FieldInput`,
+`FieldReadout`, `SegmentedControl`, `NavRow` and `SettingsHeader`'s three
+variants — is documented in
+[design-system.md](./design-system.md#the-settings-form-kit).
+
+### The language is hydrated before the first paint
+
+`composition/useAppPreferences.ts` performs **one** `load()` on the boot path and
+returns `{ hydrated, initialThemeMode, initialLanguage, saveThemeMode,
+saveLanguage }`; a key-by-key read would paint the default first.
+`composition/useAppReady.ts` ANDs `hydrated` with the fonts, so **no frame paints
+in the wrong language or the wrong theme**.
+
+`composition/LanguageProvider.tsx` then holds the live language: the i18next
+instance is created **from the hydrated value** — module scope is where it used to
+live, and that is what fixed the language for the process lifetime — and
+`setLanguage` calls `changeLanguage` and writes through the repository without
+waiting. A preference that fails to persist is a `console.warn`, not a crash.
+`AppProviders` keeps `I18nextProvider` outermost, over `ContainerProvider`.
+
 ## Copy and translation
 
 Every user-visible string goes through a key. `i18n/resources/fr.ts` is the
@@ -269,11 +434,11 @@ source of truth — the mockups are French — and `i18n/resources/en.ts` is a
   `design-system/` → `i18n/`: the toast takes a string the caller already ran
   through `t()`. `i18n-is-self-contained` forbids the layer from reaching
   anything to its right.
-- **The language comes from the device.** `i18n/language.ts` maps
-  `expo-localization`'s `getLocales()[0].languageCode` to `fr` / `en`, `fr`
-  otherwise. Persisting a *chosen* language is the preferences port's job, not
-  this layer's. `composition/AppProviders.tsx` mounts `I18nextProvider`
-  outermost over one module-scope instance.
+- **The language comes from the device only when nothing is stored.**
+  `i18n/language.ts` maps `expo-localization`'s `getLocales()[0].languageCode` to
+  `fr` / `en`, `fr` otherwise — that is the fallback. A *chosen* language is the
+  preferences port's, and the live instance is `LanguageProvider`'s; see
+  "The language is hydrated before the first paint" above.
 - **The guardrail.** `i18n/__tests__/no-literal-copy.test.ts` walks the TypeScript
   AST of `app/`, `components/`, `design-system/` and `screens/`, and fails on a
   copy-shaped literal in a JSX text node, a rendered child — including through
@@ -397,6 +562,11 @@ Found while reviewing #6 and left deliberately: each is #7 or #8 work, and none
 blocks the hardware validation. Written down so the next reader finds them
 before rediscovering them.
 
+#7 closed the two that were its own: `useFeedbackToast` still announces failures
+only, but each settings form now fires its own success toast where it sends, so
+nothing was lost when the sections' hand-rolled `ToastAndroid` went — and with
+those four sections deleted, `TOAST_ALLOWED` is empty.
+
 **Behaviour**
 
 - `DrainValve`'s restore-on-failure is **last-write-wins**. An `AUTO_CLOSED`
@@ -408,10 +578,6 @@ before rediscovering them.
   landing just after an `AUTO_CLOSED` reports the closure as manual.
 - `Feedback` carries no occurrence identity, so two identical failures in a row
   are one value change and produce one toast: a second failed close is silent.
-- `useFeedbackToast` announces **failures only**. When #7 moves the four
-  settings sections off their hand-rolled `ToastAndroid`, their *Configuration
-  enregistrée* confirmation vanishes unless each section fires its own success
-  toast.
 - `formatRemainingTime` emits unlocalized user-facing copy (`"24h 51m"`) from
   `domain/battery/BatteryTelemetry.ts`. `no-domain-copy` is a French-spelling
   detector, so it misses it — this is the "nothing but review enforces that"
