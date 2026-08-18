@@ -397,7 +397,7 @@ but the scrim, by deleting the four feature components that carried a raw hex;
 #7 gave that scrim the `scrim` token, so `COLOR_RETIRING` is `{}` and the colour
 half is down to the permanent `tokens.ts`. #7 then deleted the four settings
 sections that were the whole of `TOAST_ALLOWED`, so that map is `{}` too — the
-only `ToastAndroid` left in the repository is the one `__mocks__/react-native.ts`
+only `ToastAndroid` left in production code is the one `__mocks__/react-native.ts`
 stubs, which the scan does not walk. An empty map is the goal state, not a gap:
 the next entry added has to name the issue that removes it again.
 

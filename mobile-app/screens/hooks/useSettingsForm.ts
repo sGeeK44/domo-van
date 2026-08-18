@@ -22,7 +22,7 @@ export type SettingsFormOptions<T> = {
   /**
    * Resolves whether the module now has the last word on these fields: `true` when it
    * applied or refused them, `false` when it never confirmed — silence is what the user
-   * retries, so the draft has to survive it. A rejection keeps the draft too: nothing was sent.
+   * retries, so the draft has to survive it. A refusal is the module's word, so the draft goes.
    */
   onSave: (values: T) => Promise<boolean>;
 };

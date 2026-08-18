@@ -81,13 +81,6 @@ export const fr = {
       offlineBody: "Les réglages s'affichent une fois le module reconnecté.",
     },
     admin: {
-      section: "Administration",
-      namePlaceholder: "Nom du module",
-      saveName: "Enregistrer le nom",
-      pinLabel: "PIN (6 chiffres)",
-      savePin: "Enregistrer le PIN",
-      sendingName: "Envoi du nouveau nom…",
-      sendingPin: "Envoi du nouveau PIN…",
       restarted: "OK. Le module va redémarrer. Reconnecte-toi.",
       failed: "Erreur: {{message}}",
       nameLength: "Le nom doit faire entre 1 et 20 caractères.",
