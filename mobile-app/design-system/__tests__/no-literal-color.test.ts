@@ -22,17 +22,8 @@ const COLOR_RETIRING: Record<string, string> = {};
 
 const COLOR_ALLOWED = { ...COLOR_PERMANENT, ...COLOR_RETIRING };
 
-/** The settings sections still confirm through the native toast until #7 rewrites them. */
-const TOAST_ALLOWED: Record<string, string> = {
-  "components/water-settings/TankSettingsSection.tsx":
-    "#7 rewrites the settings sections onto useToast",
-  "components/water-settings/ValveSettingsSection.tsx":
-    "#7 rewrites the settings sections onto useToast",
-  "components/heater-settings/HeaterPidSection.tsx":
-    "#7 rewrites the settings sections onto useToast",
-  "components/module-settings/AdminSection.tsx":
-    "#7 rewrites the settings sections onto useToast",
-};
+/** Each file still on the native toast until a later issue moves it; the entry retires with it. */
+const TOAST_ALLOWED: Record<string, string> = {};
 
 /** The rows of the exception table in the doc: `| \`path\` | reason |`. */
 function documentedExceptions(): string[] {

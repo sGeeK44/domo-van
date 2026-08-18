@@ -391,15 +391,15 @@ per-file exception maps bound it, each entry naming the issue that retires it:
 | File | Retired by |
 |---|---|
 | `design-system/tokens.ts` | permanent — the palette itself |
-| `components/water-settings/TankSettingsSection.tsx` | #7 (`ToastAndroid`) |
-| `components/water-settings/ValveSettingsSection.tsx` | #7 (`ToastAndroid`) |
-| `components/heater-settings/HeaterPidSection.tsx` | #7 (`ToastAndroid`) |
-| `components/module-settings/AdminSection.tsx` | #7 (`ToastAndroid`) |
 
-#6 emptied the colour half of the list of everything but the scrim, by deleting
-the four feature components that carried a raw hex; #7 gave that scrim the
-`scrim` token, so the colour half is down to the permanent `tokens.ts`. Once the
-four settings sections are rewritten, the toast half goes with them.
+**Both temporary maps are now empty.** #6 emptied the colour half of everything
+but the scrim, by deleting the four feature components that carried a raw hex;
+#7 gave that scrim the `scrim` token, so `COLOR_RETIRING` is `{}` and the colour
+half is down to the permanent `tokens.ts`. #7 then deleted the four settings
+sections that were the whole of `TOAST_ALLOWED`, so that map is `{}` too — the
+only `ToastAndroid` left in the repository is the one `__mocks__/react-native.ts`
+stubs, which the scan does not walk. An empty map is the goal state, not a gap:
+the next entry added has to name the issue that removes it again.
 
 Two tests keep the list from lying: no `design-system/` file other than
 `tokens.ts` may appear in it, and **this table must name exactly the same files
