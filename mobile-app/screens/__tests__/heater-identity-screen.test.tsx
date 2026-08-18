@@ -15,7 +15,9 @@ const { pairOnly, renderModuleScreen } = await import("./moduleScreenHarness");
 const { default: HeaterIdentityScreen } = await import(
   "@/screens/heater-identity-screen"
 );
-const { default: ModulesScreen } = await import("@/screens/modules-screen");
+const { ModuleSettingsSection } = await import(
+  "@/screens/module-settings-section"
+);
 const { ToastProvider } = await import("@/design-system");
 const { FakeChannel } = await import("@/infrastructure/fake/FakeChannel");
 const { createI18n } = await import("@/i18n/createI18n");
@@ -27,7 +29,7 @@ const { resetNavigation, routerHistory, routerStack, useRouter } = await import(
 const PAIRED_NAME = "Heater Module (fake)";
 
 const IDENTITY_FORM = "/settings/heater-identity";
-const MODULES = "/modules";
+const SETTINGS = "/settings";
 
 const NAME = "Cellule arriere";
 const PIN = "246810";
@@ -136,16 +138,16 @@ describe("the Chauffage identity form", () => {
   });
 });
 
-describe("the Modules screen's edit button", () => {
-  it("pushes the Chauffage identity form, so back returns to Modules", async () => {
+describe("the Réglages edit button", () => {
+  it("pushes the Chauffage identity form, so back returns to Réglages", async () => {
     const harness = renderModuleScreen(
       <ToastProvider>
-        <ModulesScreen />
+        <ModuleSettingsSection />
       </ToastProvider>,
     );
     await pairOnly(harness, ["heater"]);
-    // The real entry point: Modules is a pushed route, and the form pushes on top of it.
-    useRouter().push(MODULES);
+    // The real entry point: Réglages is a pushed route, and the form pushes on top of it.
+    useRouter().push(SETTINGS);
 
     fireEvent.click(screen.getByTestId("module-edit-heater"));
 
@@ -157,6 +159,6 @@ describe("the Modules screen's edit button", () => {
 
     useRouter().back();
 
-    expect(routerStack.at(-1)).toBe(MODULES);
+    expect(routerStack.at(-1)).toBe(SETTINGS);
   });
 });

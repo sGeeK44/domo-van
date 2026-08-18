@@ -14,8 +14,8 @@ const { resetNavigation, routerStack, useRouter } = await import(
 
 const FORM_ROUTE = "/settings/water-tanks";
 
-/** The three surfaces a form is opened from, all by a push: tab, Réglages, Modules. */
-const ENTRY_POINTS = ["/water", "/settings", "/modules"];
+/** The surfaces a form is opened from, all by a push: a module tab and Réglages. */
+const ENTRY_POINTS = ["/water", "/settings"];
 
 type WaterFormProps = { save?: { onPress: () => void; busy: boolean } };
 

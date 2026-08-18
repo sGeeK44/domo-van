@@ -49,9 +49,7 @@ export const fr = {
     heater: { name: "Module de chauffage", tab: "Chauff" },
     battery: { name: "JK BMS", tab: "Batt" },
     list: {
-      title: "Modules",
       unpair: "Dissocier",
-      freeSlot: "Emplacement libre · appairer",
       unpairFailed: "La dissociation a échoué.",
     },
     add: {
@@ -75,8 +73,7 @@ export const fr = {
     notice: {
       unpairedTitle: "Aucun module appairé",
       unpairedSubtitle: "Emplacement libre",
-      unpairedBody:
-        "Appairez ce module depuis l'écran Modules pour accéder à ses réglages.",
+      unpairedBody: "Appairez ce module pour accéder à ses réglages.",
       offlineTitle: "Module hors ligne",
       offlineBody: "Les réglages s'affichent une fois le module reconnecté.",
     },
@@ -305,8 +302,7 @@ export const fr = {
       application: "APPLICATION",
     },
     rows: {
-      modules: "Modules associés",
-      modulesSubtitle: "{{paired}} sur {{slots}} emplacements",
+      editIdentity: "Modifier l'identité",
       water: "Eau",
       waterSubtitle: "volumes, hauteurs, vanne",
       heater: "Chauffage",

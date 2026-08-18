@@ -51,9 +51,7 @@ export const en: typeof fr = {
     heater: { name: "Heater module", tab: "Heat" },
     battery: { name: "JK BMS", tab: "Batt" },
     list: {
-      title: "Modules",
       unpair: "Unpair",
-      freeSlot: "Free slot · pair one",
       unpairFailed: "Unpairing failed.",
     },
     add: {
@@ -77,8 +75,7 @@ export const en: typeof fr = {
     notice: {
       unpairedTitle: "No module paired",
       unpairedSubtitle: "Free slot",
-      unpairedBody:
-        "Pair this module from the Modules screen to reach its settings.",
+      unpairedBody: "Pair this module to reach its settings.",
       offlineTitle: "Module offline",
       offlineBody: "The settings appear once the module is reconnected.",
     },
@@ -307,8 +304,7 @@ export const en: typeof fr = {
       application: "APPLICATION",
     },
     rows: {
-      modules: "Paired modules",
-      modulesSubtitle: "{{paired}} of {{slots}} slots",
+      editIdentity: "Edit identity",
       water: "Water",
       waterSubtitle: "volumes, heights, valve",
       heater: "Heating",

@@ -15,7 +15,9 @@ const { pairOnly, renderModuleScreen } = await import("./moduleScreenHarness");
 const { default: WaterIdentityScreen } = await import(
   "@/screens/water-identity-screen"
 );
-const { default: ModulesScreen } = await import("@/screens/modules-screen");
+const { ModuleSettingsSection } = await import(
+  "@/screens/module-settings-section"
+);
 const { Colors, ToastProvider } = await import("@/design-system");
 const { FakeChannel } = await import("@/infrastructure/fake/FakeChannel");
 const { resetNavigation, routerStack, useRouter } = await import(
@@ -26,7 +28,7 @@ const { resetNavigation, routerStack, useRouter } = await import(
 const PAIRED_NAME = "Water Module (fake)";
 
 const IDENTITY_FORM = "/settings/water-identity";
-const MODULES = "/modules";
+const SETTINGS = "/settings";
 
 const NAME = "Cuve avant";
 const PIN = "123456";
@@ -212,10 +214,10 @@ describe("the way into the Eau identity form", () => {
     vi.restoreAllMocks();
   });
 
-  it("returns to the Modules screen its edit button opened it from", async () => {
-    useRouter().push(MODULES);
-    const modules = renderModuleScreen(<ModulesScreen />);
-    await pairOnly(modules, ["water"]);
+  it("returns to Réglages its edit button opened it from", async () => {
+    useRouter().push(SETTINGS);
+    const settings = renderModuleScreen(<ModuleSettingsSection />);
+    await pairOnly(settings, ["water"]);
 
     fireEvent.click(screen.getByTestId("module-edit-water"));
     expect(routerStack.at(-1)).toBe(IDENTITY_FORM);
@@ -224,6 +226,6 @@ describe("the way into the Eau identity form", () => {
     await identityForm();
     fireEvent.click(screen.getByText("arrow-back"));
 
-    expect(routerStack.at(-1)).toBe(MODULES);
+    expect(routerStack.at(-1)).toBe(SETTINGS);
   });
 });

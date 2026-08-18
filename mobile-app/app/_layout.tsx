@@ -38,7 +38,6 @@ function AppContent() {
       <ToastProvider>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modules" options={{ headerShown: false }} />
           <Stack.Screen name="add-module" options={{ headerShown: false }} />
           {/* One entry for the whole group: app/settings/_layout.tsx hides each form's header. */}
           <Stack.Screen name="settings" options={{ headerShown: false }} />

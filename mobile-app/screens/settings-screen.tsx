@@ -4,14 +4,8 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  moduleSettingsRows,
-  slotSummary,
-} from "@/components/settings/settings-rows";
 import { useLanguage } from "@/composition/LanguageProvider";
-import { useModuleSlots } from "@/composition/ModuleRegistryProvider";
 import {
-  NavRow,
   type Palette,
   SegmentedControl,
   SettingsHeader,
@@ -20,19 +14,9 @@ import {
   type ThemeMode,
   useStyles,
   useTheme,
-  useThemeColor,
 } from "@/design-system";
-import type { ModuleKey } from "@/domain/modules/ModuleDescriptor";
 import type { Language } from "@/i18n/language";
-
-const MODULES_ROUTE = "/modules";
-
-/** Réglages reaches the same three forms the module tabs' tune chip does. */
-const FORM_ROUTE = {
-  water: "/settings/water-tanks",
-  heater: "/settings/heater-pid",
-  battery: "/settings/battery-info",
-} as const satisfies Record<ModuleKey, string>;
+import { ModuleSettingsSection } from "@/screens/module-settings-section";
 
 const LANGUAGES: readonly Language[] = ["fr", "en"];
 const THEME_MODES: readonly ThemeMode[] = ["auto", "dark", "light"];
@@ -40,13 +24,11 @@ const THEME_MODES: readonly ThemeMode[] = ["auto", "dark", "light"];
 export default function SettingsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const colors = useThemeColor();
   const styles = useStyles(makeStyles);
 
   const { language, setLanguage } = useLanguage();
   const { themeMode, setThemeMode } = useTheme();
 
-  const slots = useModuleSlots();
   const version = Constants.expoConfig?.version;
 
   return (
@@ -61,26 +43,7 @@ export default function SettingsScreen() {
 
         <ScrollView contentContainerStyle={styles.body}>
           <Group label={t("settings.groups.modules")}>
-            <NavRow
-              testID="settings-row-modules"
-              icon="memory"
-              iconBackground={colors.chip}
-              title={t("settings.rows.modules")}
-              subtitle={t("settings.rows.modulesSubtitle", slotSummary(slots))}
-              onPress={() => router.push(MODULES_ROUTE)}
-            />
-            {moduleSettingsRows(slots, colors).map((row) => (
-              <NavRow
-                key={row.moduleKey}
-                testID={`settings-row-${row.moduleKey}`}
-                icon={row.icon}
-                iconBackground={row.iconBackground}
-                title={t(row.titleKey)}
-                subtitle={t(row.subtitleKey)}
-                dimmed={row.dimmed}
-                onPress={() => router.push(FORM_ROUTE[row.moduleKey])}
-              />
-            ))}
+            <ModuleSettingsSection />
           </Group>
 
           <Group label={t("settings.groups.application")}>
